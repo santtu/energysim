@@ -1,17 +1,9 @@
-import java.io.{BufferedInputStream, FileInputStream}
-import java.nio.file.Files.readAllBytes
-import java.nio.file.Paths
+package fi.iki.santtu.energysim
 
-import breeze.linalg.DenseVector
-import fi.iki.santtu.energysim.{JsonDecoder, Model, YamlDecoder}
-import fi.iki.santtu.energysim.model.World
+import org.scalajs.dom
 
-object EnergySim {
+object Browser {
   def main(args: Array[String]): Unit = {
-//    val data = readAllBytes(Paths.get("world.yml"))
-//    val world = Model.from(data, YamlDecoder)
-//    val data = readAllBytes(Paths.get("world.json"))
-
     val data = """{
                  |    "areas": [
                  |        {
@@ -141,16 +133,10 @@ object EnergySim {
                  |    ],
                  |    "name": "simple model"
                  |}""".stripMargin.getBytes("UTF-8")
+    
     val world = Model.from(data, JsonDecoder)
-
-//    val world = Model.fromFile("world.yml")
-//    val world = World("nameless")
 
     println(s"World: ${world}")
     println(s"units: ${world.units}")
-
-//    import breeze.linalg._
-    val x = DenseVector.zeros[Double](5)
-    
   }
 }
