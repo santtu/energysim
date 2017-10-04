@@ -1,6 +1,6 @@
 package fi.iki.santtu.energysim.model
 
-case class Capacity(val amount: Int = 0)
+case class Capacity(amount: Int = 0)
 
 abstract class CapacityModel {
   def capacity(): Capacity

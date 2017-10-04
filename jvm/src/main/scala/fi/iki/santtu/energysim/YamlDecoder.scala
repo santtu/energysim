@@ -61,14 +61,14 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
   implicit object AreaFormat extends YamlFormat[Area] {
     override def read(yaml: YamlValue): Area = {
       val obj = yaml.asYamlObject
-      println("areaformat.read: yaml=$yaml obj=$obj")
+//      println("areaformat.read: yaml=$yaml obj=$obj")
 
       val (name, drains, sources) = (
         getString(obj, "name", s"area ${Counter.count}"),
         getArray(obj, "drains", emptyArray),
         getArray(obj, "sources", emptyArray))
 
-      println(s"area: name=$name drains=$drains sources=$sources")
+//      println(s"area: name=$name drains=$drains sources=$sources")
 
       // note: links are generated in the world parser later
       Area(name = name,
@@ -87,26 +87,26 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
   implicit object WorldFormat extends YamlFormat[World] {
     override def read(yaml: YamlValue): World = {
       val obj = yaml.asYamlObject
-      println(s"read: yaml=$yaml obj=$obj")
+//      println(s"read: yaml=$yaml obj=$obj")
 
       val (name, areas, lines) = (
         getString(obj, "name", "nameless world"),
         getArray(obj, "areas", emptyArray),
         getArray(obj, "lines", emptyArray))
 
-      println(s"name=$name areas=$areas lines=$lines")
+//      println(s"name=$name areas=$areas lines=$lines")
 
       val areas2 = areas.map(_.convertTo[Area]).map(a ⇒ a.name → a).toMap
-      println(s"areas2=$areas2")
+//      println(s"areas2=$areas2")
 
       val lines2 = lines.map(_.convertTo[LineHolder])
-      println(s"lines2=$lines2")
+//      println(s"lines2=$lines2")
 
       val lines3 = lines2.map {
         lh ⇒
           val area1 = areas2(lh.areas._1)
           val area2 = areas2(lh.areas._2)
-          println(s"lh=$lh area1=$area1 area2=$area2")
+//          println(s"lh=$lh area1=$area1 area2=$area2")
           Line(lh.name.getOrElse(s"line ${Counter.count}"),
             lh.capacity,
             Tuple2(area1, area2))
@@ -114,13 +114,13 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
 
       val areaLines = lines3.groupBy(_.areas._1) ++ lines3.groupBy(_.areas._2)
 
-      println(s"lines3=$lines3 areaLines=$areaLines")
+//      println(s"lines3=$lines3 areaLines=$areaLines")
 
       val areas3 = areas2.values.map {
         a ⇒ a.copy(links = areaLines.getOrElse(a, a.links))
       } toSeq
 
-      println(s"areas3=$areas3")
+//      println(s"areas3=$areas3")
 
       World(name, areas3, lines3)
     }

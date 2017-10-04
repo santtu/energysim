@@ -1,6 +1,11 @@
 package fi.iki.santtu.energysim
 
-import org.scalajs.dom
+import fi.iki.santtu.energysim.simulation.ScalaSimulation
+//import scala.concurrent.ExecutionContext.Implicits.global
+//import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object Browser {
   def main(args: Array[String]): Unit = {
@@ -138,5 +143,10 @@ object Browser {
 
     println(s"World: ${world}")
     println(s"units: ${world.units}")
+
+    val simulator = ScalaSimulation
+    val result = simulator.simulate(world, 1)
+
+    println(s"success: $result")
   }
 }

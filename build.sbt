@@ -24,8 +24,10 @@ lazy val energySimulator = crossProject.in(file(".")).
   ).
   jvmSettings(
     mainClass in Compile := Some("fi.iki.santtu.energysim.Command"),
-    libraryDependencies += "net.jcazevedo" %% "moultingyaml" % "0.4.0"
-  ).
+    libraryDependencies ++= Seq(
+      "net.jcazevedo" %% "moultingyaml" % "0.4.0",
+      "com.github.scopt" %% "scopt" % "3.7.0"
+    )).
   jsSettings(
     scalaJSUseMainModuleInitializer := true,
     jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(),
