@@ -4,6 +4,7 @@ import java.nio.file.Files.readAllBytes
 import java.nio.file.Paths
 
 import fi.iki.santtu.energysim.simulation.ScalaSimulation
+import scribe.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -11,7 +12,8 @@ import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
 
 object Command {
-  case class Config(file: String = "world.yml", rounds: Int = 1)
+  case class Config(file: String = "world.yml", rounds: Int = 1,
+                    verbose: Boolean = false)
 
   val parser = new scopt.OptionParser[Config]("energysim") {
     head("energysim", getClass.getPackage.getImplementationVersion)
@@ -20,6 +22,10 @@ object Command {
     opt[Int]('r', "rounds")
       .action((value, config) ⇒ config.copy(rounds = value))
       .text("number of rounds to simulate")
+
+    opt[Unit]('v', "verbose")
+      .action((_, config) ⇒ config.copy(verbose = true))
+      .text("increase verbosity")
 
     arg[String]("FILE")
       .optional()
@@ -35,7 +41,10 @@ object Command {
         sys.exit(2)
     }
 
-    println(s"parser=$parser config=$config")
+    if (config.verbose)
+      Logger.root.update { Logger.root.copy(multiplier = 2.0) }
+
+    scribe.debug(s"parser=$parser config=$config")
 
     val decoder = config.file.split('.').last match {
       case "json" ⇒ JsonDecoder
@@ -48,11 +57,11 @@ object Command {
     val world = Model.from(data, decoder)
 
     println(s"World: ${world}")
-    println(s"units: ${world.units}")
+    println(s"units: ${world.units.map(_.name).mkString(", ")}")
 
     val simulator = ScalaSimulation
     val result = simulator.simulate(world, config.rounds)
 
-    println(s"success: $result")
+    println(s"Simulation: $result")
   }
 }

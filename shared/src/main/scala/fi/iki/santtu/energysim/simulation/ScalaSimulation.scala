@@ -14,7 +14,7 @@ object ScalaSimulation extends Simulation {
   private def simulate(world: World): Round = {
     val graph = EdmondsKarp()
     val capacities = world.units.map(_.capacityModel.capacity())
-    println(s"capacities=$capacities")
+    scribe.debug(s"capacities=$capacities")
 
     // supersource is 0, supersink is 1, all others are +2,
     // generate area -> index map
@@ -33,7 +33,7 @@ object ScalaSimulation extends Simulation {
         }
     }
 
-    println(s"areaIndex=$areaIndex areaPower=$areaPower")
+    scribe.debug(s"areaIndex=$areaIndex areaPower=$areaPower")
 
     // connect areas to either supersource or supersink
     areaPower.foreach {
@@ -62,7 +62,7 @@ object ScalaSimulation extends Simulation {
 
     val result = graph.solve(0, 1)
 
-    println(s"graph=$graph result=$result")
+    scribe.debug(s"graph=$graph result=$result")
 
     // XXX NOT FULL IMPLEMENTATION
 
