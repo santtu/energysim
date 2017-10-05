@@ -20,7 +20,9 @@ lazy val energySimulator = crossProject.in(file(".")).
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
       "io.circe" %%% "circe-parser"
-    ).map(_ % circeVersion)
+    ).map(_ % circeVersion) ++ Seq(
+      "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+    )
   ).
   jvmSettings(
     mainClass in Compile := Some("fi.iki.santtu.energysim.Command"),

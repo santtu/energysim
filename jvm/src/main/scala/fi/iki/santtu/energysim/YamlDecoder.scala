@@ -1,5 +1,6 @@
 package fi.iki.santtu.energysim
 
+import fi.iki.santtu.energysim.JsonDecoder.CapacityHolder
 import fi.iki.santtu.energysim.model._
 import net.jcazevedo.moultingyaml._
 
@@ -39,23 +40,19 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
     }
   }
 
-  implicit object CapacityModelFormat extends YamlFormat[CapacityModel] {
-    override def read(yaml: YamlValue): CapacityModel = {
+  private type CapacityHolder = Seq[YamlValue]
 
-      yaml match {
-        case YamlArray(array) if array.length >= 1 ⇒
-          val name = array(0).asInstanceOf[YamlString].value
-          val params = array.slice(1, array.length).map(_.asInstanceOf[YamlNumber].value.toDouble)
-          CapacityConverter.convert(name, params)
-        case _ ⇒
-          deserializationError("capacity field must be an array of at least two elements")
-      }
+  def capacity(c: Option[CapacityHolder]): CapacityModel =
+    c match {
+      case Some(c) ⇒
+        CapacityConverter.convert(
+          c(0).convertTo[String],
+          c.slice(1, c.length).map(_.asInstanceOf[YamlNumber].value.toDouble))
+      case None ⇒
+        NullCapacityModel()
     }
 
-    override def write(obj: CapacityModel): YamlValue = ???
-  }
-
-  case class UnitHolder(name: Option[String], capacity: CapacityModel, ghg: Option[Double])
+  case class UnitHolder(name: Option[String], capacity: Option[CapacityHolder], ghg: Option[Double])
   implicit val unitHolderFormat = yamlFormat3(UnitHolder)
 
   implicit object AreaFormat extends YamlFormat[Area] {
@@ -73,15 +70,15 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       // note: links are generated in the world parser later
       Area(name = name,
         drains = drains.map(_.convertTo[UnitHolder]).map(
-          dh ⇒ Drain(dh.name.getOrElse(s"drain ${Counter.count}"), dh.capacity)),
+          dh ⇒ Drain(dh.name.getOrElse(s"drain ${Counter.count}"), capacity(dh.capacity))),
         sources = sources.map(_.convertTo[UnitHolder]).map(
-          sh ⇒ Source(sh.name.getOrElse(s"source ${Counter.count}"), sh.capacity, sh.ghg.getOrElse(0.0))))
+          sh ⇒ Source(sh.name.getOrElse(s"source ${Counter.count}"), capacity(sh.capacity), sh.ghg.getOrElse(0.0))))
     }
 
     override def write(obj: Area): YamlValue = ???
   }
 
-  case class LineHolder(name: Option[String], capacity: CapacityModel, areas: Tuple2[String, String])
+  case class LineHolder(name: Option[String], capacity: Option[CapacityHolder], areas: Tuple2[String, String])
   implicit val lineHolderFormat = yamlFormat3(LineHolder)
 
   implicit object WorldFormat extends YamlFormat[World] {
@@ -89,40 +86,27 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       val obj = yaml.asYamlObject
 //      println(s"read: yaml=$yaml obj=$obj")
 
-      val (name, areas, lines) = (
+      val (name, areaHolders, lineHolders) = (
         getString(obj, "name", "nameless world"),
         getArray(obj, "areas", emptyArray),
         getArray(obj, "lines", emptyArray))
 
 //      println(s"name=$name areas=$areas lines=$lines")
 
-      val areas2 = areas.map(_.convertTo[Area]).map(a ⇒ a.name → a).toMap
-//      println(s"areas2=$areas2")
+      val areas = areaHolders.map(_.convertTo[Area])
+      val areasMap = areas.map(a ⇒ a.name → a).toMap
 
-      val lines2 = lines.map(_.convertTo[LineHolder])
-//      println(s"lines2=$lines2")
-
-      val lines3 = lines2.map {
+      val lines = lineHolders.map(_.convertTo[LineHolder]).map {
         lh ⇒
-          val area1 = areas2(lh.areas._1)
-          val area2 = areas2(lh.areas._2)
+          val area1 = areasMap(lh.areas._1)
+          val area2 = areasMap(lh.areas._2)
 //          println(s"lh=$lh area1=$area1 area2=$area2")
           Line(lh.name.getOrElse(s"line ${Counter.count}"),
-            lh.capacity,
+            capacity(lh.capacity),
             Tuple2(area1, area2))
       }
 
-      val areaLines = lines3.groupBy(_.areas._1) ++ lines3.groupBy(_.areas._2)
-
-//      println(s"lines3=$lines3 areaLines=$areaLines")
-
-      val areas3 = areas2.values.map {
-        a ⇒ a.copy(links = areaLines.getOrElse(a, a.links))
-      } toSeq
-
-//      println(s"areas3=$areas3")
-
-      World(name, areas3, lines3)
+      World(name, areas, lines)
     }
 
     override def write(obj: World): YamlValue = ???

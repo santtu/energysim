@@ -41,8 +41,7 @@ object Line {
 
 case class Area (val name: String,
                  val drains: Seq[Drain] = Seq.empty[Drain],
-                 val sources: Seq[Source] = Seq.empty[Source],
-                 val links: Seq[Line] = Seq.empty[Line])
+                 val sources: Seq[Source] = Seq.empty[Source])
 
 class World (val name: String,
              val areas: Seq[Area] = Seq.empty[Area],

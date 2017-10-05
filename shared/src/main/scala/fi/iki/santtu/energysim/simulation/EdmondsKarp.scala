@@ -6,6 +6,14 @@ import scala.collection.{LinearSeq}
 import scala.collection.mutable.{ArrayBuffer, ListBuffer, ArraySeq, Queue}
 
 class EdmondsKarp(initialGraph: Graph) {
+  type Matrix = IndexedSeq[IndexedSeq[Int]]
+  class Result(val maxFlow: Int, flows: Matrix, residuals: Matrix) {
+    def flow(from: Int, to: Int) = flows(from)(to)
+    def residual(from: Int, to: Int) = residuals(from)(to)
+
+    override def toString: String = s"$maxFlow"
+  }
+
   // Turn the input graph into a mutable graph
   private val graph = ArrayBuffer[ListBuffer[(Int, Int)]](
       (initialGraph.map(ListBuffer[(Int, Int)](_:_*))):_*)
@@ -21,16 +29,60 @@ class EdmondsKarp(initialGraph: Graph) {
     * @param capacity
     */
   def add(from: Int, to: Int, capacity: Int): Unit = {
-    val lb = graph.lift(from) match {
-      case Some(buf) ⇒ buf
-      case None ⇒
-        val buf = ListBuffer[(Int, Int)]()
-        graph.update(from, buf)
-        buf
-    }
+    require(capacity >= 0 && from >= 0 && to >= 0)
+    val end = math.max(from, to)
 
+    println(s"add: from=$from to=$to capacity=$capacity size=${graph.size} end=$end")
+
+    if (end >= graph.size)
+      graph ++= Seq.fill(end - graph.size + 1){ ListBuffer[(Int, Int)]() }
+
+    val lb = graph(from)
+    println(s"size now ${graph.size} lb=$lb")
     require(!lb.exists(_ match { case (t, _) ⇒ t == to }))
     lb.append((to, capacity))
+  }
+
+  /**
+    * Search for a path from the source to sink with the given
+    * residual capacities, returning the path.
+    * If no path was found, the returned list is empty.
+    */
+  private def search(source: Int, sink: Int, residuals: IndexedSeq[IndexedSeq[Int]]): Seq[Int] = {
+    val visited = ArraySeq.fill[Boolean](graph.size)(false)
+    val parent = ArraySeq.fill[Int](graph.size)(-1)
+    val queue = Queue[Int]()
+
+    visited(source) = true
+    queue += source
+
+    while (queue.nonEmpty) {
+      val from = queue.dequeue()
+
+      graph(from).foreach {
+        case (to, _) ⇒
+          println(s"($from,$to) visited ${visited(to)} residual ${residuals(from)(to)}")
+          if (!visited(to) && residuals(from)(to) > 0) {
+            println(s"search: adding visit to $to")
+            visited(to) = true
+            queue += to
+            parent(to) = from
+          }
+      }
+    }
+
+    def path(i: Int, acc: Seq[Int]): Seq[Int] = {
+      println(s"path: i=$i acc=$acc parent(i)=${parent.lift(i)}")
+      if (i == -1 || !visited(i))
+        acc.reverse
+      else
+        path(parent(i), acc :+ i)
+    }
+
+    println(s"search: source=$source sink=$sink visited=$visited parent=$parent queue=$queue")
+
+    // look for path from the sink via the parent chain
+    path(sink, Seq.empty[Int])
   }
 
   /**
@@ -41,64 +93,74 @@ class EdmondsKarp(initialGraph: Graph) {
     * @return If no flow could be generated, fails, otherwise the result is
     *         a tuple of maximum flow and sequence of flows between nodes.
     */
-  def solve(source: Int, sink: Int): Int = {
+  def solve(source: Int, sink: Int): Result = {
+    if (source >= graph.size || sink >= graph.size)
+      throw new IllegalArgumentException("source or sink out of bounds")
+
     // residual graph
     val residuals = {
-      val g = Array.ofDim[Int](graph.size, graph.size)
+      val g = ArraySeq.fill[Int](graph.size, graph.size)(0)
       graph.zipWithIndex.foreach {
-        case (l, i) ⇒
-          l.foreach { case (t, c) ⇒ g(i)(t) = c }
+        case (edges, from) ⇒
+          edges.foreach { case (to, capacity) ⇒ g(from)(to) = capacity }
       }
       g
+    }
+    val flows = ArraySeq.fill[Int](graph.size, graph.size)(0)
+
+    println(s"solve: initial residuals:")
+    for (r ← residuals) {
+      for (c ← r)
+        print(s"$c\t")
+      println("")
     }
 
     var maxFlow: Int = 0
 
-    /**
-      * Search for a path from the source to sink, returning the path.
-      * If no path was found, the returned list is empty.
-      */
-    def search(): Seq[Int] = {
-      val visited = ArraySeq.fill[Boolean](graph.size)(false)
-      val parent = ArraySeq.fill[Int](graph.size)(-1)
-      val queue = Queue[Int]()
+    // keep going on until no path is available
+    var path: Seq[Int] = Seq.empty[Int]
 
-      visited(source) = true
-      queue += source
+    // yes, we could do a tail recursion here to be functional, but
+    // this is way more readable with a simple while loop
+    while ( {
+      path = search(source, sink, residuals)
+      path.nonEmpty
+    }) {
+      assert(path(0) == source && path.last == sink)
 
-      while (queue.nonEmpty) {
-        val from = queue.dequeue()
+      println(s"path=$path, determining flow")
 
-        graph(from).foreach {
-          case (to, _) ⇒
-            if (!visited(to) && residuals(from)(to) > 0) {
-              visited(to) = true
-              queue += to
-              parent(to) = from
-            }
-        }
+      // calculate flow and as a side effect, reduce residuals
+      // and update path flows, and again, we could use foldLeft
+      // or recursion here, but this should again be readable
+      var flow = Int.MaxValue
+
+      val pathPairs = path.dropRight(1).zip(path.drop(1))
+
+      pathPairs.foreach {
+        case (parent, child) ⇒
+          val residual = residuals(parent)(child)
+          println(s"$parent $child $residual")
+          flow = math.min(flow, residual)
       }
 
-      def path(i: Int, acc: Seq[Int]): Seq[Int] =
-        if (i == -1)
-          acc
-        else
-          path(parent(i), acc :+ i)
+      pathPairs.foreach {
+        case (parent, child) ⇒
+          residuals(parent)(child) -= flow
+          residuals(child)(parent) += flow
 
-      path(sink, Seq.empty[Int])
+          flows(parent)(child) += flow
+          flows(child)(parent) -= flow
+      }
+
+      println(s"found path, $path, flow=$flow")
+
+      maxFlow += flow
     }
 
-    def optimize(): Int =
-      search() match {
-        case Nil ⇒
-          println(s"no path from $source to $sink found")
-          maxFlow
-        case path ⇒
-          println(s"found path, $path")
-          -1
-      }
+    println(s"no more paths, max flow: $maxFlow flows=$flows residuals=$residuals")
 
-    optimize()
+    new Result(maxFlow, flows, residuals)
   }
 }
 
@@ -109,7 +171,7 @@ object EdmondsKarp {
     */
   type Graph = IndexedSeq[LinearSeq[(Int, Int)]]
 
-  private val emptyGraph = Array.empty[LinearSeq[(Int, Int)]]
+  private val emptyGraph = Vector.empty[LinearSeq[(Int, Int)]]
 
   def apply(graph: Graph): EdmondsKarp =
     new EdmondsKarp(graph)

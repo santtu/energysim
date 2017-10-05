@@ -38,3 +38,8 @@ object BetaCapacityModel {
   def apply(scale: Int, alpha: Double, beta: Double): BetaCapacityModel =
     new BetaCapacityModel(scale, alpha, beta)
 }
+
+object NullCapacityModel {
+  def apply() =
+    new ConstantCapacityModel(0)
+}
