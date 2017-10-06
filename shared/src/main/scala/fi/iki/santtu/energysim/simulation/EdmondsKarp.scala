@@ -32,13 +32,13 @@ class EdmondsKarp(initialGraph: Graph) {
     require(capacity >= 0 && from >= 0 && to >= 0)
     val end = math.max(from, to)
 
-    scribe.debug(s"add: from=$from to=$to capacity=$capacity size=${graph.size} end=$end")
+    scribe.trace(s"add: from=$from to=$to capacity=$capacity size=${graph.size} end=$end")
 
     if (end >= graph.size)
       graph ++= Seq.fill(end - graph.size + 1){ ListBuffer[(Int, Int)]() }
 
     val lb = graph(from)
-    scribe.debug(s"size now ${graph.size} lb=$lb")
+    scribe.trace(s"size now ${graph.size} lb=$lb")
     require(!lb.exists(_ match { case (t, _) ⇒ t == to }))
     lb.append((to, capacity))
   }
@@ -61,9 +61,9 @@ class EdmondsKarp(initialGraph: Graph) {
 
       graph(from).foreach {
         case (to, _) ⇒
-          scribe.debug(s"($from,$to) visited ${visited(to)} residual ${residuals(from)(to)}")
+          scribe.trace(s"($from,$to) visited ${visited(to)} residual ${residuals(from)(to)}")
           if (!visited(to) && residuals(from)(to) > 0) {
-            scribe.debug(s"search: adding visit to $to")
+            scribe.trace(s"search: adding visit to $to")
             visited(to) = true
             queue += to
             parent(to) = from
@@ -72,14 +72,14 @@ class EdmondsKarp(initialGraph: Graph) {
     }
 
     def path(i: Int, acc: Seq[Int]): Seq[Int] = {
-      scribe.debug(s"path: i=$i acc=$acc parent(i)=${parent.lift(i)}")
+      scribe.trace(s"path: i=$i acc=$acc parent(i)=${parent.lift(i)}")
       if (i == -1 || !visited(i))
         acc.reverse
       else
         path(parent(i), acc :+ i)
     }
 
-    scribe.debug(s"search: source=$source sink=$sink visited=$visited parent=$parent queue=$queue")
+    scribe.trace(s"search: source=$source sink=$sink visited=$visited parent=$parent queue=$queue")
 
     // look for path from the sink via the parent chain
     path(sink, Seq.empty[Int])
@@ -128,7 +128,7 @@ class EdmondsKarp(initialGraph: Graph) {
     }) {
       assert(path(0) == source && path.last == sink)
 
-      scribe.debug(s"path=$path, determining flow")
+      scribe.trace(s"path=$path, determining flow")
 
       // calculate flow and as a side effect, reduce residuals
       // and update path flows, and again, we could use foldLeft
@@ -140,7 +140,7 @@ class EdmondsKarp(initialGraph: Graph) {
       pathPairs.foreach {
         case (parent, child) ⇒
           val residual = residuals(parent)(child)
-          scribe.debug(s"$parent $child $residual")
+          scribe.trace(s"$parent $child $residual")
           flow = math.min(flow, residual)
       }
 

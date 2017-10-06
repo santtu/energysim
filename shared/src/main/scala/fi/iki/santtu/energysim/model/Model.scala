@@ -1,6 +1,8 @@
 package fi.iki.santtu.energysim.model
 
-case class Capacity(amount: Int = 0)
+case class Capacity(amount: Int = 0) {
+  override def toString: String = s"${amount}MW"
+}
 
 abstract class CapacityModel {
   def capacity(): Capacity
@@ -10,7 +12,7 @@ abstract class Unit(val name: String, val capacityModel: CapacityModel) {
 }
 
 class Drain(name: String, capacityModel: CapacityModel) extends Unit(name, capacityModel) {
-  override def toString: String = s"Drain($name,$capacityModel)"
+  override def toString: String = name
 }
 
 object Drain {
@@ -19,7 +21,7 @@ object Drain {
 }
 
 class Source(name: String, capacityModel: CapacityModel, val ghgPerCapacity: Double) extends Unit(name, capacityModel) {
-  override def toString: String = s"Source($name,$capacityModel,$ghgPerCapacity)"
+  override def toString: String = name
 }
 
 object Source {
@@ -29,7 +31,7 @@ object Source {
 
 class Line(name: String, capacityModel: CapacityModel, val areas: Tuple2[Area, Area]) extends Unit(name, capacityModel) {
 
-  override def toString: String = s"Line($name,$capacityModel,${areas._1.name}<->${areas._2.name})"
+  override def toString: String = s"${areas._1.name} <-> ${areas._2.name}"
 }
 
 object Line {
@@ -41,7 +43,9 @@ object Line {
 
 case class Area (val name: String,
                  val drains: Seq[Drain] = Seq.empty[Drain],
-                 val sources: Seq[Source] = Seq.empty[Source])
+                 val sources: Seq[Source] = Seq.empty[Source]) {
+  override def toString: String = name
+}
 
 class World (val name: String,
              val areas: Seq[Area] = Seq.empty[Area],
