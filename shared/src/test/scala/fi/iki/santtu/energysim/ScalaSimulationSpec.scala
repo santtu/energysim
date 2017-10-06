@@ -55,4 +55,48 @@ class ScalaSimulationSpec extends FlatSpec with Matchers {
     r.areas(a2) shouldBe AreaData(0, 50, 100, -50, 0)
     r.units(l) shouldBe UnitData(0, 1000, 1000)
   }
+
+  "Area without power" should "be able to get all power via transfer" in {
+    val (a1, a2) = (An("a", S(100), S(100, 1.0)), An("b", D(150)))
+    val l = L(1000, a1, a2)
+    val w = W(a1, a2, l)
+
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(0, 50, 200, 0, -150)
+    r.areas(a2) shouldBe AreaData(0, 0, 0, -150, 150)
+    r.units(l) shouldBe UnitData(150, 850, 1000)
+  }
+
+  it should "work also in reverse" in {
+    val (a1, a2) = (An("a", S(100), S(100, 1.0)), An("b", D(150)))
+    val l = L(1000, a2, a1)
+    val w = W(a1, a2, l)
+
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(0, 50, 200, 0, -150)
+    r.areas(a2) shouldBe AreaData(0, 0, 0, -150, 150)
+    r.units(l) shouldBe UnitData(-150, 1150, 1000)
+  }
+
+  it should "receive over multiple lines" in {
+    val (a1, a2, a3, b) = (An("a1", S(50)), An("a2", S(50)), An("a3", S(50)), An("b", D(150)))
+    val (l1, l2, l3) = (L(60, a1, b), L(60, b, a2), L(60, a3, b))
+    val w = W(a1, a2, a3, b, l1, l2, l3)
+
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(0, 0, 50, 0, -50)
+    r.areas(a2) shouldBe AreaData(0, 0, 50, 0, -50)
+    r.areas(a3) shouldBe AreaData(0, 0, 50, 0, -50)
+    r.areas(b) shouldBe AreaData(0, 0, 0, -150, 150)
+
+    // lines do not have preference, we can really only check for the
+    // total sum over all
+    val ld = r.units.collect { case (l: Line, ld) ⇒ ld }
+
+    ld.map(_.used.abs).sum shouldBe 150
+    ld.map(_.excess).sum shouldBe 130 // not 30 because one of the lines goes in reverse and has excess of 110
+  }
 }

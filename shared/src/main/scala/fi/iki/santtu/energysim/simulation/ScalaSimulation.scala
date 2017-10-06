@@ -101,10 +101,13 @@ object ScalaSimulation extends Simulation {
           case (a, ad) ⇒
             val ai = areaIndex(a)
 
-            if (ad.total < 0)
+            if (ad.total < 0) {
               graph.add(ai, 1, -ad.total)
-            else
-              graph.add(0, ai, ad.total)
+              scribe.info(s"area $a($ad) into supersink, capacity ${-ad.total}")
+            } else {
+              graph.add(0, ai, ad.excess)
+              scribe.info(s"area $a($ad) into supersource, capacity ${ad.excess}")
+            }
         }
 
         // then transfer lines between areas
@@ -119,6 +122,8 @@ object ScalaSimulation extends Simulation {
             // capacity on the reverse direction
             graph.add(ai1, ai2, ld.capacity - ld.used)
             graph.add(ai2, ai1, ld.capacity + ld.used)
+
+            scribe.info(s"$ai1->$ai2 = ${ld.capacity - ld.used}, $ai2->$ai1 = ${ld.capacity + ld.used}")
 
           case _ ⇒
         }
@@ -139,18 +144,24 @@ object ScalaSimulation extends Simulation {
 
             // update area 1, reduce excess and transfers (negative is outflow)
             // and for area 2, increase total and transfers (positive is in)
+            // note that excess can strictly only decline, and total can
+            // strictly only increase (transfer can go either way)
             areas(a1) = ad1.copy(
-              excess = ad1.excess - flow,
+              total = ad1.total - math.min(0, flow),
+              excess = ad1.excess - math.max(0, flow),
               transfer = ad1.transfer - flow)
 
             areas(a2) = ad2.copy(
-              total = ad2.total + flow,
+              total = ad2.total + math.max(0, flow),
+              excess = ad2.excess + math.min(0, flow),
               transfer = ad2.transfer + flow)
 
             // update link capacity
             units(l) = ld.copy(
               used = ld.used + flow,
               excess = ld.excess - flow)
+
+            scribe.info(s"flow $flow updated: $a1(${areas(a1)}) $a2(${areas(a2)}) $l(${units(l)})")
 
           case _ ⇒
         }

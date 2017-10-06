@@ -36,7 +36,7 @@ class Line(name: String,
            capacityModel: CapacityModel,
            val areas: Tuple2[Area, Area])
   extends Unit(name, capacityModel) {
-  override def toString: String = s"${areas._1.name} <-> ${areas._2.name}"
+  override def toString: String = s"${areas._1.name}<->${areas._2.name}"
 }
 
 object Line {
