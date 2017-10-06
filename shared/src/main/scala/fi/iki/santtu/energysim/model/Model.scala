@@ -16,42 +16,52 @@ class Drain(name: String, capacityModel: CapacityModel) extends Unit(name, capac
 }
 
 object Drain {
-  def apply(name: String, capacityModel: CapacityModel): Drain =
+  def apply(name: String = "drain",
+            capacityModel: CapacityModel = NullCapacityModel): Drain =
     new Drain(name, capacityModel)
 }
 
-class Source(name: String, capacityModel: CapacityModel, val ghgPerCapacity: Double) extends Unit(name, capacityModel) {
+class Source(name: String, capacityModel: CapacityModel, val ghgPerCapacity: Double = 0.0) extends Unit(name, capacityModel) {
   override def toString: String = name
 }
 
 object Source {
-  def apply(name: String, capacityModel: CapacityModel, ghgPerCapacity: Double = 0.0): Source =
+  def apply(name: String = "source",
+            capacityModel: CapacityModel = NullCapacityModel,
+            ghgPerCapacity: Double = 0.0): Source =
     new Source(name, capacityModel, ghgPerCapacity)
 }
 
-class Line(name: String, capacityModel: CapacityModel, val areas: Tuple2[Area, Area]) extends Unit(name, capacityModel) {
-
+class Line(name: String,
+           capacityModel: CapacityModel,
+           val areas: Tuple2[Area, Area])
+  extends Unit(name, capacityModel) {
   override def toString: String = s"${areas._1.name} <-> ${areas._2.name}"
 }
 
 object Line {
-  def apply(name: String,
-            capacityModel: CapacityModel,
+  def apply(name: String = "line",
+            capacityModel: CapacityModel = NullCapacityModel,
             areas: Tuple2[Area, Area]) =
     new Line(name, capacityModel, areas)
 }
 
-case class Area (val name: String,
-                 val drains: Seq[Drain] = Seq.empty[Drain],
-                 val sources: Seq[Source] = Seq.empty[Source]) {
+case class Area (name: String, drains: Seq[Drain], sources: Seq[Source]) {
   override def toString: String = name
+}
+
+object Area {
+  def apply(name: String = "area",
+            drains: Seq[Drain] = Seq.empty[Drain],
+            sources: Seq[Source] = Seq.empty[Source]) =
+    new Area(name, drains, sources)
 }
 
 class World (val name: String,
              val areas: Seq[Area] = Seq.empty[Area],
              val lines: Seq[Line] = Seq.empty[Line]) {
-  val units: Seq[Unit] = areas.map(_.drains).flatten ++
-    areas.map(_.sources).flatten ++
+  val units: Seq[Unit] = areas.flatMap(_.drains) ++
+    areas.flatMap(_.sources) ++
     lines
 
   override def toString: String =
@@ -59,7 +69,7 @@ class World (val name: String,
 }
 
 object World {
-  def apply(name: String,
+  def apply(name: String = "world",
             areas: Seq[Area] = Seq.empty[Area],
             lines: Seq[Line] = Seq.empty[Line]): World =
     new World(name, areas, lines)

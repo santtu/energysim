@@ -21,7 +21,7 @@ lazy val energySimulator = crossProject.in(file(".")).
       "io.circe" %%% "circe-generic",
       "io.circe" %%% "circe-parser"
     ).map(_ % circeVersion) ++ Seq(
-      "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+      "org.scalatest" %%% "scalatest" % "3.0.1" % "test",
       "com.outr" %%% "scribe" % "1.4.3"
     )
   ).

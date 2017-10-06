@@ -39,7 +39,6 @@ object BetaCapacityModel {
     new BetaCapacityModel(scale, alpha, beta)
 }
 
-object NullCapacityModel {
-  def apply() =
-    new ConstantCapacityModel(0)
+object NullCapacityModel extends ConstantCapacityModel(0) {
+  def apply() = this
 }
