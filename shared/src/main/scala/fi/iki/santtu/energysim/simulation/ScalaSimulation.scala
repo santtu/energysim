@@ -15,7 +15,7 @@ object ScalaSimulation extends Simulation {
     * @param world
     * @return
     */
-  protected[energysim] def simulate(world: World): Round = {
+  def simulate(world: World): Round = {
     val units = mutable.Map(world.units.map {
       u ⇒
         (u, u.capacityModel.capacity().amount) match {

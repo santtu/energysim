@@ -22,5 +22,6 @@ case class Round(areas: Map[Area, AreaData],
 case class Result(world: World, rounds: Seq[Round])
 
 trait Simulation {
+  def simulate(world: World): Round
   def simulate(world: World, rounds: Int): Result
 }
