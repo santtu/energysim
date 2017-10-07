@@ -60,8 +60,12 @@ object Command {
     println(s"units: ${world.units.map(_.name).mkString(", ")}")
 
     val simulator = ScalaSimulation
-    val result = simulator.simulate(world, config.rounds)
 
-    println(s"Simulation: $result")
+    val t0 = System.nanoTime()
+    val result = simulator.simulate(world, config.rounds)
+    val t1 = System.nanoTime()
+    val ms = (t1 - t0).toDouble / 1e6
+
+    println(f"Simulation ${config.rounds} took ${ms / 1000.0}%.3f s, ${ms / config.rounds}%.2f ms/round")
   }
 }
