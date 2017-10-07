@@ -12,6 +12,7 @@ case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transf
   
   require(generation >= 0)
   require(drain <= 0)
+  require(total <= 0)
   //      require(excess >= 0)   // this can be <0 when transfers are pending
 }
 

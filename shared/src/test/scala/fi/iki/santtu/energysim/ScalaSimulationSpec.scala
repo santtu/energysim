@@ -37,7 +37,7 @@ class ScalaSimulationSpec extends FlatSpec with Matchers {
 
     val a = world.areas(0)
 
-    r.areas(a) shouldBe AreaData(0, 0, 100, -100, 0)
+    r.areas(a) shouldBe AreaData(0, 1000, 1100, -100, 0)
     r.units(a.drains(0)) shouldBe UnitData(-100, 0, -100)
     r.units(a.sources(0)) shouldBe UnitData(90, 0, 90)
     r.units(a.sources(1)) shouldBe UnitData(10, 0, 10)
@@ -98,5 +98,51 @@ class ScalaSimulationSpec extends FlatSpec with Matchers {
 
     ld.map(_.used.abs).sum shouldBe 150
     ld.map(_.excess).sum shouldBe 130 // not 30 because one of the lines goes in reverse and has excess of 110
+  }
+
+  "Underpowered network" should "prefer local power" in {
+    val (a1, a2, a3) = (An("a", D(100), S(50)), An("b", D(10), S(5)), An("c", D(1000), S(900)))
+    val (l1, l2, l3) = (L(10000, a1, a2), L(10000, a2, a3), L(10000, a1, a3))
+    val w = W(a1, a2, a3, l1, l2, l3)
+
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(-50, 0, 50, -100, 0)
+    r.areas(a2) shouldBe AreaData(-5, 0, 5, -10, 0)
+    r.areas(a3) shouldBe AreaData(-100, 0, 900, -1000, 0)
+
+    r.units(l1) shouldBe UnitData(0, 10000, 10000)
+    r.units(l2) shouldBe UnitData(0, 10000, 10000)
+    r.units(l3) shouldBe UnitData(0, 10000, 10000)
+  }
+
+  "Transfers through an area" should "not affect between area's totals" in {
+    val (a1, a2, a3) = (An("a", D(1000)), An("b", S(1000)), An("c"))
+    val (l1, l2) = (L(1000, a3, a1), L(1, a3, a2))
+    val w = W(a1, a2, a3, l1, l2)
+
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(-999, 0, 0, -1000, 1)
+    r.areas(a2) shouldBe AreaData(0, 999, 1000, 0, -1)
+    r.areas(a3) shouldBe AreaData(0, 0, 0, 0, 0)
+
+    r.units(l1) shouldBe UnitData(1, 999, 1000)
+    r.units(l2) shouldBe UnitData(-1, 2, 1) // remember a2->a3 dir
+  }
+
+  "Unused capacity" should "be attributed back to sources" in {
+    // one area that meets all with ghg = 0, cannot transfer all
+    // capacity out, another that needs high ghg but has excess of that
+    val (a1, a2) = (An("a", D(10), S(100)), An("b", D(100), S(200, 1.0)))
+    val l = L(50, a1, a2)
+    val w = W(a1, a2, l)
+    val r = ScalaSimulation.simulate(w)
+
+    r.areas(a1) shouldBe AreaData(0, 40, 100, -10, -50)
+    r.areas(a2) shouldBe AreaData(0, 150, 200, -100, 50)
+    r.units(l) shouldBe UnitData(50, 0, 50)
+    r.units(a1.sources(0)) shouldBe UnitData(60, 40, 100)
+    r.units(a2.sources(0)) shouldBe UnitData(50, 150, 200)
   }
 }
