@@ -4,6 +4,8 @@ import fi.iki.santtu.energysim.model.{Area, World, Unit}
 
 case class UnitData(used: Int, excess: Int, capacity: Int) {
   require(used + excess == capacity)
+
+  def toSeq: Seq[Int] = Seq(used, excess, capacity)
 }
 
 case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transfer: Int) {
@@ -14,6 +16,8 @@ case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transf
   require(drain <= 0)
   require(total <= 0)
   //      require(excess >= 0)   // this can be <0 when transfers are pending
+
+  def toSeq: Seq[Int] = Seq(total, excess, generation, drain, transfer)
 }
 
 case class Round(areas: Map[Area, AreaData],

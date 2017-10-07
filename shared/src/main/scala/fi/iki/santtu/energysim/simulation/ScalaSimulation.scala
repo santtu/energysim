@@ -234,14 +234,14 @@ object ScalaSimulation extends Simulation {
           case (a, ad) if ad.excess > 0 ⇒
             var excess = ad.excess
 
-            scribe.info(s"area $a has excess $excess, distributing back to sources")
+            scribe.debug(s"area $a has excess $excess, distributing back to sources")
 
             a.sources.collect { case s: Source if s.ghgPerCapacity == ghg ⇒ s }.foreach {
               s ⇒
                 val ud = units(s)
                 val unused = min(ud.used, excess)
 
-                scribe.info(s"source $s($ud) unused attribution $unused")
+                scribe.debug(s"source $s($ud) unused attribution $unused")
 
                 units(s) = ud.copy(
                   used = ud.used - unused,
@@ -259,7 +259,7 @@ object ScalaSimulation extends Simulation {
               excess = 0)
 
           case (a, ad) ⇒
-            scribe.info(s"area $a($ad) has no excess, no need to distribute back")
+            scribe.debug(s"area $a($ad) has no excess, no need to distribute back")
         }
     }
 
