@@ -111,12 +111,15 @@ object Command {
         f"[$l%.0f...$h%.0f]"
       }
 
+      // stats index: 0 = iter, 1 = ident,
+      // 2 = total, 3 = excess, 4 = generation, 5 = drain, 6 = transfer
+
       println(f"--- $name%s ------------------------------------------------------------")
       println(f"   outages          $losses%d (${100.0 * losses / count}%.1f%%)")
-      println(f"   demand           ${ms(4)}%-15s ${lh(4)}")
-      println(f"   generation       ${ms(3)}%-15s ${lh(3)}")
-      println(f"   excess           ${ms(2)}%-15s ${lh(2)}")
-      println(f"   transfer         ${ms(5)}%-15s ${lh(5)}")
+      println(f"   demand           ${ms(5)}%-15s ${lh(5)}")
+      println(f"   generation       ${ms(4)}%-15s ${lh(4)}")
+      println(f"   excess           ${ms(3)}%-15s ${lh(3)}")
+      println(f"   transfer         ${ms(6)}%-15s ${lh(6)}")
     }
 
     val t2 = System.nanoTime()

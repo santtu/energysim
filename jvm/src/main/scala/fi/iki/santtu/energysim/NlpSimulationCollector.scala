@@ -88,19 +88,22 @@ object NlpSimulationCollector {
         i ⇒
           Future {
             val round = simulation.simulate(world)
-            areas(areaRange(i), ::) := DenseMatrix(areaIndex.map {
-              case (a, ai) ⇒ Seq(i, ai) ++ round.areas(a).toSeq
-            }:_*)
-            drains(drainRange(i), ::) := DenseMatrix(drainIndex.map {
-              case (d, di) ⇒ Seq(i, di, round.units(d).used)
-            }:_*)
-            sources(sourceRange(i), ::) := DenseMatrix(sourceIndex.map {
-              case (s, si) ⇒ Seq(i, si) ++ round.units(s).toSeq
-            }:_*)
-
-            lines(lineRange(i), ::) := DenseMatrix(lineIndex.map {
-              case (l, li) ⇒ Seq(i, li) ++ round.units(l).toSeq
-            }:_*)
+            if (areaIndex.nonEmpty)
+              areas(areaRange(i), ::) := DenseMatrix(areaIndex.map {
+                case (a, ai) ⇒ Seq(i, ai) ++ round.areas(a).toSeq
+              }:_*)
+            if (drainIndex.nonEmpty)
+              drains(drainRange(i), ::) := DenseMatrix(drainIndex.map {
+                case (d: Drain, di) ⇒ Seq(i, di, round.units(d).used)
+              }:_*)
+            if (sourceIndex.nonEmpty)
+              sources(sourceRange(i), ::) := DenseMatrix(sourceIndex.map {
+                case (s: Source, si) ⇒ Seq(i, si) ++ round.units(s).toSeq
+              }:_*)
+            if (lineIndex.nonEmpty)
+              lines(lineRange(i), ::) := DenseMatrix(lineIndex.map {
+                case (l: Line, li) ⇒ Seq(i, li) ++ round.units(l).toSeq
+              }:_*)
             Unit
           }
       }
