@@ -46,7 +46,7 @@ object Line {
     new Line(name, capacityModel, areas)
 }
 
-case class Area (name: String, drains: Seq[Drain], sources: Seq[Source]) {
+class Area (val name: String, val drains: Seq[Drain], val sources: Seq[Source]) {
   override def toString: String = name
 }
 

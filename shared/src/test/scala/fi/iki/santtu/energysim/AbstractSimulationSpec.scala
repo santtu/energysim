@@ -26,8 +26,11 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
       drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
   def D(c: Int) = Drain(capacityModel = ConstantCapacityModel(c))
+  def Dn(name: String, c: Int) = Drain(name = name, capacityModel = ConstantCapacityModel(c))
   def S(c: Int, ghg: Double = 0.0) = Source(capacityModel = ConstantCapacityModel(c), ghgPerCapacity = ghg)
+  def Sn(name: String, c: Int, ghg: Double = 0.0) = Source(name = name, capacityModel = ConstantCapacityModel(c), ghgPerCapacity = ghg)
   def L(c: Int, a1: Area, a2: Area) = Line(capacityModel = ConstantCapacityModel(c), areas=(a1, a2))
+  def Ln(name: String, c: Int, a1: Area, a2: Area) = Line(name = name, capacityModel = ConstantCapacityModel(c), areas=(a1, a2))
 
   "Single area" should "use local sources only" in {
     val world = W(A(D(100), S(90, 0.0), S(10, 1.0), S(1000, 10.0)))
@@ -148,4 +151,29 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     r.units(a2.sources(0)) shouldBe UnitData(50, 150, 200)
   }
 
+  "Areas with identically named sources and drains" should "not be mixed together" in {
+    // note: there was a regression here which occurred only if area "a"
+    // had sources at same GHG level -- any difference caused the
+    // problem not to show up; so keep the a's source GHGs the same
+    val (a1, a2) = (
+      An("a", Dn("drain", 10), Dn("drain", 100),
+        Sn("source", 5, 1.0), Sn("source", 100, 1.0)),
+      An("b", Dn("drain", 10), Dn("drain", 100),
+        Sn("source", 5), Sn("source", 200, 2.0)))
+    val l = L(50, a1, a2)
+    val w = W(a1, a2, l)
+    val r = ScalaSimulation.simulate(w)
+
+    // area "a" has -110 drain and +105 sources, -5 total
+    // area "b" has -110 drain and +5 on first ghg, and +200 on second ghg,
+    // total +95 final
+
+    r.areas(a1) shouldBe AreaData(0, 0, 105, -110, 5)
+    r.areas(a2) shouldBe AreaData(0, 90, 205, -110, -5)
+    r.units(l) shouldBe UnitData(-5, 55, 50)
+    r.units(a1.sources(0)) shouldBe UnitData(5, 0, 5)
+    r.units(a1.sources(1)) shouldBe UnitData(100, 0, 100)
+    r.units(a2.sources(0)) shouldBe UnitData(5, 0, 5)
+    r.units(a2.sources(1)) shouldBe UnitData(110, 90, 200)
+  }
 }

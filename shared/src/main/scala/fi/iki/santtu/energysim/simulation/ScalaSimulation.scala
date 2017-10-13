@@ -51,9 +51,10 @@ object ScalaSimulation extends Simulation {
         // pick area sources with this capacity, add them to the area,
         // fulfill local needs at this point (transfers come later)
         areas.foreach {
-          case (a, ad) ⇒
+          case (a, _) ⇒
             a.sources.collect { case s: Source if s.ghgPerCapacity == ghg ⇒ s }.foreach {
               s ⇒
+                val ad = areas(a) // note: cannot use ad from earlier, since it may be modified
                 val ud = units(s)
                 scribe.debug(s"GHG $ghg source $s($ud) in $a($ad)")
 
@@ -77,6 +78,10 @@ object ScalaSimulation extends Simulation {
                   used = ud.used + ud.excess,
                   excess = 0)
             }
+
+            // each area's power generation should always be in balance
+            // with its source's used power generation capacity
+            assert(areas(a).generation == a.sources.map(units(_).used).sum)
         }
 
         scribe.debug(s"areas now: $areas")
