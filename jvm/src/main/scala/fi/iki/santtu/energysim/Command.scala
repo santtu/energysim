@@ -3,15 +3,8 @@ package fi.iki.santtu.energysim
 import java.nio.file.Files.readAllBytes
 import java.nio.file.Paths
 
-import breeze.linalg._
-import breeze.linalg.operators._
-import breeze.stats._
 import fi.iki.santtu.energysim.simulation.ScalaSimulation
 import scribe.Logger
-
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
 
 object Command {
   case class Config(file: String = "world.yml", rounds: Int = 1,
@@ -62,12 +55,17 @@ object Command {
     println(s"units: ${world.units.map(_.name).mkString(", ")}")
 
     val simulator = ScalaSimulation
+    val collector = SimulationCollector(world)
 
     val t0 = System.nanoTime()
 //    val result = simulator.simulate(world, config.rounds)
-    val fut = NlpSimulationCollector.simulate(world, simulator, config.rounds)
-//    scribe.info(s"Waiting for future $fut")
-    val result = Await.result(fut, Duration.Inf)
+//    val fut = NlpSimulationCollector.simulate(world, simulator, config.rounds)
+////    scribe.info(s"Waiting for future $fut")
+//    val result = Await.result(fut, Duration.Inf)
+//    val result = SimulationCollector.simulate(world, simulator, config.rounds)
+
+    val result = simulator.simulate(world, config.rounds)
+    collector += result
     val t1 = System.nanoTime()
     val ms = (t1 - t0).toDouble / 1e6
 
@@ -75,66 +73,55 @@ object Command {
 
     println(f"Simulation with ${config.rounds} iterations took ${ms / 1000.0}%.3f s, ${ms / config.rounds}%.2f ms/round")
 
-    def areaSummary(name: String, mat: DenseMatrix[Double], global: Boolean = false): Unit = {
-      val losses = (mat(::, 2) <:< 0.0).activeSize
-      val count = mat.rows
+//    println(s"result: $result")
+//    println(s"collector: $collector")
 
-      // for global stats, we first sum each iteration and calculate
-      // statistics from *that*
-      val stats = if (global) {
-        val xxx = (0 until result.rounds).map {
-          i ⇒
-            val rows = result.areaRound(i)
-//            println(s"rows: $rows")
-            val s = sum(rows(::, *)).t
-//            println(s"sum: $s")
-            s
-        }
-//        println(s"xxx: $xxx")
-        val zzz = DenseMatrix(xxx:_*)
-//        println(s"zzz: $zzz")
-        val stats = meanAndVariance(zzz(::, *))
-//        println(stats)
-        stats
-      } else {
-        meanAndVariance(mat(::, *))
-      }
-      def ms(col: Int): String = {
-        f"${stats(col).mean}%.0f +- ${stats(col).stdDev}%.0f"
-      }
-
-      def lh(col: Int): String = {
-        val l = DescriptiveStats.percentile(
-          mat(::, col).activeValuesIterator, .05)
-        val h = DescriptiveStats.percentile(
-          mat(::, col).activeValuesIterator, .95)
-        f"[$l%.0f...$h%.0f]"
-      }
-
-      // stats index: 0 = iter, 1 = ident,
-      // 2 = total, 3 = excess, 4 = generation, 5 = drain, 6 = transfer
-
-      println(f"--- $name%s ------------------------------------------------------------")
-      println(f"   outages          $losses%d (${100.0 * losses / count}%.1f%%)")
-      println(f"   demand           ${ms(5)}%-15s ${lh(5)}")
-      println(f"   generation       ${ms(4)}%-15s ${lh(4)}")
-      println(f"   excess           ${ms(3)}%-15s ${lh(3)}")
-      println(f"   transfer         ${ms(6)}%-15s ${lh(6)}")
+    def areaSummary(name: String, a: AreaStatistics) = {
+      println(s"==== $name ${"=" * (65 - name.length)}")
+      println(f"  loss        ${a.loss.positive}%d / ${a.loss.percentage}%.1f%%")
+      println(f"  total       ${a.total}%s MW")
+      println(f"  excess      ${a.excess}%s MW")
+      println(f"  generation  ${a.generation}%s MW")
+      println(f"  drain       ${a.drain}%s MW")
+      println(f"  transfer    ${a.transfer}%s MW")
+      println(f"  ghg         ${a.ghg / 1e3 * 365 * 24}%s t/a")
     }
 
-    val t2 = System.nanoTime()
-    areaSummary("GLOBAL", result.areas, global = true)
-
-    for (area ← world.areas) {
-      val ai = result.areaIndex(area)
-      val data = result.areas(result.areas(::, 1) :== ai.toDouble, ::)
-      areaSummary(area.name, data.toDenseMatrix)
+    def sourceSummary(name: String, s: SourceStatistics) = {
+      println(s"  > $name")
+      println(f"    maxed     ${s.atCapacity.percentage}%.1f%%")
+      println(f"    used      ${s.used}%s MW")
+      println(f"    excess    ${s.excess}%s MW")
+      println(f"    capacity  ${s.capacity}%s MW")
+      println(f"    ghg       ${s.ghg / 1e3 * 365 * 24}%s t/a")
     }
 
-    val t3 = System.nanoTime()
-    val ms2 = (t3 - t2).toDouble / 1e6
+    def drainSummary(name: String, d: DrainStatistics) = {
+      println(f"  < $name%-9s ${d.used}%s MW")
 
-    println(f"Summary generation took took ${ms2 / 1000.0}%.3f s")
+    }
 
+    def lineSummary(name: String, leftName: String, rightName: String, l: LineStatistics) = {
+      println(s"---- $name ($leftName ↔︎ $rightName) ${"-" * (65 - name.length - 7 - leftName.length - rightName.length)}")
+      println(f"  maxed       ${l.atCapacity.percentage}%.1f%%")
+      println(f"  transfer    ${l.transfer} MW")
+      println(f"  unused      ${l.unused} MW")
+      println(f" →$leftName%-11s ${l.left} MW")
+      println(f" →$rightName%-11s ${l.right} MW")
+    }
+
+
+    areaSummary(world.name, collector.global)
+
+    collector.areas.foreach {
+      case (a, s) ⇒
+        areaSummary(a.name, s)
+        a.sources.foreach(s ⇒ sourceSummary(s.name, collector.sources(s)))
+        a.drains.foreach(d ⇒ drainSummary(d.name, collector.drains(d)))
+    }
+    collector.lines.foreach {
+      case (l, s) ⇒
+        lineSummary(l.name, l.areas._1.name, l.areas._2.name, s)
+    }
   }
 }
