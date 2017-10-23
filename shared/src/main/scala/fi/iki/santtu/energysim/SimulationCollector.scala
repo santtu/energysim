@@ -189,9 +189,9 @@ class SimulationCollector(private val world: World) {
   val areas: Map[Area, AreaStatistics] =
     world.areas.map { _ → AreaStatistics() }.toMap
   val sources: Map[Source, SourceStatistics] =
-    world.areas.map(_.sources).flatten.map { _ → SourceStatistics() }.toMap
+    world.areas.flatMap(_.sources).map { _ → SourceStatistics() }.toMap
   val drains: Map[Drain, DrainStatistics] =
-    world.areas.map(_.drains).flatten.map { _ → DrainStatistics() }.toMap
+    world.areas.flatMap(_.drains).map { _ → DrainStatistics() }.toMap
   val lines: Map[Line, LineStatistics] =
     world.lines.map { _ → LineStatistics() }.toMap
   val global = AreaStatistics()
@@ -245,7 +245,7 @@ object SimulationCollector {
   def apply(world: World) =
     new SimulationCollector(world)
 
-  def simulate(world: World, simulation: Simulation, count: Int) = {
+  def simulate(world: World, simulation: Simulation, count: Int): SimulationCollector = {
     val collector = SimulationCollector(world)
     collector += simulation.simulate(world, count)
     collector
@@ -288,16 +288,16 @@ object SimulationCollector {
 
     val result =
       areaSummary(collector.world.name, collector.global) ++
-        collector.areas.map {
+        collector.areas.flatMap {
           case (a, s) ⇒
             areaSummary(a.name, s) ++
-              a.sources.map(s ⇒ sourceSummary(s.name, collector.sources(s))).flatten ++
-              a.drains.map(d ⇒ drainSummary(d.name, collector.drains(d))).flatten
-        }.flatten ++
-        collector.lines.map {
+              a.sources.flatMap(s ⇒ sourceSummary(s.name, collector.sources(s))) ++
+              a.drains.flatMap(d ⇒ drainSummary(d.name, collector.drains(d)))
+        } ++
+        collector.lines.flatMap {
           case (l, s) ⇒
-            lineSummary(l.name, l.areas._1.name, l.areas._2.name, s)
-        }.flatten
+            lineSummary(l.name, l.area1.name, l.area2.name, s)
+        }
 
     result.mkString("\n")
   }

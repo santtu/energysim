@@ -18,7 +18,7 @@ object ScalaSimulation extends Simulation {
   def simulate(world: World): Round = {
     val units = mutable.Map(world.units.map {
       u ⇒
-        (u, u.capacityModel.capacity().amount) match {
+        (u, u.capacity().amount) match {
           case (d: Drain, c) ⇒ u → UnitData(-c, 0, -c)
           case (o, c) ⇒ u → UnitData(0, c, c)
         }
@@ -121,7 +121,7 @@ object ScalaSimulation extends Simulation {
         units.foreach {
           case (l: Line, ld) ⇒
             scribe.debug(s"adding line $l: $ld")
-            val (ai1, ai2) = (areaIndex(l.areas._1), areaIndex(l.areas._2))
+            val (ai1, ai2) = (areaIndex(l.area1), areaIndex(l.area2))
 
             // for lines we need to understand that "use" is calculated
             // as transfer from ai1 to ai2, thus positive "use" will
@@ -143,7 +143,7 @@ object ScalaSimulation extends Simulation {
         // go through all transfers and update line and areas
         units.foreach {
           case (l: Line, ld) ⇒
-            val (a1, a2) = (l.areas._1, l.areas._2)
+            val (a1, a2) = (l.area1, l.area2)
             val (ai1, ai2) = (areaIndex(a1), areaIndex(a2))
             val (ad1, ad2) = (areas(a1), areas(a2))
             val (flow, flow2) = (result.flow(ai1, ai2), result.flow(ai2, ai1))

@@ -8,17 +8,20 @@ import io.circe.syntax._
 
 object JsonDecoder extends ModelDecoder {
   private type CapacityHolder = Seq[Json]
+  private case class TypeHolder(size: Int, model: String, data: Json)
   private case class UnitHolder(name: Option[String],
-                                capacity: Option[CapacityHolder],
+                                capacity: Option[Int],
+                                `type`: Option[String],
                                 ghg: Option[JsonNumber])
-  private case class AreaHolder(name: Option[String],
-                                sources: Option[Seq[UnitHolder]],
+  private case class AreaHolder(sources: Option[Seq[UnitHolder]],
                                 drains: Option[Seq[UnitHolder]])
   private case class LineHolder(name: Option[String],
-                                capacity: Option[CapacityHolder],
+                                capacity: Option[Int],
+                                `type`: Option[String],
                                 areas: Tuple2[String, String])
   private case class WorldHolder(name: Option[String],
-                                 areas: Option[Seq[AreaHolder]],
+                                 types: Option[Map[String, TypeHolder]],
+                                 areas: Option[Map[String, AreaHolder]],
                                  lines: Option[Seq[LineHolder]])
   override def decode(data: Array[Byte]): World = {
     val json = new String(data, "UTF-8").asJson
@@ -31,7 +34,7 @@ object JsonDecoder extends ModelDecoder {
 
   private var counter: Int = 0
 
-  private def name(str: Option[String], label: String): String =
+  private def nameFor(str: Option[String], label: String): String =
     str match {
       case Some(name) ⇒ name
       case None ⇒
@@ -40,39 +43,54 @@ object JsonDecoder extends ModelDecoder {
     }
 
   private def holder2world(model: WorldHolder): World = {
-    def capacity(c: Option[CapacityHolder]): CapacityModel =
-      c match {
-        case Some(c) ⇒
-          CapacityConverter.convert(
-            c(0).asString.get,
-            c.slice(1, c.length).map(_.asNumber.get.toDouble))
-        case None ⇒
-          NullCapacityModel()
+    def capacityModel(model: String, json: Json): CapacityModel =
+      ???
+
+    // first generate types
+    val types = (model.types match {
+      case Some(types) ⇒
+        types.map { case (name, data) ⇒ name → CapacityType(name, data.size, capacityModel(data.model, data.data)) }
+      case None ⇒
+        Nil
+    }).toMap
+
+
+    def getType(name: String) =
+      name match {
+        case "constant" ⇒ ConstantCapacityType
+        case "uniform" ⇒ UniformCapacityType
+        case other ⇒ types(other)
       }
+
     // we need to first generate areas, then use them later to create lines
     // and finally modify areas to contain those lines
-    val areas = model.areas.getOrElse(Seq.empty[AreaHolder]).map {
-      a ⇒ Area(name = name(a.name, "area"),
-        drains = a.drains.getOrElse(Seq.empty[UnitHolder]).map(
-          d ⇒ Drain(name(d.name, "drain"),
-            capacity(d.capacity))),
-        sources = a.sources.getOrElse(Seq.empty[UnitHolder]).map(
-          s ⇒ Source(name(s.name, "source"),
-            capacity(s.capacity),
-            s.ghg.getOrElse(JsonNumber.fromString("0").get).toDouble)))
-    }
+    val areas = model.areas.getOrElse(Map.empty[String, AreaHolder]).map {
+      case (name, a) ⇒
+        val drains = a.drains.getOrElse(Seq.empty[UnitHolder]).map(
+          d ⇒ Drain(nameFor(d.name, "drain"),
+            d.capacity.getOrElse(0),
+            getType(d.`type`.getOrElse("constant"))))
 
-    val areasMap = areas.map(a ⇒ a.name → a).toMap
+        val sources = a.sources.getOrElse(Seq.empty[UnitHolder]).map(
+          s ⇒ Source(nameFor(s.name, "source"),
+            s.capacity.getOrElse(0),
+            getType(s.`type`.getOrElse("constant")),
+            s.ghg.getOrElse(JsonNumber.fromString("0").get).toDouble))
+
+        name → Area(name = name, sources = sources, drains = drains)
+    }
 
     val lines = model.lines.getOrElse(Seq.empty[LineHolder]).map {
       l ⇒ Line(
-        name(l.name, "line"),
-        capacity(l.capacity),
-        (areasMap(l.areas._1), areasMap(l.areas._2)))
+        nameFor(l.name, "line"),
+        l.capacity.getOrElse(0),
+        getType(l.`type`.getOrElse("constant")),
+        areas(l.areas._1), areas(l.areas._2))
     }
 
-    World(name = name(model.name, "world"),
-      areas = areas,
+    World(name = nameFor(model.name, "world"),
+      types = types.values.toSeq,
+      areas = areas.values.toSeq,
       lines = lines
     )
   }

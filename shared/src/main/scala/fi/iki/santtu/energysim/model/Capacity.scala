@@ -4,69 +4,81 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scala.math.{exp, log, pow}
 
-class ConstantCapacityModel(val value: Int) extends CapacityModel {
-  override def capacity() = Capacity(value)
-  override def toString: String = s"Constant($value)"
+class ConstantCapacityModel() extends CapacityModel {
+  override def capacity(amount: Int) = Capacity(amount)
+  override def toString: String = s"Constant()"
 }
 
-object ConstantCapacityModel {
-  def apply(value: Int) = new ConstantCapacityModel(value)
+object ConstantCapacityModel extends ConstantCapacityModel {
 }
 
-class UniformCapacityModel(val low: Int, val high: Int) extends CapacityModel {
-  require(high >= low)
+class UniformCapacityModel() extends CapacityModel {
+  override def capacity(amount: Int) =
+    Capacity((Random.nextDouble() * amount).toInt)
 
-  override def capacity() =
-    Capacity((Random.nextDouble() * (high - low) + low).toInt)
-
-  override def toString: String = s"Uniform($low,$high)"
+  override def toString: String = s"Uniform()"
 }
 
-object UniformCapacityModel {
-  def apply(min: Int, max: Int) =
-    new UniformCapacityModel(min, max)
+object UniformCapacityModel extends UniformCapacityModel {
 }
 
-class BetaCapacityModel(val scale: Int, val alpha: Double, val beta: Double) extends CapacityModel {
-  override def capacity() = Capacity(
-    (distributions.beta(alpha, beta) * scale).toInt)
+//class BetaCapacityModel(val scale: Int, val alpha: Double, val beta: Double) extends CapacityModel {
+//  override def capacity() = Capacity(
+//    (distributions.beta(alpha, beta) * scale).toInt)
+//
+//  override def toString: String = s"Beta($scale,$alpha,$beta)"
+//}
+//
+//object BetaCapacityModel {
+//  def apply(scale: Int, alpha: Double, beta: Double): BetaCapacityModel =
+//    new BetaCapacityModel(scale, alpha, beta)
+//}
+//
+//object NullCapacityModel extends ConstantCapacityModel(0) {
+//  def apply() = this
+//}
 
-  override def toString: String = s"Beta($scale,$alpha,$beta)"
-}
+case class Step(probability: Double, low: Double, high: Double)
 
-object BetaCapacityModel {
-  def apply(scale: Int, alpha: Double, beta: Double): BetaCapacityModel =
-    new BetaCapacityModel(scale, alpha, beta)
-}
 
-object NullCapacityModel extends ConstantCapacityModel(0) {
-  def apply() = this
-}
+/**
+  * The data is a seq of steps where prob is individual,
+  * unscaled probability, and low/high are the uniform distribution portions
+  * (e.g. 0 to 1 values).
+  *
+  * @param _steps
+  */
 
-class StepCapacityModel(_steps: Seq[Seq[Double]]) extends CapacityModel {
+class StepCapacityModel(_steps: Seq[Step]) extends CapacityModel {
+  // this will convert the unscaled probability into scaled accumulated
+  // probability value, e.g. value is 0 to 1 so that each element can be
+  // checked in order to see if its prob <= random, if true, then that is
+  // picked.
   val steps = {
-    val total = _steps.map(_(0)).sum
+    val total = _steps.map(_.probability).sum
     var upto = 0.0
 
     _steps.map {
-      case Seq(prob, low, high) =>
-        val cprob = upto + (prob / total)
+      step ⇒
+        val cprob = upto + (step.probability / total)
         //println(s"prob=$prob low=$low high=$high upto=$upto total=$total cprob=$cprob")
         upto = cprob
-        (upto, UniformCapacityModel(low.toInt, high.toInt))
+        (upto, step.low, step.high)
     }
   }
-  override def capacity() = {
+  override def capacity(amount: Int) = {
     val r = Random.nextDouble()
-    val result = steps.collectFirst { case (p, m) if r <= p => m }.get.capacity()
-    //println(s"steps=${steps.toSeq} r=$r result=$result")
-    result
+    val result = steps.collectFirst { case (p, l, h) if r <= p => (l, h) } match {
+      case Some(Tuple2(low, high)) ⇒ (Random.nextDouble() * (high - low) + low) * amount
+      case None ⇒ 0.0
+    }
+    Capacity(result.toInt)
   }
 
   override def toString: String = s"Step(steps)"
 }
 
 object StepCapacityModel {
-  def apply(steps: Seq[Seq[Double]]): StepCapacityModel =
+  def apply(steps: Seq[Step]): StepCapacityModel =
     new StepCapacityModel(steps)
 }

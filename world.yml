@@ -1,37 +1,60 @@
 name: simple model
+types:
+  hydro:
+    size: 25
+    model: step
+    data:
+      - 0.1, 0, 0
+      - 0.9, 1, 1
+  city:
+    size: 0
+    model: beta
+    data:
+      alpha: 3
+      beta: 5
+  # there are a few predefined types: constant, uniform
 areas:
   - name: north
     sources:
       - name: hydro
-        capacity: [uniform, 4000, 10000]
+        capacity: 10000
+        type: hydro
         ghg: 0
     drains:
       - name: variant
-        capacity: [beta, 500, 3, 5]
+        capacity: 500
+        type: city
   - name: south
     drains:
       - name: general
-        capacity: [uniform, 3000, 5000]
+        capacity: 5000
+        type: uniform
       - name: variant
-        capacity: [beta, 5000, 3, 5]
+        capacity: 5000
+        type: city
     sources:
       - name: coal
-        capacity: [uniform, 750, 1000]
+        capacity: 1000
+        type: uniform
         ghg: 10
   - name: east
     drains:
       - name: variant
-        capacity: [beta, 250, 3, 5]
+        capacity: 250
+        type: city
     sources:
       - name: wind
-        capacity: [uniform, 200, 1000]
+        capacity: 1000
+        type: uniform
       - name: gas
-        capacity: [beta, 1000, 10, 2]
+        capacity: 1000
+        type: uniform
         ghg: 1
 lines:
+  # default type is always constant type model, so don't have to specify that
   - areas: [north, south]
-    capacity: [constant, 5000]
+    capacity: 5000
   - areas: [south, east]
-    capacity: [constant, 2000]
+    capacity: 2000
   - areas: [north, east]
-    capacity: [constant, 500]
+    capacity: 500

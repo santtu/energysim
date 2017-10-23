@@ -5,45 +5,74 @@ case class Capacity(amount: Int = 0) {
 }
 
 abstract class CapacityModel {
-  def capacity(): Capacity
+  def capacity(amount: Int): Capacity
 }
 
-abstract class Unit(val name: String, val capacityModel: CapacityModel) {
+case class CapacityType(name: String, size: Int, model: CapacityModel)
+
+object ConstantCapacityType extends CapacityType("constant", 0, ConstantCapacityModel)
+object UniformCapacityType extends CapacityType("uniform", 0, UniformCapacityModel)
+
+abstract class Unit(val name: String, val unitCapacity: Int, val capacityType: CapacityType) {
+  def capacity(): Capacity = {
+    capacityType.size match {
+      case 0 ⇒ capacityType.model.capacity(unitCapacity)
+      case size ⇒
+        val result = (Seq.fill(unitCapacity / size) { capacityType.model.capacity(size) } ++
+          (unitCapacity % size match {
+            case 0 ⇒ Seq()
+            case pad ⇒ Seq(capacityType.model.capacity(pad))
+          })).foldLeft[Int](0) { case (v, c) ⇒ v + c.amount }
+        // yeah nicer would be to use .sum and define Capacity either as
+        // alias to Int, or implement summable for that .. but that'd
+        // be overkill
+        Capacity(result)
+    }
+  }
 }
 
-class Drain(name: String, capacityModel: CapacityModel) extends Unit(name, capacityModel) {
+class Drain(name: String, capacity: Int, capacityType: CapacityType) extends Unit(name, capacity, capacityType) {
   override def toString: String = name
 }
 
 object Drain {
   def apply(name: String = "drain",
-            capacityModel: CapacityModel = NullCapacityModel): Drain =
-    new Drain(name, capacityModel)
+            capacity: Int = 0,
+            capacityType: CapacityType = ConstantCapacityType): Drain =
+    new Drain(name, capacity, capacityType)
 }
 
-class Source(name: String, capacityModel: CapacityModel, val ghgPerCapacity: Double = 0.0) extends Unit(name, capacityModel) {
+class Source(name: String,
+             capacity: Int = 0,
+             capacityType: CapacityType = ConstantCapacityType,
+             val ghgPerCapacity: Double = 0.0) extends Unit(name, capacity, capacityType) {
   override def toString: String = name
 }
 
 object Source {
   def apply(name: String = "source",
-            capacityModel: CapacityModel = NullCapacityModel,
+            capacity: Int = 0,
+            capacityType: CapacityType = ConstantCapacityType,
             ghgPerCapacity: Double = 0.0): Source =
-    new Source(name, capacityModel, ghgPerCapacity)
+    new Source(name, capacity, capacityType, ghgPerCapacity)
 }
 
 class Line(name: String,
-           capacityModel: CapacityModel,
-           val areas: Tuple2[Area, Area])
-  extends Unit(name, capacityModel) {
-  override def toString: String = s"${areas._1.name}<->${areas._2.name}"
+           capacity: Int,
+           capacityType: CapacityType,
+           val area1: Area,
+           val area2: Area)
+  extends Unit(name, capacity, capacityType) {
+  override def toString: String = s"$area1<->$area2"
+  val areas: (Area, Area) = (area1, area2)
 }
 
 object Line {
   def apply(name: String = "line",
-            capacityModel: CapacityModel = NullCapacityModel,
-            areas: Tuple2[Area, Area]) =
-    new Line(name, capacityModel, areas)
+            capacity: Int,
+            capacityType: CapacityType = ConstantCapacityType,
+            area1: Area, area2: Area): Line =
+    new Line(name, capacity, capacityType, area1, area2)
 }
 
 class Area (val name: String, val drains: Seq[Drain], val sources: Seq[Source]) {
@@ -58,6 +87,7 @@ object Area {
 }
 
 class World (val name: String,
+             val types: Seq[CapacityType] = Seq.empty[CapacityType],
              val areas: Seq[Area] = Seq.empty[Area],
              val lines: Seq[Line] = Seq.empty[Line]) {
   val units: Seq[Unit] = areas.flatMap(_.drains) ++
@@ -70,7 +100,8 @@ class World (val name: String,
 
 object World {
   def apply(name: String = "world",
+            types: Seq[CapacityType] = Seq.empty[CapacityType],
             areas: Seq[Area] = Seq.empty[Area],
             lines: Seq[Line] = Seq.empty[Line]): World =
-    new World(name, areas, lines)
+    new World(name, types, areas, lines)
 }

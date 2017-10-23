@@ -1,6 +1,6 @@
 package fi.iki.santtu.energysim
 
-import fi.iki.santtu.energysim.model.{Area, ConstantCapacityModel, Drain, Line, Source, Unit, World}
+import fi.iki.santtu.energysim.model.{Area, CapacityType, ConstantCapacityModel, Drain, Line, Source, Unit, World}
 import fi.iki.santtu.energysim.simulation.{AreaData, ScalaSimulation, Simulation, UnitData}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -25,12 +25,13 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     Area(name = name,
       drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
-  def D(c: Int) = Drain(capacityModel = ConstantCapacityModel(c))
-  def Dn(name: String, c: Int) = Drain(name = name, capacityModel = ConstantCapacityModel(c))
-  def S(c: Int, ghg: Double = 0.0) = Source(capacityModel = ConstantCapacityModel(c), ghgPerCapacity = ghg)
-  def Sn(name: String, c: Int, ghg: Double = 0.0) = Source(name = name, capacityModel = ConstantCapacityModel(c), ghgPerCapacity = ghg)
-  def L(c: Int, a1: Area, a2: Area) = Line(capacityModel = ConstantCapacityModel(c), areas=(a1, a2))
-  def Ln(name: String, c: Int, a1: Area, a2: Area) = Line(name = name, capacityModel = ConstantCapacityModel(c), areas=(a1, a2))
+  val constantType = CapacityType("constant", 0, ConstantCapacityModel)
+  def D(c: Int) = Drain(capacity = c, capacityType = constantType)
+  def Dn(name: String, c: Int) = Drain(name = name, capacity = c, capacityType = constantType)
+  def S(c: Int, ghg: Double = 0.0) = Source(capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
+  def Sn(name: String, c: Int, ghg: Double = 0.0) = Source(name = name, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
+  def L(c: Int, a1: Area, a2: Area) = Line(capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
+  def Ln(name: String, c: Int, a1: Area, a2: Area) = Line(name = name, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
 
   "Single area" should "use local sources only" in {
     val world = W(A(D(100), S(90, 0.0), S(10, 1.0), S(1000, 10.0)))

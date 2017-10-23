@@ -5,108 +5,90 @@ import fi.iki.santtu.energysim.model._
 import net.jcazevedo.moultingyaml._
 
 
-private object Counter {
-  var _count: Int = 0
-  def count: Int = {
-    _count += 1
-    _count
-  }
-}
-
 trait WorldYamlProtocol extends DefaultYamlProtocol {
-  val emptyArray = Vector.empty[YamlValue]
+  def capacityModel(model: String, data: Option[YamlValue]): CapacityModel =
+    ???
 
-  def getString(obj: YamlObject, field: String, default: String = null): String = {
-    obj.getFields(YamlString(field)) match {
-      case Seq(YamlString(value)) ⇒ value
-      case Seq(something) ⇒
-        deserializationError(s"field $field is not a string type, instead $something")
-      case Nil if default == null ⇒
-        deserializationError(s"field $field is missing and no default given")
-      case Nil ⇒
-        default
-    }
-  }
+  case class TypeHolder(size: Option[Int],
+                        model: String,
+                        data: Option[YamlValue])
 
-  def getArray(obj: YamlObject, field: String, default: Vector[YamlValue] = null): Vector[YamlValue] = {
-    obj.getFields(YamlString(field)) match {
-      case Seq(YamlArray(value)) ⇒ value
-      case Seq(something) ⇒
-        deserializationError(s"field $field is not a array type, instead $something")
-      case Nil if default == null ⇒
-        deserializationError(s"field $field is missing and no default given")
-      case Nil ⇒
-        default
-    }
-  }
+  // we use the same "UnitHolder" for all drains, sources etc., since all
+  // fields are optional it doesn't matter
+  case class UnitHolder(name: Option[String],
+                        capacity: Option[Int],
+                        `type`: Option[String],
+                        ghg: Option[Double],
+                        areas: Option[Tuple2[String, String]])
 
-  private type CapacityHolder = Seq[YamlValue]
+  case class AreaHolder(sources: Option[Seq[UnitHolder]],
+                        drains: Option[Seq[UnitHolder]])
 
-  def capacity(c: Option[CapacityHolder]): CapacityModel =
-    c match {
-      case Some(c) ⇒
-        CapacityConverter.convert(
-          c(0).convertTo[String],
-          c.slice(1, c.length).map(_.asInstanceOf[YamlNumber].value.toDouble))
-      case None ⇒
-        NullCapacityModel()
-    }
+  case class WorldHolder(name: Option[String],
+                         types: Option[Map[String, TypeHolder]],
+                         areas: Option[Map[String, AreaHolder]],
+                         lines: Option[Seq[UnitHolder]])
 
-  case class UnitHolder(name: Option[String], capacity: Option[CapacityHolder], ghg: Option[Double])
-  implicit val unitHolderFormat = yamlFormat3(UnitHolder)
-
-  implicit object AreaFormat extends YamlFormat[Area] {
-    override def read(yaml: YamlValue): Area = {
-      val obj = yaml.asYamlObject
-//      println("areaformat.read: yaml=$yaml obj=$obj")
-
-      val (name, drains, sources) = (
-        getString(obj, "name", s"area ${Counter.count}"),
-        getArray(obj, "drains", emptyArray),
-        getArray(obj, "sources", emptyArray))
-
-//      println(s"area: name=$name drains=$drains sources=$sources")
-
-      // note: links are generated in the world parser later
-      Area(name = name,
-        drains = drains.map(_.convertTo[UnitHolder]).map(
-          dh ⇒ Drain(dh.name.getOrElse(s"drain ${Counter.count}"), capacity(dh.capacity))),
-        sources = sources.map(_.convertTo[UnitHolder]).map(
-          sh ⇒ Source(sh.name.getOrElse(s"source ${Counter.count}"), capacity(sh.capacity), sh.ghg.getOrElse(0.0))))
-    }
-
-    override def write(obj: Area): YamlValue = ???
-  }
-
-  case class LineHolder(name: Option[String], capacity: Option[CapacityHolder], areas: Tuple2[String, String])
-  implicit val lineHolderFormat = yamlFormat3(LineHolder)
+  implicit val typeHolderFormat = yamlFormat3(TypeHolder)
+  implicit val unitHolderFormat = yamlFormat5(UnitHolder)
+  implicit val areaHolderFormat = yamlFormat2(AreaHolder)
+  implicit val worldHolderFormat = yamlFormat4(WorldHolder)
 
   implicit object WorldFormat extends YamlFormat[World] {
     override def read(yaml: YamlValue): World = {
-      val obj = yaml.asYamlObject
-//      println(s"read: yaml=$yaml obj=$obj")
+      val worldHolder = yaml.convertTo[WorldHolder]
 
-      val (name, areaHolders, lineHolders) = (
-        getString(obj, "name", "nameless world"),
-        getArray(obj, "areas", emptyArray),
-        getArray(obj, "lines", emptyArray))
-
-//      println(s"name=$name areas=$areas lines=$lines")
-
-      val areas = areaHolders.map(_.convertTo[Area])
-      val areasMap = areas.map(a ⇒ a.name → a).toMap
-
-      val lines = lineHolders.map(_.convertTo[LineHolder]).map {
-        lh ⇒
-          val area1 = areasMap(lh.areas._1)
-          val area2 = areasMap(lh.areas._2)
-//          println(s"lh=$lh area1=$area1 area2=$area2")
-          Line(lh.name.getOrElse(s"line ${Counter.count}"),
-            capacity(lh.capacity),
-            Tuple2(area1, area2))
+      // first map types, these are needed in drains and sources (and lines
+      // later too)
+      val types = worldHolder.types.getOrElse(Map.empty[String, TypeHolder]).map {
+        case (name, typeHolder) ⇒
+          name → CapacityType(name, typeHolder.size.getOrElse(0), capacityModel(typeHolder.model, typeHolder.data))
       }
 
-      World(name, areas, lines)
+      def getType(name: String) =
+        name match {
+          case "constant" ⇒ ConstantCapacityType
+          case "uniform" ⇒ UniformCapacityType
+          case other ⇒ types(other)
+        }
+
+      // second generate areas with sources and drains, named areas are
+      // needed for lines later
+      val areas = worldHolder.areas.getOrElse(Map.empty[String, AreaHolder]).map {
+        case (name, areaHolder) ⇒
+          val sources = areaHolder.sources.getOrElse(Seq.empty[UnitHolder]).map {
+            unitHolder ⇒
+              Source(unitHolder.name.getOrElse("unnamed source"),
+                unitHolder.capacity.getOrElse(0),
+                getType(unitHolder.`type`.getOrElse("constant")),
+                unitHolder.ghg.getOrElse(0.0))
+          }
+          val drains = areaHolder.drains.getOrElse(Seq.empty[UnitHolder]).map {
+            unitHolder ⇒
+              Drain(unitHolder.name.getOrElse("unnamed drain"),
+                unitHolder.capacity.getOrElse(0),
+                getType(unitHolder.`type`.getOrElse("constant")))
+          }
+
+          name → Area(name = name, sources = sources, drains = drains)
+      }
+
+      // lines needs areas, so these come last
+      val lines = worldHolder.lines.getOrElse(Seq.empty[UnitHolder]).map {
+        lineHolder ⇒
+          val area1 = areas(lineHolder.areas.get._1)
+          val area2 = areas(lineHolder.areas.get._2)
+
+          Line(lineHolder.name.getOrElse("unnamed line"),
+            lineHolder.capacity.getOrElse(0),
+            getType(lineHolder.`type`.getOrElse("constant")),
+            area1, area2)
+      }
+
+      World(worldHolder.name.getOrElse("unnamed world"),
+        types = types.values.toSeq,
+        areas = areas.values.toSeq,
+        lines = lines.toSeq)
     }
 
     override def write(obj: World): YamlValue = ???

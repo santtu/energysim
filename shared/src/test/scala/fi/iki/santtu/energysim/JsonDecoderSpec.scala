@@ -13,7 +13,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   }
 
   it should "handle empty areas" in {
-    val world = decode("""{"areas":[{},{},{}]}""")
+    val world = decode("""{"areas":{"a":{},"b":{},"c":{}}}""")
     world.areas.size shouldBe 3
     world.areas.forall(_.name.length > 0) shouldBe true
     world.lines shouldBe empty
@@ -21,7 +21,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   }
 
   it should "match lines and areas" in {
-    val world = decode("""{"areas":[{"name":"a"},{"name":"b"}],"lines":[{"areas":["a","b"]}]}""")
+    val world = decode("""{"areas":{"a":{},"b":{}}, "lines":[{"areas":["a","b"]}]}""")
     world.areas.size shouldBe 2
     world.units.size shouldBe 1
     world.lines.size shouldBe 1
@@ -35,142 +35,100 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   it should "handle complex case" in {
     val data =
       """{
-                 |    "areas": [
-                 |        {
-                 |            "drains": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "beta",
-                 |                        500,
-                 |                        3,
-                 |                        5
-                 |                    ],
-                 |                    "name": "variant"
-                 |                }
-                 |            ],
-                 |            "name": "north",
-                 |            "sources": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "uniform",
-                 |                        4000,
-                 |                        10000
-                 |                    ],
-                 |                    "ghg": 0,
-                 |                    "name": "hydro"
-                 |                }
-                 |            ]
-                 |        },
-                 |        {
-                 |            "drains": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "uniform",
-                 |                        3000,
-                 |                        5000
-                 |                    ],
-                 |                    "name": "general"
-                 |                },
-                 |                {
-                 |                    "capacity": [
-                 |                        "beta",
-                 |                        5000,
-                 |                        3,
-                 |                        5
-                 |                    ],
-                 |                    "name": "variant"
-                 |                }
-                 |            ],
-                 |            "name": "south",
-                 |            "sources": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "uniform",
-                 |                        750,
-                 |                        1000
-                 |                    ],
-                 |                    "ghg": 10,
-                 |                    "name": "coal"
-                 |                }
-                 |            ]
-                 |        },
-                 |        {
-                 |            "drains": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "beta",
-                 |                        250,
-                 |                        3,
-                 |                        5
-                 |                    ],
-                 |                    "name": "variant"
-                 |                }
-                 |            ],
-                 |            "name": "east",
-                 |            "sources": [
-                 |                {
-                 |                    "capacity": [
-                 |                        "uniform",
-                 |                        200,
-                 |                        1000
-                 |                    ],
-                 |                    "name": "wind"
-                 |                },
-                 |                {
-                 |                    "capacity": [
-                 |                        "beta",
-                 |                        1000,
-                 |                        10,
-                 |                        2
-                 |                    ],
-                 |                    "ghg": 1,
-                 |                    "name": "gas"
-                 |                }
-                 |            ]
-                 |        }
-                 |    ],
-                 |    "lines": [
-                 |        {
-                 |            "areas": [
-                 |                "north",
-                 |                "south"
-                 |            ],
-                 |            "capacity": [
-                 |                "constant",
-                 |                5000
-                 |            ]
-                 |        },
-                 |        {
-                 |            "areas": [
-                 |                "south",
-                 |                "east"
-                 |            ],
-                 |            "capacity": [
-                 |                "constant",
-                 |                2000
-                 |            ]
-                 |        },
-                 |        {
-                 |            "areas": [
-                 |                "north",
-                 |                "east"
-                 |            ],
-                 |            "capacity": [
-                 |                "constant",
-                 |                500
-                 |            ]
-                 |        }
-                 |    ],
-                 |    "name": "simple model"
-                 |}""".stripMargin
+        |    "areas": {
+        |        "east": {
+        |            "drains": [
+        |                {
+        |                    "capacity": 250,
+        |                    "name": "variant"
+        |                }
+        |            ],
+        |            "sources": [
+        |                {
+        |                    "capacity": 1000,
+        |                    "name": "wind",
+        |                    "type": "uniform"
+        |                },
+        |                {
+        |                    "capacity": 1000,
+        |                    "ghg": 1,
+        |                    "name": "gas"
+        |                }
+        |            ]
+        |        },
+        |        "north": {
+        |            "drains": [
+        |                {
+        |                    "capacity": 500,
+        |                    "name": "variant"
+        |                }
+        |            ],
+        |            "sources": [
+        |                {
+        |                    "capacity": 10000,
+        |                    "ghg": 0,
+        |                    "name": "hydro",
+        |                    "type": "uniform"
+        |                }
+        |            ]
+        |        },
+        |        "south": {
+        |            "drains": [
+        |                {
+        |                    "capacity": 5000,
+        |                    "name": "general",
+        |                    "type": "uniform"
+        |                },
+        |                {
+        |                    "capacity": 5000,
+        |                    "name": "variant"
+        |                }
+        |            ],
+        |            "sources": [
+        |                {
+        |                    "capacity": 1000,
+        |                    "ghg": 10,
+        |                    "name": "coal",
+        |                    "type": "uniform"
+        |                }
+        |            ]
+        |        }
+        |    },
+        |    "lines": [
+        |        {
+        |            "areas": [
+        |                "north",
+        |                "south"
+        |            ],
+        |            "capacity": 5000
+        |        },
+        |        {
+        |            "areas": [
+        |                "south",
+        |                "east"
+        |            ],
+        |            "capacity": 2000
+        |        },
+        |        {
+        |            "areas": [
+        |                "north",
+        |                "east"
+        |            ],
+        |            "capacity": 500
+        |        }
+        |    ],
+        |    "name": "simple model"
+        |}""".stripMargin
     val world = decode(data)
 
     world.areas.size shouldBe 3
     world.units.size shouldBe 11
     world.lines.size shouldBe 3
-    world.areas.map(a ⇒ (a.drains.size, a.sources.size)) shouldBe Seq((1, 1), (2, 1), (1, 2))
+    world.areas.map(a ⇒ (a.drains.size, a.sources.size)).toSet shouldBe Set((1, 1), (2, 1), (1, 2))
 
-    val Seq(n, s, e) = world.areas
+    val (n, s, e) = (world.areas.find(_.name == "north").get,
+      world.areas.find(_.name == "south").get,
+      world.areas.find(_.name == "east").get)
     val Seq(ns, se, ne) = world.lines
 
     ns.areas shouldBe (n, s)
