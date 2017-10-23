@@ -148,13 +148,17 @@ object Browser {
   @JSExport
   def run(rounds: Int, world: World = world): Unit = {
     val simulator = ScalaSimulation
+    val collector = SimulationCollector(world)
 
     val t0 = System.nanoTime()
     val result = simulator.simulate(world, rounds)
     val t1 = System.nanoTime()
     val ms = (t1 - t0).toDouble / 1e6
+    collector += result
 
     println(f"Simulation ${rounds} took ${ms / 1000.0}%.3f s, ${ms / rounds}%.2f ms/round")
+
+    print(SimulationCollector.summary(collector))
   }
 
   def main(args: Array[String]): Unit = {

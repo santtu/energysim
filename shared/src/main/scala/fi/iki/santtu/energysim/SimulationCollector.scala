@@ -185,7 +185,7 @@ object DrainStatistics { def apply() = new DrainStatistics() }
 object LineStatistics { def apply() = new LineStatistics() }
 
 
-class SimulationCollector(world: World) {
+class SimulationCollector(private val world: World) {
   val areas: Map[Area, AreaStatistics] =
     world.areas.map { _ → AreaStatistics() }.toMap
   val sources: Map[Source, SourceStatistics] =
@@ -249,5 +249,56 @@ object SimulationCollector {
     val collector = SimulationCollector(world)
     collector += simulation.simulate(world, count)
     collector
+  }
+
+  def summary(collector: SimulationCollector): String = {
+    def areaSummary(name: String, a: AreaStatistics) = {
+      Seq(s"==== $name ${"=" * (65 - name.length)}",
+        f"  loss        ${a.loss.positive}%d / ${a.loss.percentage}%.1f%%",
+        f"  total       ${a.total}%s MW",
+        f"  excess      ${a.excess}%s MW",
+        f"  generation  ${a.generation}%s MW",
+        f"  drain       ${a.drain}%s MW",
+        f"  transfer    ${a.transfer}%s MW",
+        f"  ghg         ${a.ghg / 1e3 * 365 * 24}%s t/a")
+    }
+
+    def sourceSummary(name: String, s: SourceStatistics) = {
+      Seq(s"  > $name",
+        f"    maxed     ${s.atCapacity.percentage}%.1f%%",
+        f"    used      ${s.used}%s MW",
+        f"    excess    ${s.excess}%s MW",
+        f"    capacity  ${s.capacity}%s MW",
+        f"    ghg       ${s.ghg / 1e3 * 365 * 24}%s t/a")
+    }
+
+    def drainSummary(name: String, d: DrainStatistics) = {
+      Seq(f"  < $name%-9s ${d.used}%s MW")
+
+    }
+
+    def lineSummary(name: String, leftName: String, rightName: String, l: LineStatistics) = {
+      Seq(s"---- $name ($leftName ↔︎ $rightName) ${"-" * (65 - name.length - 7 - leftName.length - rightName.length)}",
+        f"  maxed       ${l.atCapacity.percentage}%.1f%%",
+        f"  transfer    ${l.transfer} MW",
+        f"  unused      ${l.unused} MW",
+        f" →$leftName%-11s ${l.left} MW",
+        f" →$rightName%-11s ${l.right} MW")
+    }
+
+    val result =
+      areaSummary(collector.world.name, collector.global) ++
+        collector.areas.map {
+          case (a, s) ⇒
+            areaSummary(a.name, s) ++
+              a.sources.map(s ⇒ sourceSummary(s.name, collector.sources(s))).flatten ++
+              a.drains.map(d ⇒ drainSummary(d.name, collector.drains(d))).flatten
+        }.flatten ++
+        collector.lines.map {
+          case (l, s) ⇒
+            lineSummary(l.name, l.areas._1.name, l.areas._2.name, s)
+        }.flatten
+
+    result.mkString("\n")
   }
 }

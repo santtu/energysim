@@ -65,9 +65,9 @@ object Command {
 //    val result = SimulationCollector.simulate(world, simulator, config.rounds)
 
     val result = simulator.simulate(world, config.rounds)
-    collector += result
     val t1 = System.nanoTime()
     val ms = (t1 - t0).toDouble / 1e6
+    collector += result
 
 //    scribe.info(s"result:\n$result")
 
@@ -76,52 +76,7 @@ object Command {
 //    println(s"result: $result")
 //    println(s"collector: $collector")
 
-    def areaSummary(name: String, a: AreaStatistics) = {
-      println(s"==== $name ${"=" * (65 - name.length)}")
-      println(f"  loss        ${a.loss.positive}%d / ${a.loss.percentage}%.1f%%")
-      println(f"  total       ${a.total}%s MW")
-      println(f"  excess      ${a.excess}%s MW")
-      println(f"  generation  ${a.generation}%s MW")
-      println(f"  drain       ${a.drain}%s MW")
-      println(f"  transfer    ${a.transfer}%s MW")
-      println(f"  ghg         ${a.ghg / 1e3 * 365 * 24}%s t/a")
-    }
+    print(SimulationCollector.summary(collector))
 
-    def sourceSummary(name: String, s: SourceStatistics) = {
-      println(s"  > $name")
-      println(f"    maxed     ${s.atCapacity.percentage}%.1f%%")
-      println(f"    used      ${s.used}%s MW")
-      println(f"    excess    ${s.excess}%s MW")
-      println(f"    capacity  ${s.capacity}%s MW")
-      println(f"    ghg       ${s.ghg / 1e3 * 365 * 24}%s t/a")
-    }
-
-    def drainSummary(name: String, d: DrainStatistics) = {
-      println(f"  < $name%-9s ${d.used}%s MW")
-
-    }
-
-    def lineSummary(name: String, leftName: String, rightName: String, l: LineStatistics) = {
-      println(s"---- $name ($leftName ↔︎ $rightName) ${"-" * (65 - name.length - 7 - leftName.length - rightName.length)}")
-      println(f"  maxed       ${l.atCapacity.percentage}%.1f%%")
-      println(f"  transfer    ${l.transfer} MW")
-      println(f"  unused      ${l.unused} MW")
-      println(f" →$leftName%-11s ${l.left} MW")
-      println(f" →$rightName%-11s ${l.right} MW")
-    }
-
-
-    areaSummary(world.name, collector.global)
-
-    collector.areas.foreach {
-      case (a, s) ⇒
-        areaSummary(a.name, s)
-        a.sources.foreach(s ⇒ sourceSummary(s.name, collector.sources(s)))
-        a.drains.foreach(d ⇒ drainSummary(d.name, collector.drains(d)))
-    }
-    collector.lines.foreach {
-      case (l, s) ⇒
-        lineSummary(l.name, l.areas._1.name, l.areas._2.name, s)
-    }
   }
 }
