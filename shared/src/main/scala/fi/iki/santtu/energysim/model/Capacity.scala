@@ -10,33 +10,38 @@ class ConstantCapacityModel() extends CapacityModel {
 }
 
 object ConstantCapacityModel extends ConstantCapacityModel {
+  def apply() = this
 }
 
-class UniformCapacityModel() extends CapacityModel {
+class UniformCapacityModel(val low: Double = 0.0, val high: Double = 1.0) extends CapacityModel {
+  require(low <= high)
+  require(low >= 0.0 && low <= 1.0)
+  require(high >= 0.0 && high <= 1.0)
+  
   override def capacity(amount: Int) =
-    Capacity((Random.nextDouble() * amount).toInt)
+    Capacity((Random.nextDouble() * (high - low) * amount +
+      low * amount).toInt)
 
   override def toString: String = s"Uniform()"
 }
 
-object UniformCapacityModel extends UniformCapacityModel {
+object UniformCapacityModel extends UniformCapacityModel(0.0, 1.0) {
+  def apply() = this
+  def apply(low: Double) = new UniformCapacityModel(low, 1.0)
+  def apply(low: Double, high: Double) = new UniformCapacityModel(low, high)
 }
 
-//class BetaCapacityModel(val scale: Int, val alpha: Double, val beta: Double) extends CapacityModel {
-//  override def capacity() = Capacity(
-//    (distributions.beta(alpha, beta) * scale).toInt)
-//
-//  override def toString: String = s"Beta($scale,$alpha,$beta)"
-//}
-//
-//object BetaCapacityModel {
-//  def apply(scale: Int, alpha: Double, beta: Double): BetaCapacityModel =
-//    new BetaCapacityModel(scale, alpha, beta)
-//}
-//
-//object NullCapacityModel extends ConstantCapacityModel(0) {
-//  def apply() = this
-//}
+class BetaCapacityModel(val alpha: Double, val beta: Double) extends CapacityModel {
+  override def capacity(amount: Int) = Capacity(
+    (distributions.beta(alpha, beta) * amount).toInt)
+
+  override def toString: String = s"Beta($alpha,$beta)"
+}
+
+object BetaCapacityModel {
+  def apply(alpha: Double, beta: Double): BetaCapacityModel =
+    new BetaCapacityModel(alpha, beta)
+}
 
 case class Step(probability: Double, low: Double, high: Double)
 
@@ -81,4 +86,17 @@ class StepCapacityModel(_steps: Seq[Step]) extends CapacityModel {
 object StepCapacityModel {
   def apply(steps: Seq[Step]): StepCapacityModel =
     new StepCapacityModel(steps)
+}
+
+
+// re-use step capacity model's probability summing ...
+class ScaledCapacityModel(val mean: Double, _steps: Seq[Step]) extends StepCapacityModel(_steps) {
+  override def capacity(amount: Int) = {
+    Capacity((super.capacity(1).amount * (amount / mean)).toInt)
+  }
+}
+
+object ScaledCapacityModel {
+  def apply(mean: Double, steps: Seq[Step]): ScaledCapacityModel =
+    new ScaledCapacityModel(mean, steps)
 }

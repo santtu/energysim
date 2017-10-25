@@ -4,17 +4,15 @@ types:
     size: 25
     model: step
     data:
-      - 0.1, 0, 0
-      - 0.9, 1, 1
+      - [0.1, 0, 0]
+      - [0.9, 1, 1]
   city:
     size: 0
     model: beta
-    data:
-      alpha: 3
-      beta: 5
+    data: [3, 5]
   # there are a few predefined types: constant, uniform
 areas:
-  - name: north
+  north:
     sources:
       - name: hydro
         capacity: 10000
@@ -24,7 +22,7 @@ areas:
       - name: variant
         capacity: 500
         type: city
-  - name: south
+  south:
     drains:
       - name: general
         capacity: 5000
@@ -37,7 +35,7 @@ areas:
         capacity: 1000
         type: uniform
         ghg: 10
-  - name: east
+  east:
     drains:
       - name: variant
         capacity: 250

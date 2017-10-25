@@ -1,13 +1,59 @@
 package fi.iki.santtu.energysim
 
-import fi.iki.santtu.energysim.JsonDecoder.CapacityHolder
 import fi.iki.santtu.energysim.model._
 import net.jcazevedo.moultingyaml._
 
 
 trait WorldYamlProtocol extends DefaultYamlProtocol {
+  case class ScaledHolder(mean: Double, bins: Seq[Seq[Double]])
+  implicit val scaledHolderFormat = yamlFormat2(ScaledHolder)
+
   def capacityModel(model: String, data: Option[YamlValue]): CapacityModel =
-    ???
+    model match {
+      case "uniform" ⇒
+        // uniform capacity model is assumed to be [0, 1] relative
+        // of maximum value, but it can be given other values, either
+        // LOW or [LOW, HIGH]
+        data match {
+          case None ⇒ UniformCapacityModel
+          case Some(YamlNumber(v)) ⇒ UniformCapacityModel(v.toDouble, 1.0)
+          case Some(YamlArray(Seq(YamlNumber(l), YamlNumber(h)))) ⇒ UniformCapacityModel(l.toDouble, h.toDouble)
+        }
+        UniformCapacityModel
+      case "constant" ⇒
+        ConstantCapacityModel
+      case "step" ⇒
+        data match {
+          case Some(YamlArray(ary)) ⇒
+            val steps = ary.map {
+              // prob, constant
+              case YamlArray(Seq(YamlNumber(p), YamlNumber(c))) ⇒
+                Step(p.toDouble, c.toDouble, c.toDouble)
+
+              // prob, low, high
+              case YamlArray(Seq(YamlNumber(p), YamlNumber(l), YamlNumber(h))) ⇒
+                Step(p.toDouble, l.toDouble, h.toDouble)
+            }
+            StepCapacityModel(steps)
+        }
+      case "scaled" ⇒
+        data.get.asYamlObject.convertTo[ScaledHolder] match {
+          case ScaledHolder(mean, bins) ⇒
+            val steps = bins.map {
+              case Seq(p, c) ⇒ Step(p, c, c)
+              case Seq(p, l, h) ⇒ Step(p, l, h)
+            }
+            ScaledCapacityModel(mean, steps)
+        }
+      case "beta" ⇒
+        data match {
+          case Some(YamlArray(Seq(YamlNumber(alpha), YamlNumber(beta)))) ⇒
+            BetaCapacityModel(alpha.toDouble, beta.toDouble)
+        }
+      case other ⇒
+        throw new IllegalArgumentException(s"capacity model type $other is not known")
+
+    }
 
   case class TypeHolder(size: Option[Int],
                         model: String,
@@ -27,7 +73,10 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
   case class WorldHolder(name: Option[String],
                          types: Option[Map[String, TypeHolder]],
                          areas: Option[Map[String, AreaHolder]],
-                         lines: Option[Seq[UnitHolder]])
+                         lines: Option[Seq[UnitHolder]]) {
+    require(types.isEmpty ||
+      (types.get.keySet & Set("constant", "uniform")).isEmpty)
+  }
 
   implicit val typeHolderFormat = yamlFormat3(TypeHolder)
   implicit val unitHolderFormat = yamlFormat5(UnitHolder)

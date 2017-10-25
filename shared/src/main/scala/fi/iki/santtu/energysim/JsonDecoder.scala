@@ -2,13 +2,13 @@ package fi.iki.santtu.energysim
 
 
 import fi.iki.santtu.energysim.model._
-import io.circe._
+import io.circe.{JsonNumber, _}
 import io.circe.generic.auto._
 import io.circe.syntax._
 
 object JsonDecoder extends ModelDecoder {
   private type CapacityHolder = Seq[Json]
-  private case class TypeHolder(size: Int, model: String, data: Json)
+  private case class TypeHolder(size: Option[Int], model: String, data: Option[Json])
   private case class UnitHolder(name: Option[String],
                                 capacity: Option[Int],
                                 `type`: Option[String],
@@ -42,14 +42,48 @@ object JsonDecoder extends ModelDecoder {
         s"$label $counter"
     }
 
+  private def capacityModel(model: String, data: Option[Json]): CapacityModel =
+    model match {
+      case "uniform" ⇒
+        // uniform capacity model is assumed to be [0, 1] relative
+        // of maximum value, but it can be given other values, either
+        // LOW or [LOW, HIGH]
+        data match {
+          case None ⇒ UniformCapacityModel
+          case Some(json) ⇒
+            (json.as[Double], json.as[Seq[Double]]) match {
+              case (Right(c), _) ⇒ UniformCapacityModel(c, 1.0)
+              case (_, Right(Seq(l, h))) ⇒ UniformCapacityModel(l, h)
+            }
+        }
+        UniformCapacityModel
+      case "constant" ⇒
+        ConstantCapacityModel
+      case "step" ⇒
+        data.get.as[Seq[Seq[Double]]] match {
+          case Right(ary) ⇒
+            val steps = ary.map {
+              case Seq(p, c) ⇒ Step(p, c, c)
+              case Seq(p, l, h) ⇒ Step(p, l, h)
+            }
+            StepCapacityModel(steps)
+        }
+      case "beta" ⇒
+        data.get.as[Seq[Double]] match {
+          case Right(Seq(alpha, beta)) ⇒ BetaCapacityModel(alpha, beta)
+        }
+      case other ⇒
+        throw new IllegalArgumentException(s"capacity model type $other is not known")
+
+    }
+
   private def holder2world(model: WorldHolder): World = {
-    def capacityModel(model: String, json: Json): CapacityModel =
-      ???
+
 
     // first generate types
     val types = (model.types match {
       case Some(types) ⇒
-        types.map { case (name, data) ⇒ name → CapacityType(name, data.size, capacityModel(data.model, data.data)) }
+        types.map { case (name, data) ⇒ name → CapacityType(name, data.size.getOrElse(0), capacityModel(data.model, data.data)) }
       case None ⇒
         Nil
     }).toMap

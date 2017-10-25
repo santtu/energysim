@@ -135,4 +135,51 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     se.areas shouldBe (s, e)
     ne.areas shouldBe (n, e)
   }
+
+
+  it should "handle type specifications" in {
+    val data = """{
+                  |    "name": "simple model",
+                  |    "types": {
+                  |        "a": {
+                  |            "model": "constant",
+                  |            "size": 0
+                  |        },
+                  |        "b1": {
+                  |            "model": "uniform",
+                  |            "size": 100
+                  |        },
+                  |        "b2": {
+                  |            "data": 0.8,
+                  |            "model": "uniform",
+                  |            "size": 100
+                  |        },
+                  |        "b3": {
+                  |            "data": [
+                  |                0,
+                  |                0.9
+                  |            ],
+                  |            "model": "uniform",
+                  |            "size": 100
+                  |        },
+                  |        "c": {
+                  |            "data": [
+                  |                [
+                  |                    1,
+                  |                    0
+                  |                ],
+                  |                [
+                  |                    1,
+                  |                    1
+                  |                ]
+                  |            ],
+                  |            "model": "step"
+                  |        }
+                  |    }
+                  |}""".stripMargin
+    val world = decode(data)
+    world.areas.size shouldBe 0
+    world.units.size shouldBe 0
+    world.types.size shouldBe 5
+  }
 }

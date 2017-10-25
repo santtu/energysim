@@ -1,5 +1,6 @@
 package fi.iki.santtu.energysim
 
+import fi.iki.santtu.energysim.model.{ConstantCapacityModel, StepCapacityModel, UniformCapacityModel}
 import org.scalatest.{FlatSpec, Matchers}
 
 class YamlDecoderSpec extends FlatSpec with Matchers {
@@ -98,5 +99,32 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
     ns.areas shouldBe (n, s)
     se.areas shouldBe (s, e)
     ne.areas shouldBe (n, e)
+  }
+
+  it should "handle type specifications" in {
+    val data = """name: simple model
+                 |types:
+                 |  a:
+                 |    model: constant
+                 |    size: 0
+                 |  b1:
+                 |    model: uniform
+                 |    size: 100
+                 |  b2:
+                 |    model: uniform
+                 |    size: 100
+                 |    data: .8
+                 |  b3:
+                 |    model: uniform
+                 |    size: 100
+                 |    data: [0, .9]
+                 |  c:
+                 |    model: step
+                 |    data: [[1, 0], [1, 1]]
+                 |""".stripMargin
+    val world = decode(data)
+    world.areas.size shouldBe 0
+    world.units.size shouldBe 0
+    world.types.size shouldBe 5
   }
 }

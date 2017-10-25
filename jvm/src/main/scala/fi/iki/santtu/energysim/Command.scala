@@ -76,7 +76,7 @@ object Command {
 //    println(s"result: $result")
 //    println(s"collector: $collector")
 
-    print(SimulationCollector.summary(collector))
+    println(SimulationCollector.summary(collector))
 
   }
 }

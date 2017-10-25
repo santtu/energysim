@@ -1,129 +1,115 @@
 {
-    "areas": [
-        {
+    "areas": {
+        "east": {
             "drains": [
                 {
-                    "capacity": [
-                        "beta",
-                        500,
-                        3,
-                        5
-                    ],
-                    "name": "variant"
+                    "capacity": 250,
+                    "name": "variant",
+                    "type": "city"
                 }
             ],
-            "name": "north",
             "sources": [
                 {
-                    "capacity": [
-                        "uniform",
-                        4000,
-                        10000
-                    ],
-                    "ghg": 0,
-                    "name": "hydro"
-                }
-            ]
-        },
-        {
-            "drains": [
-                {
-                    "capacity": [
-                        "uniform",
-                        3000,
-                        5000
-                    ],
-                    "name": "general"
+                    "capacity": 1000,
+                    "name": "wind",
+                    "type": "uniform"
                 },
                 {
-                    "capacity": [
-                        "beta",
-                        5000,
-                        3,
-                        5
-                    ],
-                    "name": "variant"
-                }
-            ],
-            "name": "south",
-            "sources": [
-                {
-                    "capacity": [
-                        "uniform",
-                        750,
-                        1000
-                    ],
-                    "ghg": 10,
-                    "name": "coal"
-                }
-            ]
-        },
-        {
-            "drains": [
-                {
-                    "capacity": [
-                        "beta",
-                        250,
-                        3,
-                        5
-                    ],
-                    "name": "variant"
-                }
-            ],
-            "name": "east",
-            "sources": [
-                {
-                    "capacity": [
-                        "uniform",
-                        200,
-                        1000
-                    ],
-                    "name": "wind"
-                },
-                {
-                    "capacity": [
-                        "beta",
-                        1000,
-                        10,
-                        2
-                    ],
+                    "capacity": 1000,
                     "ghg": 1,
-                    "name": "gas"
+                    "name": "gas",
+                    "type": "uniform"
+                }
+            ]
+        },
+        "north": {
+            "drains": [
+                {
+                    "capacity": 500,
+                    "name": "variant",
+                    "type": "city"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 10000,
+                    "ghg": 0,
+                    "name": "hydro",
+                    "type": "hydro"
+                }
+            ]
+        },
+        "south": {
+            "drains": [
+                {
+                    "capacity": 5000,
+                    "name": "general",
+                    "type": "uniform"
+                },
+                {
+                    "capacity": 5000,
+                    "name": "variant",
+                    "type": "city"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 1000,
+                    "ghg": 10,
+                    "name": "coal",
+                    "type": "uniform"
                 }
             ]
         }
-    ],
+    },
     "lines": [
         {
             "areas": [
                 "north",
                 "south"
             ],
-            "capacity": [
-                "constant",
-                5000
-            ]
+            "capacity": 5000
         },
         {
             "areas": [
                 "south",
                 "east"
             ],
-            "capacity": [
-                "constant",
-                2000
-            ]
+            "capacity": 2000
         },
         {
             "areas": [
                 "north",
                 "east"
             ],
-            "capacity": [
-                "constant",
-                500
-            ]
+            "capacity": 500
         }
     ],
-    "name": "simple model"
+    "name": "simple model",
+    "types": {
+        "city": {
+            "data": [
+                3,
+                5
+            ],
+            "model": "beta",
+            "size": 0
+        },
+        "hydro": {
+            "data": [
+                [
+                    0.1,
+                    0,
+                    0
+                ],
+                [
+                    0.9,
+                    1,
+                    1
+                ]
+            ],
+            "model": "step",
+            "size": 25
+        }
+    }
 }
