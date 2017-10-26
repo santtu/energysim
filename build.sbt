@@ -30,8 +30,6 @@ lazy val energySimulator = crossProject.in(file(".")).
     libraryDependencies ++= Seq(
       "net.jcazevedo" %% "moultingyaml" % "0.4.0",
       "com.github.scopt" %% "scopt" % "3.7.0",
-      "org.scalanlp" %% "breeze" % "0.13.2",
-      "org.scalanlp" %% "breeze-natives" % "0.13.2",
     )
   ).
   jsSettings(
