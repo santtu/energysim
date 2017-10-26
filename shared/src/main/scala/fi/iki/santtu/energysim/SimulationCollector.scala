@@ -234,6 +234,9 @@ class SimulationCollector(private val world: World) {
             drains(d) += dd
           case (l: Line, ld) ⇒
             lines(l) += ld
+          case _ ⇒
+            // should not happen
+            ???
         }
     }
   }

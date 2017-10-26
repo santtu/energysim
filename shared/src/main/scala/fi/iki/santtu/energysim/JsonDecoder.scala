@@ -23,6 +23,7 @@ object JsonDecoder extends ModelDecoder {
                                  types: Option[Map[String, TypeHolder]],
                                  areas: Option[Map[String, AreaHolder]],
                                  lines: Option[Seq[LineHolder]])
+  
   override def decode(data: Array[Byte]): World = {
     val json = new String(data, "UTF-8").asJson
     val model = io.circe.parser.decode[WorldHolder](new String(data, "UTF-8"))
@@ -67,6 +68,8 @@ object JsonDecoder extends ModelDecoder {
               case Seq(p, l, h) ⇒ Step(p, l, h)
             }
             StepCapacityModel(steps)
+          case _ ⇒
+            throw new IllegalArgumentException(s"'step' model parameters are invalid: $data")
         }
       case "beta" ⇒
         data.get.as[Seq[Double]] match {
@@ -78,8 +81,6 @@ object JsonDecoder extends ModelDecoder {
     }
 
   private def holder2world(model: WorldHolder): World = {
-
-
     // first generate types
     val types = (model.types match {
       case Some(types) ⇒
