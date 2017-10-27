@@ -3,12 +3,14 @@ package fi.iki.santtu.energysim
 import fi.iki.santtu.energysim.model.World
 import fi.iki.santtu.energysim.simulation.ScalaSimulation
 
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
-//import scala.concurrent.ExecutionContext.Implicits.global
-//import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
+import scala.scalajs.js.JSApp
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel, JSGlobal, JSImport}
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+@JSImport("bootstrap", JSImport.Namespace)
+@js.native
+object bootstrap extends js.Object {
+}
 
 @JSExportTopLevel("EnergySim")
 object Browser {
@@ -147,10 +149,12 @@ object Browser {
     print(SimulationCollector.summary(collector))
   }
 
+  @JSExport
   def main(args: Array[String]): Unit = {
+    println(s"bootstrap: $bootstrap")
     println(s"World: ${world}")
     println(s"units: ${world.units}")
 
     run(1000)
- }
+  }
 }
