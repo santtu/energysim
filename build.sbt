@@ -1,5 +1,3 @@
-enablePlugins(ScalaJSPlugin)
-
 name := "Energy Simulator"
 version := "0.1.0"
 
@@ -11,6 +9,12 @@ lazy val root = project.in(file(".")).
     publish := {},
     publishLocal := {}
   )
+
+// This is to prevent me from getting confused if I accidentally typed
+// fastOptJS instead of fastOptJS::webpack -- they write to same files
+// but with different effects, resulting in confusion if used
+// interchangeably. So force this to be the webpack version.
+addCommandAlias("fastOptJS", "fastOptJS::webpack")
 
 lazy val energySimulator = crossProject.in(file("."))
   .settings(
