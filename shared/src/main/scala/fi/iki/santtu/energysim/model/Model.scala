@@ -46,7 +46,17 @@ class Source(name: String,
              capacity: Int = 0,
              capacityType: CapacityType = ConstantCapacityType,
              val ghgPerCapacity: Double = 0.0) extends Unit(name, capacity, capacityType) {
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case o: Source ⇒
+        o.name == name &&
+          o.unitCapacity == unitCapacity &&
+          o.capacityType == capacityType &&
+          o.ghgPerCapacity == ghgPerCapacity
+    }
+
   override def toString: String = name
+//  override def toString: String = s"$name,$capacity,$capacityType,$ghgPerCapacity"
 }
 
 object Source {
@@ -75,7 +85,7 @@ object Line {
     new Line(name, capacity, capacityType, area1, area2)
 }
 
-class Area (val name: String, val drains: Seq[Drain], val sources: Seq[Source]) {
+case class Area (name: String, drains: Seq[Drain], sources: Seq[Source]) {
   override def toString: String = name
 }
 
@@ -86,16 +96,23 @@ object Area {
     new Area(name, drains, sources)
 }
 
-class World (val name: String,
-             val types: Seq[CapacityType] = Seq.empty[CapacityType],
-             val areas: Seq[Area] = Seq.empty[Area],
-             val lines: Seq[Line] = Seq.empty[Line]) {
+case class World (name: String,
+                  types: Seq[CapacityType] = Seq.empty[CapacityType],
+                  areas: Seq[Area] = Seq.empty[Area],
+                  lines: Seq[Line] = Seq.empty[Line]) {
   val units: Seq[Unit] = areas.flatMap(_.drains) ++
     areas.flatMap(_.sources) ++
     lines
 
   override def toString: String =
-    s"World(name=$name,areas=$areas)"
+    s"World(name=$name,areas=$areas,types=$types,lines=$lines)"
+
+  // some manipulations, these return a copy
+  def remove(area: Area, drain: Drain) =
+    copy(areas = areas.map {
+      case a if a == area ⇒ a.copy(drains = a.drains.filter(_ != drain))
+      case a ⇒ a
+    })
 }
 
 object World {

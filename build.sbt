@@ -36,6 +36,20 @@ lazy val ui = (project in file("ui"))
       "jquery" → "3.2.1",
       "popper.js" → "^1.12.6",
     ),
+    npmDevDependencies in Compile ++= Seq(
+      "webpack-merge" → "^4.1.0",
+      "css-loader" → "^0.28.0",
+      "style-loader" → "^0.19.0",
+      "sass-loader" → "^6.0.0",
+      "node-sass" → "^4.0.0",
+      "precss" → "^2.0.0",
+      "autoprefixer" → "^7.0.0",
+    ),
+    libraryDependencies ++= Seq(
+      "com.github.marklister" %%% "base64" % "0.2.3",
+    ),
+    webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
+    includeFilter in webpackMonitoredFiles := "*.sass",
   )
   .dependsOn(libraryJS)
 
@@ -64,6 +78,7 @@ lazy val library = crossProject.in(file("."))
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.3",
       "com.github.japgolly.scalajs-react" %%% "core" % "1.1.0",
+      "com.github.japgolly.scalajs-react" %%% "extra" % "1.1.0",
     ),
   )
 

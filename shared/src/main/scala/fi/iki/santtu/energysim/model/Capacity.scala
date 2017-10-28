@@ -7,6 +7,9 @@ import scala.math.{exp, log, pow}
 class ConstantCapacityModel() extends CapacityModel {
   override def capacity(amount: Int) = Capacity(amount)
   override def toString: String = s"Constant()"
+
+  override def equals(obj: scala.Any): Boolean =
+    obj.isInstanceOf[ConstantCapacityModel]
 }
 
 object ConstantCapacityModel extends ConstantCapacityModel {
@@ -22,6 +25,12 @@ class UniformCapacityModel(val low: Double = 0.0, val high: Double = 1.0) extend
     Capacity((Random.nextDouble() * (high - low) * amount +
       low * amount).toInt)
 
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case o: UniformCapacityModel ⇒ o.low == low && o.high == high
+      case _ ⇒ false
+    }
+
   override def toString: String = s"Uniform()"
 }
 
@@ -34,6 +43,12 @@ object UniformCapacityModel extends UniformCapacityModel(0.0, 1.0) {
 class BetaCapacityModel(val alpha: Double, val beta: Double) extends CapacityModel {
   override def capacity(amount: Int) = Capacity(
     (distributions.beta(alpha, beta) * amount).toInt)
+
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case o: BetaCapacityModel ⇒ o.alpha == alpha && o.beta == beta
+      case _ ⇒ false
+    }
 
   override def toString: String = s"Beta($alpha,$beta)"
 }
@@ -54,16 +69,16 @@ case class Step(probability: Double, low: Double, high: Double)
   * @param _steps
   */
 
-class StepCapacityModel(_steps: Seq[Step]) extends CapacityModel {
+class StepCapacityModel(val steps: Seq[Step]) extends CapacityModel {
   // this will convert the unscaled probability into scaled accumulated
   // probability value, e.g. value is 0 to 1 so that each element can be
   // checked in order to see if its prob <= random, if true, then that is
   // picked.
-  val steps = {
-    val total = _steps.map(_.probability).sum
+  private val csteps = {
+    val total = steps.map(_.probability).sum
     var upto = 0.0
 
-    _steps.map {
+    steps.map {
       step ⇒
         val cprob = upto + (step.probability / total)
         //println(s"prob=$prob low=$low high=$high upto=$upto total=$total cprob=$cprob")
@@ -73,12 +88,18 @@ class StepCapacityModel(_steps: Seq[Step]) extends CapacityModel {
   }
   override def capacity(amount: Int) = {
     val r = Random.nextDouble()
-    val result = steps.collectFirst { case (p, l, h) if r <= p => (l, h) } match {
+    val result = csteps.collectFirst { case (p, l, h) if r <= p => (l, h) } match {
       case Some(Tuple2(low, high)) ⇒ (Random.nextDouble() * (high - low) + low) * amount
       case None ⇒ 0.0
     }
     Capacity(result.toInt)
   }
+
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case o: StepCapacityModel ⇒ o.steps == steps
+      case _ ⇒ false
+    }
 
   override def toString: String = s"Step(steps)"
 }
@@ -91,6 +112,12 @@ object StepCapacityModel {
 
 // re-use step capacity model's probability summing ...
 class ScaledCapacityModel(val mean: Double, _steps: Seq[Step]) extends StepCapacityModel(_steps) {
+  override def equals(obj: Any): Boolean =
+    obj match {
+      case o: ScaledCapacityModel ⇒ o.steps == steps && o.mean == mean
+      case _ ⇒ false
+    }
+
   override def capacity(amount: Int) = {
     Capacity((super.capacity(1).amount * (amount / mean)).toInt)
   }
