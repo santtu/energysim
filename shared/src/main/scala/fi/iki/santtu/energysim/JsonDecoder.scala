@@ -12,13 +12,13 @@ object JsonDecoder extends ModelDecoder {
                                 model: String,
                                 data: Option[Json])
   private case class UnitHolder(name: Option[String],
-                                capacity: Option[Int],
+                                capacity: Option[Double],
                                 `type`: Option[String],
                                 ghg: Option[Double])
   private case class AreaHolder(sources: Option[Seq[UnitHolder]],
                                 drains: Option[Seq[UnitHolder]])
   private case class LineHolder(name: Option[String],
-                                capacity: Option[Int],
+                                capacity: Option[Double],
                                 `type`: Option[String],
                                 areas: Tuple2[String, String])
   private case class WorldHolder(name: Option[String],
@@ -98,15 +98,6 @@ object JsonDecoder extends ModelDecoder {
             throw new IllegalArgumentException(s"'step' model parameters are invalid: $data")
         }
       case "scaled" ⇒
-        //      case "scaled" ⇒
-        //        data.get.asYamlObject.convertTo[ScaledHolder] match {
-        //          case ScaledHolder(mean, bins) ⇒
-        //            val steps = bins.map {
-        //              case Seq(p, c) ⇒ Step(p, c, c)
-        //              case Seq(p, l, h) ⇒ Step(p, l, h)
-        //            }
-        //            ScaledCapacityModel(mean, steps)
-        //        }
         val d = data.get
 
         (d \\ "mean", d \\ "bins") match {
@@ -150,12 +141,12 @@ object JsonDecoder extends ModelDecoder {
       case (name, a) ⇒
         val drains = a.drains.getOrElse(Seq.empty[UnitHolder]).map(
           d ⇒ Drain(nameFor(d.name, "drain"),
-            d.capacity.getOrElse(0),
+            d.capacity.getOrElse(0.0).toInt,
             getType(d.`type`.getOrElse("constant"))))
 
         val sources = a.sources.getOrElse(Seq.empty[UnitHolder]).map(
           s ⇒ Source(nameFor(s.name, "source"),
-            s.capacity.getOrElse(0),
+            s.capacity.getOrElse(0.0).toInt,
             getType(s.`type`.getOrElse("constant")),
             s.ghg.getOrElse(0)))
 
@@ -165,7 +156,7 @@ object JsonDecoder extends ModelDecoder {
     val lines = model.lines.getOrElse(Seq.empty[LineHolder]).map {
       l ⇒ Line(
         nameFor(l.name, "line"),
-        l.capacity.getOrElse(0),
+        l.capacity.getOrElse(0.0).toInt,
         getType(l.`type`.getOrElse("constant")),
         areas(l.areas._1), areas(l.areas._2))
     }

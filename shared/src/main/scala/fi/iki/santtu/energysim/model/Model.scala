@@ -53,6 +53,7 @@ class Source(name: String,
           o.unitCapacity == unitCapacity &&
           o.capacityType == capacityType &&
           o.ghgPerCapacity == ghgPerCapacity
+      case _ ⇒ false
     }
 
   override def toString: String = name
@@ -87,6 +88,9 @@ object Line {
 
 case class Area (name: String, drains: Seq[Drain], sources: Seq[Source]) {
   override def toString: String = name
+
+  def drainByName(name: String): Option[Drain] = drains.find(_.name == name)
+  def sourceByName(name: String): Option[Source] = sources.find(_.name == name)
 }
 
 object Area {
@@ -113,6 +117,11 @@ case class World (name: String,
       case a if a == area ⇒ a.copy(drains = a.drains.filter(_ != drain))
       case a ⇒ a
     })
+
+  def areaByName(name: String): Option[Area] = areas.find(_.name == name)
+  def lineByName(name: String): Option[Line] = lines.find(_.name == name)
+  def linesForArea(area: Area): Seq[Line] =
+    lines.filter(l ⇒ l.area1 == area || l.area2 == area)
 }
 
 object World {

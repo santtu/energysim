@@ -26,6 +26,7 @@ lazy val ui = (project in file("ui"))
   .settings(
     name := "Energy Simulator UI",
     webpackBundlingMode := BundlingMode.LibraryOnly(),
+//    emitSourceMaps := false,
     webpackConfigFile := Some(baseDirectory.value / "my.webpack.config.js"),
     mainClass in Compile := Some("fi.iki.santtu.energysimui.Main"),
     scalaJSUseMainModuleInitializer := true,
