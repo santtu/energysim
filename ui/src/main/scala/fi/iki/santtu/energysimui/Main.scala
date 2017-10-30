@@ -3,9 +3,9 @@ package fi.iki.santtu.energysimui
 import com.github.marklister.base64.Base64._
 import fi.iki.santtu.energysim.model.{Area, Line, World}
 import fi.iki.santtu.energysim.{JsonDecoder, Model}
-import fi.iki.santtu.energysimworker.SimulationWorker
-import fi.iki.santtu.energysimworker.SimulationWorker.Message
-import japgolly.scalajs.react._
+import fi.iki.santtu.energysimworker.{Message, Reply, WorkerOperation, WorkerState}
+import fi.iki.santtu.energysimworker.WorkerState._
+import japgolly.scalajs.react.{vdom, _}
 import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom
@@ -23,23 +23,65 @@ import scala.scalajs.js.annotation._
 @JSExportTopLevel("EnergySim")
 object Main {
   val defaultWorld = Model.from(Data.finland, JsonDecoder)
-
+//  val worker = new Worker("worker.js")
+  
   case class State(world: World,
                    focused: Option[Either[Area,Line]] = None,
-                   playing: Boolean = false) {
-  }
-
-  object State {
-    val default = State(defaultWorld)
+                   playing: Boolean = false,
+                   running: Boolean = false,
+                   iterations: Int = 0,
+                   runningTime: Double = 0.0) {
   }
 
   class Interface($: BackendScope[Props, State]) {
+    val worker = new Worker("worker.js")
+
+    worker.onmessage = { (event: MessageEvent) ⇒
+      val reply = event.data.asInstanceOf[Reply]
+      println(s"Reply from worker: ${WorkerState(reply.state)}")
+
+      WorkerState(reply.state) match {
+        case Started ⇒
+          println("Worker has started")
+          $.modState(s ⇒ s.copy(running = true)).runNow()
+        case Stopped =>
+          println("Worker has stopped")
+          $.modState(s ⇒ s.copy(running = false)).runNow()
+        case Result ⇒
+          println("Worker gave result")
+          $.modState(s ⇒ s.copy(iterations = s.iterations + reply.rounds,
+            runningTime = s.runningTime + reply.interval)).runNow()
+      }
+    }
+
+    def send(m: Message): Unit = {
+      worker.postMessage(m)
+      println(s"Sent worker message: ${WorkerOperation(m.op)}")
+    }
+
+    def init: Callback = {
+      $.state |> { s ⇒
+        println(s"init called, state=$s")
+        val worldAsJson = new String(JsonDecoder.encode(s.world), "UTF-8")
+        send(Message(WorkerOperation.SetWorld, world = worldAsJson))
+      }
+    }
+
+    def uninit: Callback = {
+      $.state |> { s ⇒
+        println(s"uninit called, state=$s")
+        worker.terminate()
+      }
+    }
+
     val start = {
       $.modState(_.copy(playing = true)) >>
+        Callback { send(Message(WorkerOperation.Start)) } >>
         Callback.log("START CLICKED!")
     }
     val stop = {
       $.modState(_.copy(playing = false)) >>
+        Callback { send(Message(WorkerOperation.Stop)) } >>
         Callback.log("STOP CLICKED!")
     }
 
@@ -117,12 +159,20 @@ object Main {
               ^.`type` := "button",
               ^.className := "btn btn-primary",
               ^.onClick --> start,
+              ^.disabled := s.running,
               "PLAY").when(!s.playing),
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-primary",
               ^.onClick --> stop,
-              "STOP").when(s.playing)),
+              ^.disabled := !s.running,
+              "STOP").when(s.playing),
+            <.br,
+            <.small(
+              ^.className := "text-muted",
+              s"${s.iterations} iterations ",
+              f"in ${s.runningTime}%.1f seconds".when(s.runningTime > 0.0))
+          ),
 
           // graphs come here
           <.div(^.className := "col",
@@ -163,7 +213,17 @@ object Main {
                   val drain = area.drains.head
                   val sourceSum = area.sources.map(_.unitCapacity).sum
                   <.div(
-                    s"AREA: ${dataFor(area).name}", <.br,
+                    s"AREA: ${dataFor(area).name} (connected to ",
+                    s.world.linesForArea(area).toVdomArray( l ⇒ {
+                      val o = l.areasSeq.filter(_ != area).head
+                      <.span(
+                        ^.key := l.name,
+                        <.span(
+                          ^.className := "text-primary",
+                          ^.onClick --> selectArea(o),
+                          dataFor(o).name), " ")
+                    }), ")",
+                    <.br,
                     s"Drain: ${drain.unitCapacity} MW", <.br,
                     s"Drain model: ${drain.capacityType.name}", <.br,
                     s"Sources: ${sourceSum} MW", <.br,
@@ -248,6 +308,8 @@ object Main {
     val ctor = ScalaComponent.builder[Props]("Interface")
       .initialState(State(w))
       .renderBackend[Interface]
+      .componentWillMount(_.backend.init)
+      .componentWillUnmount(_.backend.uninit)
       .build
     ctor(Props(ctl))
   }
@@ -264,21 +326,7 @@ object Main {
 
     // would need to wait for ready
 
-    val worker = new Worker("worker.js")
 
-    println(s"worker=$worker")
-
-    worker.onmessage = { (reply: js.Any) =>
-      reply match {
-        case reply: MessageEvent =>
-          println(s"Received reply ${reply.data}")
-      }
-    }
-
-    // it would be nicer to pass the json directly but whatever
-    val worldAsJson = new String(JsonDecoder.encode(defaultWorld), "UTF-8")
-    worker.postMessage(new Message(SimulationWorker.Op.SetWorld.id, world = worldAsJson))
-
-    println(s"posted [SetWorld, $defaultWorld]")
+//    println(s"posted [SetWorld, $defaultWorld]")
   }
 }

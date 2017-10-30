@@ -76,6 +76,7 @@ class Line(name: String,
   extends Unit(name, capacity, capacityType) {
   override def toString: String = s"$area1<->$area2"
   val areas: (Area, Area) = (area1, area2)
+  val areasSeq = Seq(area1, area2)
 }
 
 object Line {

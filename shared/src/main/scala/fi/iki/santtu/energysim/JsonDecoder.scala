@@ -104,7 +104,7 @@ object JsonDecoder extends ModelDecoder {
           case (Seq(a), Seq(b)) ⇒
             (a.as[Double], b.as[Seq[Seq[Double]]]) match {
               case (Right(mean), Right(ary)) ⇒
-                println(s"mean=$mean ary=$ary")
+//                println(s"mean=$mean ary=$ary")
                 ScaledCapacityModel(mean, ary2steps(ary))
             }
         }
