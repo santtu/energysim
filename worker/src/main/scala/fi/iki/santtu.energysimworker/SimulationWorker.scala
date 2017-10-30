@@ -24,12 +24,11 @@ object WorkerOperation extends Enumeration {
 }
 
 @ScalaJSDefined
-class Message(val op: Int,
-              val world: js.UndefOr[String] = js.undefined) extends js.Object {
+class Message(val op: Int, val world: js.Any) extends js.Object {
 }
 
 object Message {
-  def apply(op: Op, world: js.UndefOr[String] = js.undefined) =
+  def apply(op: Op, world: js.Any = js.undefined) =
     new Message(op.id, world)
 }
 
@@ -78,10 +77,16 @@ object SimulationWorker extends JSApp {
       WorkerOperation(data.op) match {
         case Nop ⇒ println("got nop")
 
-        case SetWorld ⇒ println(s"got setworld")
-          val decoded = JsonDecoder.decode(data.world.get)
-          println(s"world decoded: $decoded")
+        case SetWorld ⇒
+          val json = io.circe.scalajs.convertJsToJson(data.world) match {
+            case Left(error) ⇒ throw error
+            case Right(json) ⇒ json
+          }
+//          println(s"world json: $json")
+          val decoded = JsonDecoder.decodeFromJson(json)
+//          println(s"world decoded: $decoded")
           world = Some(decoded)
+          println(s"decoded world ${decoded.name} with ${decoded.units.length} units")
 
         case Start if world.isDefined && timer.isEmpty ⇒
           timer = Some(timers.setInterval(1.0)(simulateRound))

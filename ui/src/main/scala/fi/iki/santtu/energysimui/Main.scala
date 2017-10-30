@@ -62,8 +62,9 @@ object Main {
     def init: Callback = {
       $.state |> { s ⇒
         println(s"init called, state=$s")
-        val worldAsJson = JsonDecoder.encode(s.world)
-        send(Message(WorkerOperation.SetWorld, world = worldAsJson))
+
+        val worldJs = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(s.world))
+        send(Message(WorkerOperation.SetWorld, world = worldJs))
       }
     }
 
