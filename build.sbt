@@ -11,9 +11,9 @@ addCommandAlias("fastOptJS", "fastOptJS::webpack")
 
 
 // root project is aggregate of the subprojects, JVM and JS libraries
-// plus UI
+// plus UI and background webworker
 lazy val root = project.in(file(".")).
-  aggregate(libraryJS, libraryJVM, ui).
+  aggregate(libraryJS, libraryJVM, ui, worker).
   settings(
     publish := {},
     publishLocal := {}
@@ -52,7 +52,21 @@ lazy val ui = (project in file("ui"))
     webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
     includeFilter in webpackMonitoredFiles := "*.sass",
   )
+  .dependsOn(worker)
+
+// Worker is a separate project that has no NPM dependencies so it
+// doesn't use scalajs-bundler at all, just plain scalajs output. It
+// implements a WebWorker simulation backend that the UI element uses.
+
+lazy val worker = (project in file("worker"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    name := "Simulation Worker",
+    mainClass in Compile := Some("fi.iki.santtu.energysimworker.SimulationWorker"),
+    scalaJSUseMainModuleInitializer := true,
+  )
   .dependsOn(libraryJS)
+
 
 // Library JVM and JS versions is a Scala.JS cross-project, generating
 // both JVM and JS versions. The JVM version has a command line

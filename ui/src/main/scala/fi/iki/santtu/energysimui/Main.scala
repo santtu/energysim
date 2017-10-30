@@ -1,19 +1,18 @@
 package fi.iki.santtu.energysimui
 
-import fi.iki.santtu.energysim.{JsonDecoder, Model, SimulationCollector}
-import fi.iki.santtu.energysim.model.{Area, Drain, Line, Source, World}
-import fi.iki.santtu.energysim.simulation.ScalaSimulation
-
-import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel, JSGlobal, JSImport}
+import com.github.marklister.base64.Base64._
+import fi.iki.santtu.energysim.model.{Area, Line, World}
+import fi.iki.santtu.energysim.{JsonDecoder, Model}
+import fi.iki.santtu.energysimworker.SimulationWorker
+import fi.iki.santtu.energysimworker.SimulationWorker.Message
 import japgolly.scalajs.react._
-import japgolly.scalajs.react.extra.router.Router
+import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom
-import japgolly.scalajs.react.extra.router._
-import com.github.marklister.base64.Base64._
-import japgolly.scalajs.react.vdom.TagOf
-import org.scalajs.dom.html.Div
+import org.scalajs.dom.raw.{MessageEvent, Worker}
+
+import scala.scalajs.js
+import scala.scalajs.js.annotation._
 
 
 // @JSImport("bootstrap", JSImport.Namespace)
@@ -23,24 +22,7 @@ import org.scalajs.dom.html.Div
 
 @JSExportTopLevel("EnergySim")
 object Main {
-  @JSExport("defaultWorld")
   val defaultWorld = Model.from(Data.finland, JsonDecoder)
-
-  @JSExport
-  def run(rounds: Int, world: World = defaultWorld): Unit = {
-    val simulator = ScalaSimulation
-    val collector = SimulationCollector(world)
-
-    val t0 = System.nanoTime()
-    val result = simulator.simulate(world, rounds)
-    val t1 = System.nanoTime()
-    val ms = (t1 - t0).toDouble / 1e6
-    collector += result
-
-    println(f"Simulation ${rounds} took ${ms / 1000.0}%.3f s, ${ms / rounds}%.2f ms/round")
-
-    print(SimulationCollector.summary(collector))
-  }
 
   case class State(world: World,
                    focused: Option[Either[Area,Line]] = None,
@@ -60,42 +42,6 @@ object Main {
       $.modState(_.copy(playing = false)) >>
         Callback.log("STOP CLICKED!")
     }
-//
-//    def source(s: Source)(implicit a: Area) =
-//      <.div(
-//        ^.className := "source",
-//        s.name, <.br,
-//        s.unitCapacity.toString, " MW")
-//
-//    def remove(a: Area, d: Drain) = {
-//      $.props |> (_.ctl) >>= {
-//        ctl ⇒
-//          $.state |> (_.world) >>= {
-//            w ⇒
-//              CallbackTo {
-//                (ctl, w.remove(a, d))
-//              }
-//          }
-//      } >>= {
-//        case (ctl, w) ⇒
-//          $.modState {
-//            s ⇒
-////              println(s"XXX ctl=$ctl w=$w s=$s")
-//              s.copy(world = w)
-//          } >> ctl.set(WithWorld(w))
-//      }
-//    }
-//
-//    def drain(d: Drain)(implicit a: Area) =
-//      <.div(
-//        ^.className := "drain",
-//        d.name, <.br,
-//        d.unitCapacity.toString, " MW", <.br,
-//        <.button(
-//          ^.`type` := "button",
-//          ^.className := "btn btn-danger",
-//          ^.onClick --> remove(a, d).void,
-//          <.i(^.className := "fa fa-trash-o")))
 
     def isAreaFocused(area: Area)(implicit s: State): Boolean =
       s.focused.contains(Left(area))
@@ -161,7 +107,7 @@ object Main {
 
     def render(p: Props, s: State): VdomElement = {
       implicit val state = s
-      println(s"render: p=$p s=$s")
+//      println(s"render: p=$p s=$s")
       <.div(
         // header contains controllers and graphs
         <.header(^.className := "row pb-3",
@@ -287,9 +233,8 @@ object Main {
 
       val worldRoute =
         dynamicRouteCT("#" / string(".+").caseClass[WithWorld]) ~>
-          dynRenderR((w, ctl) => {
+          dynRenderR((w: WithWorld, ctl) => {
             val ui = UserInterfaceComponent(w.world, ctl)
-            println(s"worldroute: w=$w ctl=$ctl ui=$ui")
             ui
           })
 
@@ -307,6 +252,7 @@ object Main {
     ctor(Props(ctl))
   }
 
+
   @JSExport
   def main(args: Array[String]): Unit = {
     val router = Router(BaseUrl.until_#, routerConfig)
@@ -315,5 +261,24 @@ object Main {
 
     println(s"World: ${defaultWorld}")
     println(s"units: ${defaultWorld.units}")
+
+    // would need to wait for ready
+
+    val worker = new Worker("worker.js")
+
+    println(s"worker=$worker")
+
+    worker.onmessage = { (reply: js.Any) =>
+      reply match {
+        case reply: MessageEvent =>
+          println(s"Received reply ${reply.data}")
+      }
+    }
+
+    // it would be nicer to pass the json directly but whatever
+    val worldAsJson = new String(JsonDecoder.encode(defaultWorld), "UTF-8")
+    worker.postMessage(new Message(SimulationWorker.Op.SetWorld.id, world = worldAsJson))
+
+    println(s"posted [SetWorld, $defaultWorld]")
   }
 }
