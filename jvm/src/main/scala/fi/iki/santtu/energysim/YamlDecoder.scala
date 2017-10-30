@@ -147,10 +147,10 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
 
 
 object YamlDecoder extends ModelDecoder with WorldYamlProtocol {
-  override def decode(data: Array[Byte]): World = {
-    val yaml = new String(data, "UTF-8").parseYaml
+  override def decode(data: String): World = {
+    val yaml = data.parseYaml
     yaml.convertTo[World]
   }
 
-  override def encode(world: World): Array[Byte] = ???
+  override def encode(world: World): String = ???
 }

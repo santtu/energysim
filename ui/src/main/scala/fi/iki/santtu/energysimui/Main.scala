@@ -62,7 +62,7 @@ object Main {
     def init: Callback = {
       $.state |> { s ⇒
         println(s"init called, state=$s")
-        val worldAsJson = new String(JsonDecoder.encode(s.world), "UTF-8")
+        val worldAsJson = JsonDecoder.encode(s.world)
         send(Message(WorkerOperation.SetWorld, world = worldAsJson))
       }
     }
@@ -277,8 +277,8 @@ object Main {
     def world = WithWorld.from(this)
   }
   object WithWorld {
-    private def encode(w: World): String = JsonDecoder.encode(w).toBase64
-    private def decode(s: String): World = JsonDecoder.decode(s.toByteArray)
+    private def encode(w: World): String = JsonDecoder.encode(w).getBytes("UTF-8").toBase64
+    private def decode(s: String): World = JsonDecoder.decode(new String(s.toByteArray, "UTF-8"))
     def apply(w: World): WithWorld = WithWorld(encode(w))
     def from(ww: WithWorld): World = decode(ww.encoded)
   }

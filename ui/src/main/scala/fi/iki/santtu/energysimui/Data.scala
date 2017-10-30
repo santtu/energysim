@@ -536,5 +536,5 @@ object Data {
                   |        }
                   |    },
                   |    "version": 1
-                  |}""".stripMargin.getBytes("UTF-8")
+                  |}""".stripMargin
 }

@@ -2,7 +2,8 @@ package fi.iki.santtu.energysim
 
 
 import fi.iki.santtu.energysim.model._
-import io.circe.{JsonNumber, _}
+import io.circe._
+import io.circe.parser._
 import io.circe.generic.auto._
 import io.circe.syntax._
 
@@ -25,13 +26,18 @@ object JsonDecoder extends ModelDecoder {
                                  types: Option[Map[String, TypeHolder]],
                                  areas: Option[Map[String, AreaHolder]],
                                  lines: Option[Seq[LineHolder]])
-  
-  override def decode(data: Array[Byte]): World = {
-    val json = new String(data, "UTF-8").asJson
-    val model = io.circe.parser.decode[WorldHolder](new String(data, "UTF-8"))
-    model match {
+
+  def decodeFromJson(json: Json): World = {
+    json.as[WorldHolder] match {
       case Left(error) ⇒ throw error
       case Right(model) ⇒ holder2world(model)
+    }
+  }
+
+  override def decode(data: String): World = {
+    parse(data) match {
+      case Left(error) ⇒ throw error
+      case Right(json) ⇒ decodeFromJson(json)
     }
   }
 
@@ -168,7 +174,11 @@ object JsonDecoder extends ModelDecoder {
     )
   }
 
-  override def encode(w: World): Array[Byte] = {
+  override def encode(w: World): String = {
+    encodeAsJson(w).toString()
+  }
+
+  def encodeAsJson(w: World): Json = {
     WorldHolder(
       name = Some(w.name),
       types = Some(w.types.map { t ⇒
@@ -205,6 +215,6 @@ object JsonDecoder extends ModelDecoder {
           areas = (l.area1.name, l.area2.name)
         )
       })
-    ).asJson.toString().getBytes("UTF-8")
+    ).asJson
   }
 }

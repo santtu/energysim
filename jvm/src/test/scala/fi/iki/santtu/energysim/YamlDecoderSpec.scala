@@ -4,7 +4,7 @@ import fi.iki.santtu.energysim.model.{ConstantCapacityModel, StepCapacityModel, 
 import org.scalatest.{FlatSpec, Matchers}
 
 class YamlDecoderSpec extends FlatSpec with Matchers {
-  def decode(str: String) =  YamlDecoder.decode(str.getBytes("UTF-8"))
+  def decode(str: String) =  YamlDecoder.decode(str)
   "YAML world decoder" should "work with empty input" in {
     val world = decode("{}")
     world.name should not be empty

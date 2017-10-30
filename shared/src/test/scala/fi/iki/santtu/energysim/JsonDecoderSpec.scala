@@ -6,8 +6,8 @@ import io.circe._
 import org.scalatest.{FlatSpec, Matchers}
 
 class JsonDecoderSpec extends FlatSpec with Matchers {
-  def dec(str: String) = JsonDecoder.decode(str.getBytes("UTF-8"))
-  def enc(w: World) = decode[Json](new String(JsonDecoder.encode(w), "UTF-8")).right.get
+  def dec(str: String) = JsonDecoder.decode(str)
+  def enc(w: World) = decode[Json](JsonDecoder.encode(w)).right.get
 
   val complexData =
     """{
@@ -257,8 +257,6 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
       )
     val j = enc(w)
 
-    println(s"w=$w")
-
     j shouldBe Json.fromFields(Seq(
       "name" → Json.fromString("a world"),
       "areas" → Json.fromFields(Seq(
@@ -283,7 +281,6 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val w = dec(complexData)
     val j = enc(w)
     val w1 = dec(j.toString())
-    println(s"w= $w\nw1=$w1")
     w1 shouldBe w
   }
 }

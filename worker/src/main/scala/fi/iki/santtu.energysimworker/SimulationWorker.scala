@@ -79,7 +79,7 @@ object SimulationWorker extends JSApp {
         case Nop ⇒ println("got nop")
 
         case SetWorld ⇒ println(s"got setworld")
-          val decoded = JsonDecoder.decode(data.world.get.getBytes("UTF-8"))
+          val decoded = JsonDecoder.decode(data.world.get)
           println(s"world decoded: $decoded")
           world = Some(decoded)
 

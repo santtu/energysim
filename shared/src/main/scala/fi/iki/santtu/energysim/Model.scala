@@ -3,28 +3,13 @@ package fi.iki.santtu.energysim
 import fi.iki.santtu.energysim.model._
 
 
-private object CapacityConverter {
-  def convert(name: String, params: Seq[Double]): CapacityModel = {
-    ???
-//    (name, params) match {
-//      case ("constant", Seq(value)) ⇒ ConstantCapacityModel(value.toInt)
-//      case ("uniform", Seq(min, max)) ⇒ UniformCapacityModel(min.toInt, max.toInt)
-//      case ("beta", Seq(scale, alpha, beta)) ⇒ BetaCapacityModel(scale.toInt, alpha, beta)
-//      case ("step", _) => StepCapacityModel(params.grouped(3).toSeq)
-//
-//      case (typeName, _) ⇒
-//        throw new Exception(s"capacity model ${typeName} not recognized")
-//    }
-  }
-}
-
 trait ModelDecoder {
-  def decode(data: Array[Byte]): World
-  def encode(world: World): Array[Byte]
+  def decode(data: String): World
+  def encode(world: World): String
 }
 
 object Model  {
-  def from(data: Array[Byte], decoder: ModelDecoder): World = {
+  def from(data: String, decoder: ModelDecoder): World = {
     decoder.decode(data)
   }
 }

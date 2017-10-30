@@ -33,6 +33,12 @@ abstract class Unit(val name: String, val unitCapacity: Int, val capacityType: C
 
 class Drain(name: String, capacity: Int, capacityType: CapacityType) extends Unit(name, capacity, capacityType) {
   override def toString: String = name
+
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case d: Drain ⇒ d.name == name && d.unitCapacity == unitCapacity && d.capacityType == capacityType
+      case _ ⇒ false
+    }
 }
 
 object Drain {
@@ -77,11 +83,19 @@ class Line(name: String,
   override def toString: String = s"$area1<->$area2"
   val areas: (Area, Area) = (area1, area2)
   val areasSeq = Seq(area1, area2)
+
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case l: Line ⇒ l.name == name && l.unitCapacity == unitCapacity && l.capacityType == capacityType && (
+        (l.area1 == area1 && l.area2 == area2) ||
+          (l.area1 == area2 && l.area2 == area1))
+      case _ ⇒ false
+    }
 }
 
 object Line {
   def apply(name: String = "line",
-            capacity: Int,
+            capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType,
             area1: Area, area2: Area): Line =
     new Line(name, capacity, capacityType, area1, area2)
@@ -123,6 +137,16 @@ case class World (name: String,
   def lineByName(name: String): Option[Line] = lines.find(_.name == name)
   def linesForArea(area: Area): Seq[Line] =
     lines.filter(l ⇒ l.area1 == area || l.area2 == area)
+
+  override def equals(obj: scala.Any): Boolean =
+    obj match {
+      case w: World ⇒
+        w.name == name &&
+          w.types.toSet == types.toSet &&
+          w.areas.toSet == areas.toSet &&
+          w.lines.toSet == lines.toSet
+      case _ ⇒ false
+    }
 }
 
 object World {
