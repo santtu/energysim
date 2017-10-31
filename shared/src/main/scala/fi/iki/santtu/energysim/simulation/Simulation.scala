@@ -23,7 +23,7 @@ case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transf
 case class Round(areas: Map[Area, AreaData],
                  units: Map[Unit, UnitData])
 
-case class Result(world: World, rounds: Seq[Round])
+case class Result(rounds: Seq[Round])
 
 trait Simulation {
   def simulate(world: World): Round

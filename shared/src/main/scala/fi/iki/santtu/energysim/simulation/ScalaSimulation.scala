@@ -288,6 +288,6 @@ object ScalaSimulation extends Simulation {
   }
 
   override def simulate(world: World, nrounds: Int): Result = {
-    Result(world, (1 to nrounds).map(i ⇒ simulate(world)))
+    Result((1 to nrounds).map(i ⇒ simulate(world)))
   }
 }

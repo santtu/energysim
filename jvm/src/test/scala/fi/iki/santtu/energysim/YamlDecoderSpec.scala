@@ -20,7 +20,7 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
         |  b: {}
         |  c: {}""".stripMargin)
     world.areas.size shouldBe 3
-    world.areas.forall(_.name.length > 0) shouldBe true
+    world.areas.forall(_.id.length > 0) shouldBe true
     world.lines shouldBe empty
     world.units shouldBe empty
   }
@@ -37,7 +37,7 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
     world.lines.size shouldBe 1
     world.units shouldBe world.lines
     // ordering is not guaranteed to be stable
-    world.areas.map(_.name).toSet shouldBe Set("a", "b")
+    world.areas.map(_.id).toSet shouldBe Set("a", "b")
     world.lines(0).areas.productIterator.toSet shouldBe world.areas.toSet
   }
 
@@ -91,9 +91,9 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
     world.lines.size shouldBe 3
     world.areas.map(a ⇒ (a.drains.size, a.sources.size)).toSet shouldBe Set((1, 1), (2, 1), (1, 2))
 
-    val (n, s, e) = (world.areas.find(_.name == "north").get,
-      world.areas.find(_.name == "south").get,
-      world.areas.find(_.name == "east").get)
+    val (n, s, e) = (world.areas.find(_.id == "north").get,
+      world.areas.find(_.id == "south").get,
+      world.areas.find(_.id == "east").get)
     val Seq(ns, se, ne) = world.lines
 
     ns.areas shouldBe (n, s)

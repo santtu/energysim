@@ -7,7 +7,7 @@ object Data {
                   |            "drains": [
                   |                {
                   |                    "capacity": 1819,
-                  |                    "name": "kunnat",
+                  |                    "id": "central-consumption",
                   |                    "type": "finland_consumption"
                   |                }
                   |            ],
@@ -15,49 +15,49 @@ object Data {
                   |                {
                   |                    "capacity": 538.2,
                   |                    "ghg": 18,
-                  |                    "name": "Biopolttoaine",
+                  |                    "id": "central-bio",
                   |                    "type": "bio"
                   |                },
                   |                {
                   |                    "capacity": 65.0,
                   |                    "ghg": 469,
-                  |                    "name": "Maakaasu",
+                  |                    "id": "central-gas",
                   |                    "type": "gas"
                   |                },
                   |                {
                   |                    "capacity": 94.0,
                   |                    "ghg": 470,
-                  |                    "name": "Muut",
+                  |                    "id": "central-other",
                   |                    "type": "other"
                   |                },
                   |                {
                   |                    "capacity": 750.9,
                   |                    "ghg": 1145,
-                  |                    "name": "Turve",
+                  |                    "id": "central-peat",
                   |                    "type": "peat"
                   |                },
                   |                {
                   |                    "capacity": 577.2,
                   |                    "ghg": 15,
-                  |                    "name": "Tuulivoima",
+                  |                    "id": "central-wind",
                   |                    "type": "wind"
                   |                },
                   |                {
                   |                    "capacity": 319.2,
                   |                    "ghg": 90,
-                  |                    "name": "Vesivoima",
+                  |                    "id": "central-hydro",
                   |                    "type": "hydro"
                   |                },
                   |                {
                   |                    "capacity": 58.2,
                   |                    "ghg": 774,
-                  |                    "name": "\u00d6ljy",
+                  |                    "id": "central-oil",
                   |                    "type": "oil"
                   |                },
                   |                {
                   |                    "capacity": 0,
                   |                    "ghg": 104,
-                  |                    "name": "Aurinko",
+                  |                    "id": "central-solar",
                   |                    "type": "solar"
                   |                }
                   |            ]
@@ -66,7 +66,7 @@ object Data {
                   |            "drains": [
                   |                {
                   |                    "capacity": 1364,
-                  |                    "name": "kunnat",
+                  |                    "id": "east-consumption",
                   |                    "type": "finland_consumption"
                   |                }
                   |            ],
@@ -74,49 +74,49 @@ object Data {
                   |                {
                   |                    "capacity": 509.8,
                   |                    "ghg": 18,
-                  |                    "name": "Biopolttoaine",
+                  |                    "id": "east-bio",
                   |                    "type": "bio"
                   |                },
                   |                {
                   |                    "capacity": 9.0,
                   |                    "ghg": 469,
-                  |                    "name": "Maakaasu",
+                  |                    "id": "east-gas",
                   |                    "type": "gas"
                   |                },
                   |                {
                   |                    "capacity": 35.4,
                   |                    "ghg": 470,
-                  |                    "name": "Muut",
+                  |                    "id": "east-other",
                   |                    "type": "other"
                   |                },
                   |                {
                   |                    "capacity": 263.0,
                   |                    "ghg": 1145,
-                  |                    "name": "Turve",
+                  |                    "id": "east-peat",
                   |                    "type": "peat"
                   |                },
                   |                {
                   |                    "capacity": 21.0,
                   |                    "ghg": 15,
-                  |                    "name": "Tuulivoima",
+                  |                    "id": "east-wind",
                   |                    "type": "wind"
                   |                },
                   |                {
                   |                    "capacity": 375.1,
                   |                    "ghg": 90,
-                  |                    "name": "Vesivoima",
+                  |                    "id": "east-hydro",
                   |                    "type": "hydro"
                   |                },
                   |                {
                   |                    "capacity": 282.0,
                   |                    "ghg": 774,
-                  |                    "name": "\u00d6ljy",
+                  |                    "id": "east-oil",
                   |                    "type": "oil"
                   |                },
                   |                {
                   |                    "capacity": 0,
                   |                    "ghg": 104,
-                  |                    "name": "Aurinko",
+                  |                    "id": "east-solar",
                   |                    "type": "solar"
                   |                }
                   |            ]
@@ -125,7 +125,7 @@ object Data {
                   |            "drains": [
                   |                {
                   |                    "capacity": 1324,
-                  |                    "name": "kunnat",
+                  |                    "id": "north-consumption",
                   |                    "type": "finland_consumption"
                   |                }
                   |            ],
@@ -133,32 +133,32 @@ object Data {
                   |                {
                   |                    "capacity": 273.8,
                   |                    "ghg": 18,
-                  |                    "name": "Biopolttoaine"
+                  |                    "id": "north-bio"
                   |                },
                   |                {
                   |                    "capacity": 258.4,
                   |                    "ghg": 1145,
-                  |                    "name": "Turve"
+                  |                    "id": "north-peat"
                   |                },
                   |                {
                   |                    "capacity": 609.1,
                   |                    "ghg": 15,
-                  |                    "name": "Tuulivoima"
+                  |                    "id": "north-wind"
                   |                },
                   |                {
                   |                    "capacity": 1700.8,
                   |                    "ghg": 90,
-                  |                    "name": "Vesivoima"
+                  |                    "id": "north-hydro"
                   |                },
                   |                {
                   |                    "capacity": 12.9,
                   |                    "ghg": 774,
-                  |                    "name": "\u00d6ljy"
+                  |                    "id": "north-oil"
                   |                },
                   |                {
                   |                    "capacity": 0,
                   |                    "ghg": 104,
-                  |                    "name": "Aurinko"
+                  |                    "id": "north-solar"
                   |                }
                   |            ]
                   |        },
@@ -166,7 +166,7 @@ object Data {
                   |            "drains": [
                   |                {
                   |                    "capacity": 2702,
-                  |                    "name": "kunnat",
+                  |                    "id": "south-consumption",
                   |                    "type": "finland_consumption"
                   |                }
                   |            ],
@@ -174,67 +174,67 @@ object Data {
                   |                {
                   |                    "capacity": 485.38,
                   |                    "ghg": 18,
-                  |                    "name": "Biopolttoaine",
+                  |                    "id": "south-bio",
                   |                    "type": "bio"
                   |                },
                   |                {
                   |                    "capacity": 1060.3,
                   |                    "ghg": 1026,
-                  |                    "name": "Kivihiili",
+                  |                    "id": "south-coal",
                   |                    "type": "coal"
                   |                },
                   |                {
                   |                    "capacity": 965.6,
                   |                    "ghg": 469,
-                  |                    "name": "Maakaasu",
+                  |                    "id": "south-gas",
                   |                    "type": "gas"
                   |                },
                   |                {
                   |                    "capacity": 143.0,
                   |                    "ghg": 470,
-                  |                    "name": "Muut",
+                  |                    "id": "south-other",
                   |                    "type": "other"
                   |                },
                   |                {
                   |                    "capacity": 83.54,
                   |                    "ghg": 1145,
-                  |                    "name": "Turve",
+                  |                    "id": "south-peat",
                   |                    "type": "peat"
                   |                },
                   |                {
                   |                    "capacity": 56.9,
                   |                    "ghg": 15,
-                  |                    "name": "Tuulivoima",
+                  |                    "id": "south-wind",
                   |                    "type": "wind"
                   |                },
                   |                {
                   |                    "capacity": 222.6,
                   |                    "ghg": 90,
-                  |                    "name": "Vesivoima",
+                  |                    "id": "south-hydro",
                   |                    "type": "hydro"
                   |                },
                   |                {
                   |                    "capacity": 507,
                   |                    "ghg": 40,
-                  |                    "name": "Loviisa 1",
+                  |                    "id": "loviisa-1",
                   |                    "type": "nuclear"
                   |                },
                   |                {
                   |                    "capacity": 502,
                   |                    "ghg": 40,
-                  |                    "name": "Loviisa 2",
+                  |                    "id": "loviisa-2",
                   |                    "type": "nuclear"
                   |                },
                   |                {
                   |                    "capacity": 268.6,
                   |                    "ghg": 774,
-                  |                    "name": "\u00d6ljy",
+                  |                    "id": "south-oil",
                   |                    "type": "oil"
                   |                },
                   |                {
                   |                    "capacity": 0,
                   |                    "ghg": 104,
-                  |                    "name": "Aurinko",
+                  |                    "id": "south-solar",
                   |                    "type": "solar"
                   |                }
                   |            ]
@@ -243,7 +243,7 @@ object Data {
                   |            "drains": [
                   |                {
                   |                    "capacity": 2201,
-                  |                    "name": "kunnat",
+                  |                    "id": "west-consumption",
                   |                    "type": "finland_consumption"
                   |                }
                   |            ],
@@ -251,7 +251,7 @@ object Data {
                   |                {
                   |                    "capacity": 183.2,
                   |                    "ghg": 18,
-                  |                    "name": "Biopolttoaine",
+                  |                    "id": "west-bio",
                   |                    "type": "bio"
                   |                },
                   |                {
@@ -263,31 +263,31 @@ object Data {
                   |                {
                   |                    "capacity": 375.6,
                   |                    "ghg": 469,
-                  |                    "name": "Maakaasu",
+                  |                    "id": "west-gas",
                   |                    "type": "gas"
                   |                },
                   |                {
                   |                    "capacity": 36.2,
                   |                    "ghg": 470,
-                  |                    "name": "Muut",
+                  |                    "id": "west-other",
                   |                    "type": "other"
                   |                },
                   |                {
                   |                    "capacity": 342.0,
                   |                    "ghg": 1145,
-                  |                    "name": "Turve",
+                  |                    "id": "west-peat",
                   |                    "type": "peat"
                   |                },
                   |                {
                   |                    "capacity": 488.26,
                   |                    "ghg": 15,
-                  |                    "name": "Tuulivoima",
+                  |                    "id": "west-wind",
                   |                    "type": "wind"
                   |                },
                   |                {
                   |                    "capacity": 407.65,
                   |                    "ghg": 90,
-                  |                    "name": "Vesivoima",
+                  |                    "id": "west-hydro",
                   |                    "type": "hydro"
                   |                },
                   |                {
@@ -305,13 +305,13 @@ object Data {
                   |                {
                   |                    "capacity": 320.2,
                   |                    "ghg": 774,
-                  |                    "name": "\u00d6ljy",
+                  |                    "id": "west-oil",
                   |                    "type": "oil"
                   |                },
                   |                {
                   |                    "capacity": 0,
                   |                    "ghg": 104,
-                  |                    "name": "Aurinko",
+                  |                    "id": "west-solar",
                   |                    "type": "solar"
                   |                }
                   |            ]
@@ -324,7 +324,7 @@ object Data {
                   |                "south"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "west-south"
+                  |            "id": "west-south"
                   |        },
                   |        {
                   |            "areas": [
@@ -332,7 +332,7 @@ object Data {
                   |                "central"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "west-central"
+                  |            "id": "west-central"
                   |        },
                   |        {
                   |            "areas": [
@@ -340,7 +340,7 @@ object Data {
                   |                "east"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "south-east"
+                  |            "id": "south-east"
                   |        },
                   |        {
                   |            "areas": [
@@ -348,7 +348,7 @@ object Data {
                   |                "central"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "south-central"
+                  |            "id": "south-central"
                   |        },
                   |        {
                   |            "areas": [
@@ -356,7 +356,7 @@ object Data {
                   |                "central"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "east-central"
+                  |            "id": "east-central"
                   |        },
                   |        {
                   |            "areas": [
@@ -364,7 +364,7 @@ object Data {
                   |                "north"
                   |            ],
                   |            "capacity": 10000,
-                  |            "name": "central-north"
+                  |            "id": "central-north"
                   |        }
                   |    ],
                   |    "name": "Suomi",

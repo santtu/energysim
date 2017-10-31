@@ -293,13 +293,13 @@ object SimulationCollector {
       areaSummary(collector.world.name, collector.global) ++
         collector.areas.flatMap {
           case (a, s) ⇒
-            areaSummary(a.name, s) ++
-              a.sources.flatMap(s ⇒ sourceSummary(s.name, collector.sources(s))) ++
-              a.drains.flatMap(d ⇒ drainSummary(d.name, collector.drains(d)))
+            areaSummary(a.id, s) ++
+              a.sources.flatMap(s ⇒ sourceSummary(s.id, collector.sources(s))) ++
+              a.drains.flatMap(d ⇒ drainSummary(d.id, collector.drains(d)))
         } ++
         collector.lines.flatMap {
           case (l, s) ⇒
-            lineSummary(l.name, l.area1.name, l.area2.name, s)
+            lineSummary(l.id, l.area1.id, l.area2.id, s)
         }
 
     result.mkString("\n")

@@ -52,7 +52,7 @@ object Command {
     val world = Model.from(new String(data, "UTF-8"), decoder)
 
     println(s"World: ${world}")
-    println(s"units: ${world.units.map(_.name).mkString(", ")}")
+    println(s"units: ${world.units.map(_.id).mkString(", ")}")
 
     val simulator = ScalaSimulation
     val collector = SimulationCollector(world)

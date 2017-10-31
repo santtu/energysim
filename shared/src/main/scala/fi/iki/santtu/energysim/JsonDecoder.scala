@@ -2,6 +2,7 @@ package fi.iki.santtu.energysim
 
 
 import fi.iki.santtu.energysim.model._
+import fi.iki.santtu.energysim.simulation.Result
 import io.circe._
 import io.circe.parser._
 import io.circe.generic.auto._
@@ -9,16 +10,24 @@ import io.circe.syntax._
 
 object JsonDecoder extends ModelDecoder {
   private type CapacityHolder = Seq[Json]
-  private case class TypeHolder(size: Option[Int],
+  private case class TypeHolder(name: Option[String],
+                                size: Option[Int],
                                 model: String,
                                 data: Option[Json])
-  private case class UnitHolder(name: Option[String],
+  private case class DrainHolder(id: Option[String],
+                                name: Option[String],
                                 capacity: Option[Double],
-                                `type`: Option[String],
-                                ghg: Option[Double])
-  private case class AreaHolder(sources: Option[Seq[UnitHolder]],
-                                drains: Option[Seq[UnitHolder]])
-  private case class LineHolder(name: Option[String],
+                                 `type`: Option[String])
+  private case class SourceHolder(id: Option[String],
+                                  name: Option[String],
+                                  capacity: Option[Double],
+                                  `type`: Option[String],
+                                  ghg: Option[Double])
+  private case class AreaHolder(name: Option[String],
+                                sources: Option[Seq[SourceHolder]],
+                                drains: Option[Seq[DrainHolder]])
+  private case class LineHolder(id: Option[String],
+                                name: Option[String],
                                 capacity: Option[Double],
                                 `type`: Option[String],
                                 areas: Tuple2[String, String])
@@ -42,13 +51,12 @@ object JsonDecoder extends ModelDecoder {
   }
 
   private var counter: Int = 0
-
-  private def nameFor(str: Option[String], label: String): String =
+  private def orId(str: Option[String]) =
     str match {
-      case Some(name) ⇒ name
+      case Some(s) ⇒ s
       case None ⇒
         counter += 1
-        s"$label $counter"
+        s"id-$counter"
     }
 
   private def capacityData(model: CapacityModel): (String, Option[Json]) = {
@@ -128,11 +136,11 @@ object JsonDecoder extends ModelDecoder {
     // first generate types
     val types = (model.types match {
       case Some(types) ⇒
-        types.map { case (name, data) ⇒ name → CapacityType(name, data.size.getOrElse(0), capacityModel(data.model, data.data)) }
+        types.map { case (id, data) ⇒ id →
+          CapacityType(id, data.name, data.size.getOrElse(0), capacityModel(data.model, data.data)) }
       case None ⇒
         Nil
     }).toMap
-
 
     def getType(name: String) =
       name match {
@@ -144,30 +152,32 @@ object JsonDecoder extends ModelDecoder {
     // we need to first generate areas, then use them later to create lines
     // and finally modify areas to contain those lines
     val areas = model.areas.getOrElse(Map.empty[String, AreaHolder]).map {
-      case (name, a) ⇒
-        val drains = a.drains.getOrElse(Seq.empty[UnitHolder]).map(
-          d ⇒ Drain(nameFor(d.name, "drain"),
+      case (id, a) ⇒
+        val drains = a.drains.getOrElse(Seq.empty[DrainHolder]).map(
+          d ⇒ Drain(orId(d.id), d.name,
             d.capacity.getOrElse(0.0).toInt,
             getType(d.`type`.getOrElse("constant"))))
 
-        val sources = a.sources.getOrElse(Seq.empty[UnitHolder]).map(
-          s ⇒ Source(nameFor(s.name, "source"),
+        val sources = a.sources.getOrElse(Seq.empty[SourceHolder]).map(
+          s ⇒ Source(orId(s.id),
+            s.name,
             s.capacity.getOrElse(0.0).toInt,
             getType(s.`type`.getOrElse("constant")),
             s.ghg.getOrElse(0)))
 
-        name → Area(name = name, sources = sources, drains = drains)
+        id → Area(id = id, name = a.name, sources = sources, drains = drains)
     }
 
     val lines = model.lines.getOrElse(Seq.empty[LineHolder]).map {
       l ⇒ Line(
-        nameFor(l.name, "line"),
+        orId(l.id),
+        l.name,
         l.capacity.getOrElse(0.0).toInt,
         getType(l.`type`.getOrElse("constant")),
         areas(l.areas._1), areas(l.areas._2))
     }
 
-    World(name = nameFor(model.name, "world"),
+    World(name = model.name.getOrElse("unnamed world"),
       types = types.values.toList,
       areas = areas.values.toList,
       lines = lines.toList
@@ -183,38 +193,46 @@ object JsonDecoder extends ModelDecoder {
       name = Some(w.name),
       types = Some(w.types.map { t ⇒
         val (model, data) = capacityData(t.model)
-        t.name → TypeHolder(
+        t.id → TypeHolder(
+          name = t.name,
           size = Some(t.size),
           model = model,
           data = data
         )
       }.toMap),
       areas = Some(w.areas.map { a ⇒
-        a.name → AreaHolder(
+        a.id → AreaHolder(
+          name = a.name,
           sources = Some(a.sources.map {
-            s ⇒ UnitHolder(
-              name = Some(s.name),
-              `type` = Some(s.capacityType.name),
+            s ⇒ SourceHolder(
+              id = Some(s.id),
+              name = s.name,
+              `type` = Some(s.capacityType.id),
               capacity = Some(s.unitCapacity),
               ghg = Some(s.ghgPerCapacity))
           }),
           drains = Some(a.drains.map {
-            d ⇒ UnitHolder(
-              name = Some(d.name),
-              `type` = Some(d.capacityType.name),
-              capacity = Some(d.unitCapacity),
-              ghg = None)
+            d ⇒ DrainHolder(
+              id = Some(d.id),
+              name = d.name,
+              `type` = Some(d.capacityType.id),
+              capacity = Some(d.unitCapacity))
           })
         )
       }.toMap),
       lines = Some(w.lines.map { l ⇒
         LineHolder(
-          name = Some(l.name),
+          id = Some(l.id),
+          name = l.name,
           capacity = Some(l.unitCapacity),
-          `type` = Some(l.capacityType.name),
-          areas = (l.area1.name, l.area2.name)
+          `type` = Some(l.capacityType.id),
+          areas = (l.area1.id, l.area2.id)
         )
       })
     ).asJson
+  }
+
+  def encodeAsJson(result: Result): Json = {
+    ???
   }
 }

@@ -55,19 +55,22 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
 
     }
 
-  case class TypeHolder(size: Option[Int],
+  case class TypeHolder(name: Option[String],
+                        size: Option[Int],
                         model: String,
                         data: Option[YamlValue])
 
   // we use the same "UnitHolder" for all drains, sources etc., since all
   // fields are optional it doesn't matter
-  case class UnitHolder(name: Option[String],
+  case class UnitHolder(id: Option[String],
+                        name: Option[String],
                         capacity: Option[Int],
                         `type`: Option[String],
                         ghg: Option[Double],
                         areas: Option[Tuple2[String, String]])
 
-  case class AreaHolder(sources: Option[Seq[UnitHolder]],
+  case class AreaHolder(name: Option[String],
+                        sources: Option[Seq[UnitHolder]],
                         drains: Option[Seq[UnitHolder]])
 
   case class WorldHolder(name: Option[String],
@@ -78,10 +81,20 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       (types.get.keySet & Set("constant", "uniform")).isEmpty)
   }
 
-  implicit val typeHolderFormat = yamlFormat3(TypeHolder)
-  implicit val unitHolderFormat = yamlFormat5(UnitHolder)
-  implicit val areaHolderFormat = yamlFormat2(AreaHolder)
+  implicit val typeHolderFormat = yamlFormat4(TypeHolder)
+  implicit val unitHolderFormat = yamlFormat6(UnitHolder)
+  implicit val areaHolderFormat = yamlFormat3(AreaHolder)
   implicit val worldHolderFormat = yamlFormat4(WorldHolder)
+
+
+  private var counter: Int = 0
+  private def orId(str: Option[String]) =
+    str match {
+      case Some(s) ⇒ s
+      case None ⇒
+        counter += 1
+        s"id-$counter"
+    }
 
   implicit object WorldFormat extends YamlFormat[World] {
     override def read(yaml: YamlValue): World = {
@@ -90,8 +103,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       // first map types, these are needed in drains and sources (and lines
       // later too)
       val types = worldHolder.types.getOrElse(Map.empty[String, TypeHolder]).map {
-        case (name, typeHolder) ⇒
-          name → CapacityType(name, typeHolder.size.getOrElse(0), capacityModel(typeHolder.model, typeHolder.data))
+        case (id, typeHolder) ⇒
+          id → CapacityType(id, typeHolder.name, typeHolder.size.getOrElse(0), capacityModel(typeHolder.model, typeHolder.data))
       }
 
       def getType(name: String) =
@@ -104,22 +117,26 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       // second generate areas with sources and drains, named areas are
       // needed for lines later
       val areas = worldHolder.areas.getOrElse(Map.empty[String, AreaHolder]).map {
-        case (name, areaHolder) ⇒
+        case (id, areaHolder) ⇒
           val sources = areaHolder.sources.getOrElse(Seq.empty[UnitHolder]).map {
             unitHolder ⇒
-              Source(unitHolder.name.getOrElse("unnamed source"),
+              Source(
+                orId(unitHolder.id),
+                unitHolder.name,
                 unitHolder.capacity.getOrElse(0),
                 getType(unitHolder.`type`.getOrElse("constant")),
                 unitHolder.ghg.getOrElse(0.0))
           }
           val drains = areaHolder.drains.getOrElse(Seq.empty[UnitHolder]).map {
             unitHolder ⇒
-              Drain(unitHolder.name.getOrElse("unnamed drain"),
+              Drain(
+                orId(unitHolder.id),
+                unitHolder.name,
                 unitHolder.capacity.getOrElse(0),
                 getType(unitHolder.`type`.getOrElse("constant")))
           }
 
-          name → Area(name = name, sources = sources, drains = drains)
+          id → Area(id, name = areaHolder.name, sources = sources, drains = drains)
       }
 
       // lines needs areas, so these come last
@@ -128,7 +145,9 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
           val area1 = areas(lineHolder.areas.get._1)
           val area2 = areas(lineHolder.areas.get._2)
 
-          Line(lineHolder.name.getOrElse("unnamed line"),
+          Line(
+            orId(lineHolder.id),
+            lineHolder.name,
             lineHolder.capacity.getOrElse(0),
             getType(lineHolder.`type`.getOrElse("constant")),
             area1, area2)

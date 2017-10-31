@@ -62,6 +62,9 @@ object SimulationWorker extends JSApp {
 
     println(s"Simulate round, $roundsPerStep rounds")
     reply(Reply(Result, rounds = result.rounds.length, interval = interval ))
+
+    val x = JsonDecoder.encodeAsJson(result)
+    println(s"Simulate result as json: $x")
   }
 
   private def reply(r: Reply) =

@@ -15,23 +15,30 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     r.units shouldBe empty
   }
 
+  var counter: Int = 0
+
+  def makeId = {
+    counter += 1
+    s"id-${counter}"
+  }
+
   def W(stuff: Any*) =
     World(areas = stuff.collect { case a: Area ⇒ a },
       lines = stuff.collect { case l: Line ⇒ l })
   def A(units: Unit*) =
-    Area(drains = units.collect { case d: Drain ⇒ d },
+    Area(makeId, drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
-  def An(name: String, units: Unit*) =
-    Area(name = name,
+  def An(id: String, units: Unit*) =
+    Area(id = id,
       drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
-  val constantType = CapacityType("constant", 0, ConstantCapacityModel)
-  def D(c: Int) = Drain(capacity = c, capacityType = constantType)
-  def Dn(name: String, c: Int) = Drain(name = name, capacity = c, capacityType = constantType)
-  def S(c: Int, ghg: Double = 0.0) = Source(capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
-  def Sn(name: String, c: Int, ghg: Double = 0.0) = Source(name = name, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
-  def L(c: Int, a1: Area, a2: Area) = Line(capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
-  def Ln(name: String, c: Int, a1: Area, a2: Area) = Line(name = name, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
+  val constantType = CapacityType("constant", None, 0, ConstantCapacityModel)
+  def D(c: Int) = Drain(makeId, capacity = c, capacityType = constantType)
+  def Dn(id: String, c: Int) = Drain(id = id, capacity = c, capacityType = constantType)
+  def S(c: Int, ghg: Double = 0.0) = Source(makeId, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
+  def Sn(id: String, c: Int, ghg: Double = 0.0) = Source(id = id, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
+  def L(c: Int, a1: Area, a2: Area) = Line(makeId, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
+  def Ln(id: String, c: Int, a1: Area, a2: Area) = Line(id = id, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
 
   "Single area" should "use local sources only" in {
     val world = W(A(D(100), S(90, 0.0), S(10, 1.0), S(1000, 10.0)))

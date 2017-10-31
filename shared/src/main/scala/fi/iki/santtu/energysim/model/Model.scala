@@ -8,12 +8,12 @@ abstract class CapacityModel {
   def capacity(amount: Int): Capacity
 }
 
-case class CapacityType(name: String, size: Int, model: CapacityModel)
+case class CapacityType(id: String, name: Option[String], size: Int, model: CapacityModel)
 
-object ConstantCapacityType extends CapacityType("constant", 0, ConstantCapacityModel)
-object UniformCapacityType extends CapacityType("uniform", 0, UniformCapacityModel)
+object ConstantCapacityType extends CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel)
+object UniformCapacityType extends CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel)
 
-abstract class Unit(val name: String, val unitCapacity: Int, val capacityType: CapacityType) {
+abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: CapacityType) {
   def capacity(): Capacity = {
     capacityType.size match {
       case 0 ⇒ capacityType.model.capacity(unitCapacity)
@@ -31,62 +31,74 @@ abstract class Unit(val name: String, val unitCapacity: Int, val capacityType: C
   }
 }
 
-class Drain(name: String, capacity: Int, capacityType: CapacityType) extends Unit(name, capacity, capacityType) {
-  override def toString: String = name
+class Drain(id: String, name: Option[String], capacity: Int, capacityType: CapacityType) extends Unit(id, name, capacity, capacityType) {
+  override def toString: String = id
 
   override def equals(obj: scala.Any): Boolean =
     obj match {
-      case d: Drain ⇒ d.name == name && d.unitCapacity == unitCapacity && d.capacityType == capacityType
+      case d: Drain ⇒
+        d.id == id &&
+          d.name == name &&
+          d.unitCapacity == unitCapacity &&
+          d.capacityType == capacityType
       case _ ⇒ false
     }
 }
 
 object Drain {
-  def apply(name: String = "drain",
+  def apply(id: String,
+            name: Option[String] = None,
             capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType): Drain =
-    new Drain(name, capacity, capacityType)
+    new Drain(id, name, capacity, capacityType)
 }
 
-class Source(name: String,
+class Source(id: String,
+             name: Option[String],
              capacity: Int = 0,
              capacityType: CapacityType = ConstantCapacityType,
-             val ghgPerCapacity: Double = 0.0) extends Unit(name, capacity, capacityType) {
+             val ghgPerCapacity: Double = 0.0) extends Unit(id, name, capacity, capacityType) {
   override def equals(obj: scala.Any): Boolean =
     obj match {
       case o: Source ⇒
-        o.name == name &&
+        o.id == id &&
+          o.name == name &&
           o.unitCapacity == unitCapacity &&
           o.capacityType == capacityType &&
           o.ghgPerCapacity == ghgPerCapacity
       case _ ⇒ false
     }
 
-  override def toString: String = name
+  override def toString: String = id
 //  override def toString: String = s"$name,$capacity,$capacityType,$ghgPerCapacity"
 }
 
 object Source {
-  def apply(name: String = "source",
+  def apply(id: String,
+            name: Option[String] = None,
             capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType,
             ghgPerCapacity: Double = 0.0): Source =
-    new Source(name, capacity, capacityType, ghgPerCapacity)
+    new Source(id, name, capacity, capacityType, ghgPerCapacity)
 }
 
-class Line(name: String,
+class Line(id: String,
+           name: Option[String],
            capacity: Int,
            capacityType: CapacityType,
            val area1: Area,
            val area2: Area)
-  extends Unit(name, capacity, capacityType) {
+  extends Unit(id, name, capacity, capacityType) {
   override def toString: String = s"$area1<->$area2"
   val areas: (Area, Area) = (area1, area2)
   val areasSeq = Seq(area1, area2)
 
   override def equals(obj: scala.Any): Boolean =
     obj match {
-      case l: Line ⇒ l.name == name && l.unitCapacity == unitCapacity && l.capacityType == capacityType && (
+      case l: Line ⇒ l.id == id &&
+        l.name == name &&
+        l.unitCapacity == unitCapacity &&
+        l.capacityType == capacityType && (
         (l.area1 == area1 && l.area2 == area2) ||
           (l.area1 == area2 && l.area2 == area1))
       case _ ⇒ false
@@ -94,25 +106,27 @@ class Line(name: String,
 }
 
 object Line {
-  def apply(name: String = "line",
+  def apply(id: String,
+            name: Option[String] = None,
             capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType,
             area1: Area, area2: Area): Line =
-    new Line(name, capacity, capacityType, area1, area2)
+    new Line(id, name, capacity, capacityType, area1, area2)
 }
 
-case class Area (name: String, drains: Seq[Drain], sources: Seq[Source]) {
-  override def toString: String = name
+case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: Seq[Source]) {
+  override def toString: String = id
 
   def drainByName(name: String): Option[Drain] = drains.find(_.name == name)
   def sourceByName(name: String): Option[Source] = sources.find(_.name == name)
 }
 
 object Area {
-  def apply(name: String = "area",
+  def apply(id: String,
+            name: Option[String] = None,
             drains: Seq[Drain] = Seq.empty[Drain],
             sources: Seq[Source] = Seq.empty[Source]) =
-    new Area(name, drains, sources)
+    new Area(id, name, drains, sources)
 }
 
 case class World (name: String,
@@ -133,8 +147,8 @@ case class World (name: String,
       case a ⇒ a
     })
 
-  def areaByName(name: String): Option[Area] = areas.find(_.name == name)
-  def lineByName(name: String): Option[Line] = lines.find(_.name == name)
+  def areaById(id: String): Option[Area] = areas.find(_.id == id)
+  def lineById(id: String): Option[Line] = lines.find(_.id == id)
   def linesForArea(area: Area): Seq[Line] =
     lines.filter(l ⇒ l.area1 == area || l.area2 == area)
 

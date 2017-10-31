@@ -129,7 +129,7 @@ object Main {
       "central" → AreaData("Keskinen"),
     )
 
-    def dataFor(a: Area) = areas(a.name)
+    def dataFor(a: Area) = areas(a.id)
 
     /**
       * Container for UI-related stuff for lines.
@@ -146,7 +146,7 @@ object Main {
       "central-north" → LineData("K-P")
     )
 
-    def dataFor(l: Line) = lines(l.name)
+    def dataFor(l: Line) = lines(l.id)
 
     def render(p: Props, s: State): VdomElement = {
       implicit val state = s
@@ -200,12 +200,12 @@ object Main {
                 <.div(
                   ^.key := p._1,
                   ^.className := "col-md",
-                  area(s.world.areaByName(p._1).get, p._2))),
+                  area(s.world.areaById(p._1).get, p._2))),
               lines.toVdomArray(p ⇒
                 <.div(
                   ^.key := p._1,
                   ^.className := "col-md",
-                  line(s.world.lineByName(p._1).get, p._2)))),
+                  line(s.world.lineById(p._1).get, p._2)))),
             <.div(
               ^.className := "col-lg-4 row",
               s.focused match {
@@ -215,14 +215,14 @@ object Main {
                   val sourceSum = area.sources.map(_.unitCapacity).sum
                   <.div(
                     s"AREA: ${dataFor(area).name} (connected to ",
-                    s.world.linesForArea(area).toVdomArray( l ⇒ {
-                      val o = l.areasSeq.filter(_ != area).head
+                    s.world.linesForArea(area).toVdomArray( line ⇒ {
+                      val other = line.areasSeq.filter(_ != area).head
                       <.span(
-                        ^.key := l.name,
+                        ^.key := line.id,
                         <.span(
                           ^.className := "text-primary",
-                          ^.onClick --> selectArea(o),
-                          dataFor(o).name), " ")
+                          ^.onClick --> selectArea(other),
+                          dataFor(other).name), " ")
                     }), ")",
                     <.br,
                     s"Drain: ${drain.unitCapacity} MW", <.br,
@@ -231,19 +231,19 @@ object Main {
                     <.ul(
                       area.sources.toVdomArray(source ⇒
                         <.li(
-                          ^.key := source.name,
+                          ^.key := source.id,
                           s"${source.name}", <.br,
                           s"Maximum capacity: ${source.unitCapacity} MW", <.br,
                           s"Capacity model: ${source.capacityType.name}"))),
                     s"Connections:", <.br,
                     <.ul(
-                    s.world.linesForArea(area).toVdomArray(l ⇒
+                    s.world.linesForArea(area).toVdomArray(line ⇒
                       <.li(
-                        ^.key := l.name,
+                        ^.key := line.id,
                         <.span(
                           ^.className := "text-primary",
-                          ^.onClick --> selectLine(l),
-                          dataFor(l).name)))))
+                          ^.onClick --> selectLine(line),
+                          dataFor(line).name)))))
                 case Some(Right(line)) ⇒
                   <.div(
                     s"LINE: ${dataFor(line).name}", <.br,

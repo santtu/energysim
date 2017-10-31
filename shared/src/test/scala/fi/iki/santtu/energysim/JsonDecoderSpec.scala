@@ -107,7 +107,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   it should "handle empty areas" in {
     val world = dec("""{"areas":{"a":{},"b":{},"c":{}}}""")
     world.areas.size shouldBe 3
-    world.areas.forall(_.name.length > 0) shouldBe true
+    world.areas.forall(_.id.length > 0) shouldBe true
     world.lines shouldBe empty
     world.units shouldBe empty
   }
@@ -119,8 +119,8 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     world.lines.size shouldBe 1
     world.units shouldBe world.lines
     val (a, b) = (world.areas(0), world.areas(1))
-    a.name shouldBe "a"
-    b.name shouldBe "b"
+    a.id shouldBe "a"
+    b.id shouldBe "b"
     world.lines(0).areas.productIterator.toSeq shouldBe Seq(a, b)
   }
 
@@ -133,9 +133,9 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     world.lines.size shouldBe 3
     world.areas.map(a ⇒ (a.drains.size, a.sources.size)).toSet shouldBe Set((1, 1), (2, 1), (1, 2))
 
-    val (n, s, e) = (world.areas.find(_.name == "north").get,
-      world.areas.find(_.name == "south").get,
-      world.areas.find(_.name == "east").get)
+    val (n, s, e) = (world.areas.find(_.id == "north").get,
+      world.areas.find(_.id == "south").get,
+      world.areas.find(_.id == "east").get)
     val Seq(ns, se, ne) = world.lines
 
     ns.areas shouldBe (n, s)
@@ -207,10 +207,10 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   it should "serialize types" in {
     val w = World(name="a world",
       types = Seq(
-        CapacityType("t-const", 0, ConstantCapacityModel),
-        CapacityType("t-uni", 100, UniformCapacityModel),
-        CapacityType("t-step", 0, StepCapacityModel(Seq(Step(1, 0, .5), Step(2, .5, 1)))),
-        CapacityType("t-scale", 0, ScaledCapacityModel(10.0,
+        CapacityType("t-const", None, 0, ConstantCapacityModel),
+        CapacityType("t-uni", None, 100, UniformCapacityModel),
+        CapacityType("t-step", None, 0, StepCapacityModel(Seq(Step(1, 0, .5), Step(2, .5, 1)))),
+        CapacityType("t-scale", None, 0, ScaledCapacityModel(10.0,
           Seq(Step(1.0, 0.0, 10.0), Step(1.0, 20.0, 20.0))))
       ))
     val j = enc(w)
@@ -221,20 +221,24 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
       "lines" → Json.fromValues(Seq()),
       "types" → Json.fromFields(Seq(
         "t-const" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "size" → Json.fromInt(0),
           "model" → Json.fromString("constant"),
           "data" → Json.Null)) ,
         "t-uni" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "size" → Json.fromInt(100),
           "model" → Json.fromString("uniform"),
           "data" → d(0.0, 1.0))),
         "t-step" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "size" → Json.fromInt(0),
           "model" → Json.fromString("step"),
           "data" → Json.fromValues(Seq(
             d(1.0, 0.0, 0.5),
             d(2.0, 0.5, 1.0))))),
         "t-scale" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "size" → Json.fromInt(0),
           "model" → Json.fromString("scaled"),
           "data" → Json.fromFields(Seq(
@@ -253,7 +257,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val w = World(name="a world",
       areas = Seq(
         Area("a"),
-        Area("b", sources = Seq(Source("s", 100, ConstantCapacityType, 1.0))))
+        Area("b", sources = Seq(Source("s", None, 100, ConstantCapacityType, 1.0))))
       )
     val j = enc(w)
 
@@ -261,12 +265,15 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
       "name" → Json.fromString("a world"),
       "areas" → Json.fromFields(Seq(
         "a" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "sources" → Json.fromValues(Seq()),
           "drains" → Json.fromValues(Seq()))),
         "b" → Json.fromFields(Seq(
+          "name" → Json.Null,
           "sources" → Json.fromValues(Seq(
             Json.fromFields(Seq(
-              "name" → Json.fromString("s"),
+              "id" → Json.fromString("s"),
+              "name" → Json.Null,
               "capacity" → Json.fromInt(100),
               "type" → Json.fromString("constant"),
               "ghg" → Json.fromDoubleOrNull(1.0))))),
