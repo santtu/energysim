@@ -186,15 +186,18 @@ object LineStatistics { def apply() = new LineStatistics() }
 
 
 class SimulationCollector(private val world: World) {
-  val areas: Map[Area, AreaStatistics] =
-    world.areas.map { _ → AreaStatistics() }.toMap
-  val sources: Map[Source, SourceStatistics] =
-    world.areas.flatMap(_.sources).map { _ → SourceStatistics() }.toMap
-  val drains: Map[Drain, DrainStatistics] =
-    world.areas.flatMap(_.drains).map { _ → DrainStatistics() }.toMap
-  val lines: Map[Line, LineStatistics] =
-    world.lines.map { _ → LineStatistics() }.toMap
+  val areas: Map[String, AreaStatistics] =
+    world.areas.map { _.id → AreaStatistics() }.toMap
+  val sources: Map[String, SourceStatistics] =
+    world.areas.flatMap(_.sources).map { _.id → SourceStatistics() }.toMap
+  val drains: Map[String, DrainStatistics] =
+    world.areas.flatMap(_.drains).map { _.id → DrainStatistics() }.toMap
+  val lines: Map[String, LineStatistics] =
+    world.lines.map { _.id → LineStatistics() }.toMap
   val global = AreaStatistics()
+
+  val sourcesByAreaId = world.areas.map(a ⇒ a.id → a.sources).toMap
+  val sourcesById = world.areas.flatMap(_.sources).map(s ⇒ s.id → s).toMap
 
   def +=(r: Result): Unit = {
     r.rounds foreach {
@@ -218,7 +221,7 @@ class SimulationCollector(private val world: World) {
             drain += ad.drain
             transfer += ad.transfer
 
-            val ag = a.sources.map(s ⇒ round.units(s).used * s.ghgPerCapacity).sum
+            val ag = sourcesByAreaId(a).map(s ⇒ round.units(s.id).used * s.ghgPerCapacity).sum
             areas(a).ghg += ag
             ghg += ag
         }
@@ -227,12 +230,12 @@ class SimulationCollector(private val world: World) {
         global.ghg += ghg
 
         round.units.foreach {
-          case (s: Source, sd) ⇒
+          case (s, sd) if sources.contains(s) ⇒
             sources(s) += sd
-            sources(s).ghg += sd.used * s.ghgPerCapacity
-          case (d: Drain, dd) ⇒
+            sources(s).ghg += sd.used * sourcesById(s).ghgPerCapacity
+          case (d, dd) if drains.contains(d) ⇒
             drains(d) += dd
-          case (l: Line, ld) ⇒
+          case (l, ld) if lines.contains(l) ⇒
             lines(l) += ld
           case _ ⇒
             // should not happen
@@ -255,8 +258,8 @@ object SimulationCollector {
   }
 
   def summary(collector: SimulationCollector): String = {
-    def areaSummary(name: String, a: AreaStatistics) = {
-      Seq(s"==== $name ${"=" * (65 - name.length)}",
+    def areaSummary(id: String, a: AreaStatistics) = {
+      Seq(s"==== $id ${"=" * (65 - id.length)}",
         f"  loss        ${a.loss.positive}%d / ${a.loss.percentage}%.1f%%",
         f"  total       ${a.total}%s MW",
         f"  excess      ${a.excess}%s MW",
@@ -266,8 +269,8 @@ object SimulationCollector {
         f"  ghg         ${a.ghg / 1e3 * 365 * 24}%s t/a")
     }
 
-    def sourceSummary(name: String, s: SourceStatistics) = {
-      Seq(s"  > $name",
+    def sourceSummary(id: String, s: SourceStatistics) = {
+      Seq(s"  > $id",
         f"    maxed     ${s.atCapacity.percentage}%.1f%%",
         f"    used      ${s.used}%s MW",
         f"    excess    ${s.excess}%s MW",
@@ -275,13 +278,12 @@ object SimulationCollector {
         f"    ghg       ${s.ghg / 1e3 * 365 * 24}%s t/a")
     }
 
-    def drainSummary(name: String, d: DrainStatistics) = {
-      Seq(f"  < $name%-9s ${d.used}%s MW")
-
+    def drainSummary(id: String, d: DrainStatistics) = {
+      Seq(f"  < $id%-9s ${d.used}%s MW")
     }
 
-    def lineSummary(name: String, leftName: String, rightName: String, l: LineStatistics) = {
-      Seq(s"---- $name ($leftName ↔︎ $rightName) ${"-" * (65 - name.length - 7 - leftName.length - rightName.length)}",
+    def lineSummary(id: String, leftName: String, rightName: String, l: LineStatistics) = {
+      Seq(s"---- $id ($leftName ↔︎ $rightName) ${"-" * (65 - id.length - 7 - leftName.length - rightName.length)}",
         f"  maxed       ${l.atCapacity.percentage}%.1f%%",
         f"  transfer    ${l.transfer} MW",
         f"  unused      ${l.unused} MW",
@@ -292,13 +294,15 @@ object SimulationCollector {
     val result =
       areaSummary(collector.world.name, collector.global) ++
         collector.areas.flatMap {
-          case (a, s) ⇒
-            areaSummary(a.id, s) ++
-              a.sources.flatMap(s ⇒ sourceSummary(s.id, collector.sources(s))) ++
-              a.drains.flatMap(d ⇒ drainSummary(d.id, collector.drains(d)))
+          case (id, s) ⇒
+            val a = collector.world.areaById(id).get
+            areaSummary(id, s) ++
+              a.sources.flatMap(s ⇒ sourceSummary(s.id, collector.sources(s.id))) ++
+              a.drains.flatMap(d ⇒ drainSummary(d.id, collector.drains(d.id)))
         } ++
         collector.lines.flatMap {
-          case (l, s) ⇒
+          case (id, s) ⇒
+            val l = collector.world.lineById(id).get
             lineSummary(l.id, l.area1.id, l.area2.id, s)
         }
 

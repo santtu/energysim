@@ -284,7 +284,10 @@ object ScalaSimulation extends Simulation {
         nad
     }
 
-    Round(areas.toMap, units.toMap)
+    val x = areas.map { case (a, ad) ⇒ a.id → ad }.toMap
+
+    Round(areas.map { case (a, ad) ⇒ a.id → ad } toMap,
+      units.map { case (u, ud) ⇒ u.id → ud } toMap)
   }
 
   override def simulate(world: World, nrounds: Int): Result = {

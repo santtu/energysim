@@ -133,9 +133,16 @@ case class World (name: String,
                   types: Seq[CapacityType] = Seq.empty[CapacityType],
                   areas: Seq[Area] = Seq.empty[Area],
                   lines: Seq[Line] = Seq.empty[Line]) {
+  
   val units: Seq[Unit] = areas.flatMap(_.drains) ++
     areas.flatMap(_.sources) ++
     lines
+
+  (types.map(_.id) ++ areas.map(_.id) ++ units.map(_.id)).foldLeft(Set.empty[String]) {
+     (set, id) ⇒
+       require(!set.contains(id), s"Identifier ${id} is used multiple times")
+       set + id
+  }
 
   override def toString: String =
     s"World(name=$name,areas=$areas,types=$types,lines=$lines)"

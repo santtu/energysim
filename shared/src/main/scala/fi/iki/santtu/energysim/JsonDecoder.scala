@@ -233,6 +233,6 @@ object JsonDecoder extends ModelDecoder {
   }
 
   def encodeAsJson(result: Result): Json = {
-    ???
+    result.asJson
   }
 }

@@ -20,8 +20,8 @@ case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transf
   def toSeq: Seq[Int] = Seq(total, excess, generation, drain, transfer)
 }
 
-case class Round(areas: Map[Area, AreaData],
-                 units: Map[Unit, UnitData])
+case class Round(areas: Map[String, AreaData],
+                 units: Map[String, UnitData])
 
 case class Result(rounds: Seq[Round])
 
