@@ -2,7 +2,7 @@ package fi.iki.santtu.energysimui
 
 import com.github.marklister.base64.Base64._
 import fi.iki.santtu.energysim.model.{Area, Line, World}
-import fi.iki.santtu.energysim.{JsonDecoder, Model}
+import fi.iki.santtu.energysim.{JsonDecoder, Model, SimulationCollector}
 import fi.iki.santtu.energysimworker.{Message, Reply, WorkerOperation, WorkerState}
 import fi.iki.santtu.energysimworker.WorkerState._
 import japgolly.scalajs.react.{vdom, _}
@@ -30,7 +30,8 @@ object Main {
                    playing: Boolean = false,
                    running: Boolean = false,
                    iterations: Int = 0,
-                   runningTime: Double = 0.0) {
+                   runningTime: Double = 0.0,
+                   collector: SimulationCollector) {
   }
 
   class Interface($: BackendScope[Props, State]) {
@@ -49,8 +50,17 @@ object Main {
           $.modState(s ⇒ s.copy(running = false)).runNow()
         case Result ⇒
           println("Worker gave result")
-          $.modState(s ⇒ s.copy(iterations = s.iterations + reply.rounds,
-            runningTime = s.runningTime + reply.interval)).runNow()
+          val result = io.circe.scalajs.convertJsToJson(reply.result) match {
+            case Left(error) ⇒ throw error
+            case Right(json) ⇒ JsonDecoder.decodeResultFromJson(json)
+          }
+          // this is a bit evil, but simulation collector is an object,
+          // not a case class, so we modify it directly ...
+          $.modState(s ⇒ {
+            s.collector += result
+            s.copy(iterations = s.iterations + reply.rounds,
+              runningTime = s.runningTime + reply.interval)
+          }).runNow()
       }
     }
 
@@ -168,16 +178,19 @@ object Main {
               ^.onClick --> stop,
               ^.disabled := !s.running,
               "STOP").when(s.playing),
-            <.br,
-            <.small(
-              ^.className := "text-muted",
-              s"${s.iterations} iterations ",
-              f"in ${s.runningTime}%.1f seconds".when(s.runningTime > 0.0))
           ),
 
           // graphs come here
           <.div(^.className := "col",
-            "GRAPHS HERE"),
+            <.small(
+              ^.className := "text-muted",
+              s"${s.iterations} iterations ",
+              f"in ${s.runningTime}%.1f seconds".when(s.runningTime > 0.0)),
+            <.br,
+            <.small(
+              f"Loss: ${s.collector.global.loss.percentage}%.1f%%", <.br,
+              f"Generation: ${s.collector.global.generation.mean}%.0f±${s.collector.global.generation.dev}%.0f MW", <.br
+            ).when(s.collector.rounds > 0)),
 
           // summary information
           <.div(^.className := "col-2",
@@ -195,73 +208,84 @@ object Main {
           // next comes actual world information
           <.div(^.className := "row",
             <.div(
-              ^.className := "col-lg-8",
+              ^.className := "col-md-8 row",
               areas.toVdomArray(p ⇒
                 <.div(
                   ^.key := p._1,
-                  ^.className := "col-md",
+                  ^.className := "col",
                   area(s.world.areaById(p._1).get, p._2))),
               lines.toVdomArray(p ⇒
                 <.div(
                   ^.key := p._1,
-                  ^.className := "col-md",
+                  ^.className := "col",
                   line(s.world.lineById(p._1).get, p._2)))),
             <.div(
-              ^.className := "col-lg-4 row",
-              s.focused match {
-                case Some(Left(area)) ⇒
-                  require(area.drains.size == 1)
-                  val drain = area.drains.head
-                  val sourceSum = area.sources.map(_.unitCapacity).sum
-                  <.div(
-                    s"AREA: ${dataFor(area).name} (connected to ",
-                    s.world.linesForArea(area).toVdomArray( line ⇒ {
-                      val other = line.areasSeq.filter(_ != area).head
+              ^.className := "col-md-4 row",
+              if (s.playing)
+                s.focused match {
+                  case Some(Left(area)) ⇒
+                    val data = s.collector.areas(area.id)
+                    s"$data"
+                  case Some(Right(line)) ⇒
+                    val data = s.collector.lines(line.id)
+                    s"$data"
+                  case None ⇒ "NOTHING TO SEE HERE"
+                }
+              else
+                s.focused match {
+                  case Some(Left(area)) ⇒
+                    require(area.drains.size == 1)
+                    val drain = area.drains.head
+                    val sourceSum = area.sources.map(_.unitCapacity).sum
+                    <.div(
+                      s"AREA: ${dataFor(area).name} (connected to ",
+                      s.world.linesForArea(area).toVdomArray( line ⇒ {
+                        val other = line.areasSeq.filter(_ != area).head
+                        <.span(
+                          ^.key := line.id,
+                          <.span(
+                            ^.className := "text-primary",
+                            ^.onClick --> selectArea(other),
+                            dataFor(other).name), " ")
+                      }), ")",
+                      <.br,
+                      s"Drain: ${drain.unitCapacity} MW", <.br,
+                      s"Drain model: ${drain.capacityType.name}", <.br,
+                      s"Sources: ${sourceSum} MW", <.br,
+                      <.ul(
+                        area.sources.toVdomArray(source ⇒
+                          <.li(
+                            ^.key := source.id,
+                            s"${source.name}", <.br,
+                            s"Maximum capacity: ${source.unitCapacity} MW", <.br,
+                            s"Capacity model: ${source.capacityType.name}"))),
+                      s"Connections:", <.br,
+                      <.ul(
+                        s.world.linesForArea(area).toVdomArray(line ⇒
+                          <.li(
+                            ^.key := line.id,
+                            <.span(
+                              ^.className := "text-primary",
+                              ^.onClick --> selectLine(line),
+                              dataFor(line).name)))))
+                  case Some(Right(line)) ⇒
+                    <.div(
+                      s"LINE: ${dataFor(line).name}", <.br,
+                      s"Between ",
                       <.span(
-                        ^.key := line.id,
-                        <.span(
-                          ^.className := "text-primary",
-                          ^.onClick --> selectArea(other),
-                          dataFor(other).name), " ")
-                    }), ")",
-                    <.br,
-                    s"Drain: ${drain.unitCapacity} MW", <.br,
-                    s"Drain model: ${drain.capacityType.name}", <.br,
-                    s"Sources: ${sourceSum} MW", <.br,
-                    <.ul(
-                      area.sources.toVdomArray(source ⇒
-                        <.li(
-                          ^.key := source.id,
-                          s"${source.name}", <.br,
-                          s"Maximum capacity: ${source.unitCapacity} MW", <.br,
-                          s"Capacity model: ${source.capacityType.name}"))),
-                    s"Connections:", <.br,
-                    <.ul(
-                    s.world.linesForArea(area).toVdomArray(line ⇒
-                      <.li(
-                        ^.key := line.id,
-                        <.span(
-                          ^.className := "text-primary",
-                          ^.onClick --> selectLine(line),
-                          dataFor(line).name)))))
-                case Some(Right(line)) ⇒
-                  <.div(
-                    s"LINE: ${dataFor(line).name}", <.br,
-                    s"Between ",
-                    <.span(
-                      ^.className := "text-primary",
-                      ^.onClick --> selectArea(line.area1),
-                      dataFor(line.area1).name),
-                    " and ",
-                    <.span(
-                      ^.className := "text-primary",
-                      ^.onClick --> selectArea(line.area2),
-                      dataFor(line.area2).name), <.br,
-                    s"Maximum capacity: ${line.unitCapacity} MW", <.br,
-                    s"Capacity model: ${line.capacityType.name}")
-                case None ⇒
-                  <.div(
-                    "No area or line selected")
+                        ^.className := "text-primary",
+                        ^.onClick --> selectArea(line.area1),
+                        dataFor(line.area1).name),
+                      " and ",
+                      <.span(
+                        ^.className := "text-primary",
+                        ^.onClick --> selectArea(line.area2),
+                        dataFor(line.area2).name), <.br,
+                      s"Maximum capacity: ${line.unitCapacity} MW", <.br,
+                      s"Capacity model: ${line.capacityType.name}")
+                  case None ⇒
+                    <.div(
+                      "No area or line selected")
               }
           ))),
 
@@ -307,7 +331,7 @@ object Main {
 
   def UserInterfaceComponent(w: World, ctl: RouterCtl[Pages]) = {
     val ctor = ScalaComponent.builder[Props]("Interface")
-      .initialState(State(w))
+      .initialState(State(w, collector = SimulationCollector(w)))
       .renderBackend[Interface]
       .componentWillMount(_.backend.init)
       .componentWillUnmount(_.backend.uninit)

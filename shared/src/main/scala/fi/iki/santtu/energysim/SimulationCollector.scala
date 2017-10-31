@@ -121,7 +121,7 @@ class AreaStatistics {
   }
 
   override def toString: String =
-    s"[loss=$loss,total=$total,excess=$excess,generation=$generation,drain=$drain,transfer=$transfer]"
+    s"[loss=$loss,total=$total,excess=$excess,generation=$generation,drain=$drain,transfer=$transfer,ghg=$ghg]"
 }
 
 object AreaStatistics {
@@ -178,6 +178,9 @@ class LineStatistics extends UnitStatistics {
     else
       left += actual
   }
+
+  override def toString: String =
+    s"[transfer=$transfer,unused=$unused,right=$right,left=$left,full=$atCapacity]"
 }
 
 object SourceStatistics { def apply() = new SourceStatistics() }
@@ -186,6 +189,7 @@ object LineStatistics { def apply() = new LineStatistics() }
 
 
 class SimulationCollector(private val world: World) {
+  var rounds: Int = 0
   val areas: Map[String, AreaStatistics] =
     world.areas.map { _.id → AreaStatistics() }.toMap
   val sources: Map[String, SourceStatistics] =
@@ -241,6 +245,8 @@ class SimulationCollector(private val world: World) {
             // should not happen
             ???
         }
+
+        rounds += 1
     }
   }
 

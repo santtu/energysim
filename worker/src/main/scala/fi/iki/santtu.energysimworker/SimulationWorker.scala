@@ -35,12 +35,13 @@ object Message {
 @ScalaJSDefined
 class Reply(val state: Int,
             val rounds: Int,
-            val interval: Double) extends js.Object
+            val interval: Double,
+            val result: js.Any) extends js.Object
 
 
 object Reply {
-  def apply(state: State, rounds: Int = 0, interval: Double = 0.0) =
-    new Reply(state.id, rounds, interval)
+  def apply(state: State, rounds: Int = 0, interval: Double = 0.0, result: js.Any = js.undefined) =
+    new Reply(state.id, rounds, interval, result)
 }
 
 object SimulationWorker extends JSApp {
@@ -61,10 +62,11 @@ object SimulationWorker extends JSApp {
     val interval = (end - start) / 1000.0
 
     println(s"Simulate round, $roundsPerStep rounds")
-    reply(Reply(Result, rounds = result.rounds.length, interval = interval ))
-
-    val x = JsonDecoder.encodeAsJson(result)
-    println(s"Simulate result as json: $x")
+    val x = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(result))
+//    val x = js.undefined
+//    println(s"result ${x}")
+    reply(Reply(Result, rounds = result.rounds.length, interval = interval,
+      result = x))
   }
 
   private def reply(r: Reply) =
@@ -86,7 +88,7 @@ object SimulationWorker extends JSApp {
             case Right(json) ⇒ json
           }
 //          println(s"world json: $json")
-          val decoded = JsonDecoder.decodeFromJson(json)
+          val decoded = JsonDecoder.decodeWorldFromJson(json)
 //          println(s"world decoded: $decoded")
           world = Some(decoded)
           println(s"decoded world ${decoded.name} with ${decoded.units.length} units")

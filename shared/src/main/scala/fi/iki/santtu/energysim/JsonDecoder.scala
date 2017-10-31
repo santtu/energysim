@@ -36,17 +36,24 @@ object JsonDecoder extends ModelDecoder {
                                  areas: Option[Map[String, AreaHolder]],
                                  lines: Option[Seq[LineHolder]])
 
-  def decodeFromJson(json: Json): World = {
+  def decodeWorldFromJson(json: Json): World = {
     json.as[WorldHolder] match {
       case Left(error) ⇒ throw error
       case Right(model) ⇒ holder2world(model)
     }
   }
 
+  def decodeResultFromJson(json: Json): Result = {
+    json.as[Result] match {
+      case Left(error) ⇒ throw error
+      case Right(result) ⇒ result
+    }
+  }
+
   override def decode(data: String): World = {
     parse(data) match {
       case Left(error) ⇒ throw error
-      case Right(json) ⇒ decodeFromJson(json)
+      case Right(json) ⇒ decodeWorldFromJson(json)
     }
   }
 
