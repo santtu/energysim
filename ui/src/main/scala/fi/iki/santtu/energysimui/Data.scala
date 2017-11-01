@@ -257,7 +257,7 @@ object Data {
                   |                {
                   |                    "capacity": 1085.0,
                   |                    "ghg": 1026,
-                  |                    "name": "Kivihiili",
+                  |                    "id": "west-coal",
                   |                    "type": "coal"
                   |                },
                   |                {
@@ -293,13 +293,13 @@ object Data {
                   |                {
                   |                    "capacity": 880,
                   |                    "ghg": 40,
-                  |                    "name": "Olkiluoto 1",
+                  |                    "id": "olkiluoto-1",
                   |                    "type": "nuclear"
                   |                },
                   |                {
                   |                    "capacity": 880,
                   |                    "ghg": 40,
-                  |                    "name": "Olkiluoto 2",
+                  |                    "id": "olkiluoto-2",
                   |                    "type": "nuclear"
                   |                },
                   |                {

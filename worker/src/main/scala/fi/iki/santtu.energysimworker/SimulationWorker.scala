@@ -61,7 +61,7 @@ object SimulationWorker extends JSApp {
     val end = System.currentTimeMillis()
     val interval = (end - start) / 1000.0
 
-    println(s"Simulate round, $roundsPerStep rounds")
+//    println(s"Simulate round, $roundsPerStep rounds")
     val x = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(result))
 //    val x = js.undefined
 //    println(s"result ${x}")

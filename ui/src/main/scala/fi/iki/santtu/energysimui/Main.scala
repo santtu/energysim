@@ -6,6 +6,8 @@ import fi.iki.santtu.energysim.model.{Area, Line, World}
 import fi.iki.santtu.energysimworker.WorkerState._
 import fi.iki.santtu.energysimworker.{Message, Reply, WorkerOperation, WorkerState}
 import japgolly.scalajs.react._
+import japgolly.scalajs.react.component.Scala.Unmounted
+import japgolly.scalajs.react.component.{Js, Scala}
 import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom
@@ -39,7 +41,7 @@ object Main {
   case class LineData(name: String)
 
   val lines: Map[String, LineData] = Map(
-    "west-south" → LineData("I-E"),
+    "west-south" → LineData("L-E"),
     "west-central" → LineData("L-K"),
     "south-east" → LineData("E-I"),
     "south-central" → LineData("E-K"),
@@ -56,7 +58,8 @@ object Main {
                    collector: SimulationCollector) {
   }
 
-  type Selection = Option[Either[Area, Line]]
+  // these are ids, not direct references: left = area, right = line
+  type Selection = Option[Either[String, String]]
 
   case class InterfaceProps(ctl: RouterCtl[Pages])
 
@@ -65,7 +68,7 @@ object Main {
 
     worker.onmessage = { (event: MessageEvent) ⇒
       val reply = event.data.asInstanceOf[Reply]
-      println(s"Reply from worker: ${WorkerState(reply.state)}")
+//      println(s"Reply from worker: ${WorkerState(reply.state)}")
 
       WorkerState(reply.state) match {
         case Started ⇒
@@ -75,7 +78,7 @@ object Main {
           println("Worker has stopped")
           $.modState(s ⇒ s.copy(running = false)).runNow()
         case Result ⇒
-          println("Worker gave result")
+//          println("Worker gave result")
           val result = io.circe.scalajs.convertJsToJson(reply.result) match {
             case Left(error) ⇒ throw error
             case Right(json) ⇒ JsonDecoder.decodeResultFromJson(json)
@@ -95,24 +98,54 @@ object Main {
       println(s"Sent worker message: ${WorkerOperation(m.op)}")
     }
 
+    def sendWorld(w: World) =
+      send(Message(WorkerOperation.SetWorld,
+        world = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(w))))
+
+
     def init: Callback = {
       $.state |> { s ⇒
-        println(s"init called, state=$s")
-
-        val worldJs = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(s.world))
-        send(Message(WorkerOperation.SetWorld, world = worldJs))
+//        println(s"init called, state=$s")
+//        sendWorld(s.world)
       }
     }
 
     def uninit: Callback = {
       $.state |> { s ⇒
-        println(s"uninit called, state=$s")
+//        println(s"uninit called, state=$s")
         worker.terminate()
+      }
+    }
+
+    def updateWorld(fn: World ⇒ World): Callback = {
+      $.state >>= {
+        oldState ⇒
+          val oldWorld = oldState.world
+          val newWorld = fn(oldWorld)
+
+          if (oldWorld != newWorld) {
+            println("world is different, updating state")
+            $.props >>= {
+              p ⇒
+                println("change in world, setting new page")
+                // when updating world, reset also collector statistics
+                $.modState(s ⇒ {
+                  s.copy(world = newWorld,
+                    collector = SimulationCollector(newWorld))
+                }) >>
+                // send world only if playing
+                  Callback(if (oldState.playing) sendWorld(newWorld)) >>
+                  p.ctl.set(WithWorld(newWorld)) >>
+                  Callback.log(s"updated world to $newWorld via $fn")
+            }
+          } else
+            Callback.log("no change in world")
       }
     }
 
     val start = {
       $.modState(_.copy(playing = true)) >>
+        ($.state |> { s ⇒ sendWorld(s.world) }) >>
         Callback { send(Message(WorkerOperation.Start)) } >>
         Callback.log("START CLICKED!")
     }
@@ -121,36 +154,36 @@ object Main {
         Callback { send(Message(WorkerOperation.Stop)) } >>
         Callback.log("STOP CLICKED!")
     }
-
-    def isAreaFocused(area: Area)(implicit s: State): Boolean =
-      s.selected.contains(Left(area))
-
-    def isLineFocused(line: Line)(implicit s: State): Boolean =
-      s.selected.contains(Right(line))
-
-    def selectArea(a: Area): Callback =
-      $.modState(s ⇒ s.copy(selected = Some(Left(a))))
-
-    def selectLine(l: Line): Callback =
-      $.modState(s ⇒ s.copy(selected = Some(Right(l))))
-
-    def selectNone: Callback =
-      $.modState(s ⇒ s.copy(selected = None))
-
-    def area(a: Area, data: AreaData)(implicit s: State) =
-      <.div(^.className := "area",
-        (^.className := "focused").when(isAreaFocused(a)),
-        (^.onClick --> selectArea(a)).when(!isAreaFocused(a)),
-        (^.onClick --> selectNone).when(isAreaFocused(a)),
-        <.span(^.className := "name", data.name))
-
-    def line(l: Line, data: LineData)(implicit s: State) =
-      <.div(^.className := "line",
-        (^.className := "focused").when(isLineFocused(l)),
-        (^.onClick --> selectLine(l)).when(!isLineFocused(l)),
-        (^.onClick --> selectNone).when(isLineFocused(l)),
-          <.span(^.className := "name", data.name))
-
+//
+//    def isAreaFocused(area: Area)(implicit s: State): Boolean =
+//      s.selected.contains(Left(area))
+//
+//    def isLineFocused(line: Line)(implicit s: State): Boolean =
+//      s.selected.contains(Right(line))
+//
+//    def selectArea(a: Area): Callback =
+//      $.modState(s ⇒ s.copy(selected = Some(Left(a))))
+//
+//    def selectLine(l: Line): Callback =
+//      $.modState(s ⇒ s.copy(selected = Some(Right(l))))
+//
+//    def selectNone: Callback =
+//      $.modState(s ⇒ s.copy(selected = None))
+//
+//    def area(a: Area, data: AreaData)(implicit s: State) =
+//      <.div(^.className := "area",
+//        (^.className := "focused").when(isAreaFocused(a)),
+//        (^.onClick --> selectArea(a)).when(!isAreaFocused(a)),
+//        (^.onClick --> selectNone).when(isAreaFocused(a)),
+//        <.span(^.className := "name", data.name))
+//
+//    def line(l: Line, data: LineData)(implicit s: State) =
+//      <.div(^.className := "line",
+//        (^.className := "focused").when(isLineFocused(l)),
+//        (^.onClick --> selectLine(l)).when(!isLineFocused(l)),
+//        (^.onClick --> selectNone).when(isLineFocused(l)),
+//          <.span(^.className := "name", data.name))
+//
 
     def render(p: InterfaceProps, s: State): VdomElement = {
       implicit val state = s
@@ -194,7 +227,8 @@ object Main {
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-warning",
-              ^.onClick --> p.ctl.set(defaultPage),
+//|              ^.onClick --> p.ctl.set(defaultPage),
+              ^.onClick --> updateWorld(_ ⇒ defaultWorld),
               ^.disabled := (s.playing || s.world == defaultWorld),
               "RESET"))),
 
@@ -230,13 +264,15 @@ object Main {
               // running or paused
               if (s.collector.rounds > 0)
                 s.selected match {
-                  case Some(Left(area)) ⇒
-                    val data = s.collector.areas(area.id)
+                  case Some(Left(id)) ⇒
+                    val area = s.world.areaById(id).get
+                    val data = s.collector.areas(id)
                     <.div(
                       ^.className := "stats",
                       AreaStats((area, data)))
-                  case Some(Right(line)) ⇒
-                    val data = s.collector.lines(line.id)
+                  case Some(Right(id)) ⇒
+                    val line = s.world.lineById(id).get
+                    val data = s.collector.lines(id)
                     <.div(
                       ^.className := "stats",
                       LineStats((line, data)))
@@ -248,8 +284,11 @@ object Main {
               <.div(
                 ^.className := "info",
                 s.selected match {
-                  case Some(Left(area)) ⇒
-                    AreaInfo(area)
+                  case Some(Left(id)) ⇒
+                    AreaInfo(AreaInfo.Props(s.world.areaById(id).get,
+                      { newArea ⇒
+                        updateWorld(w ⇒ w.update(newArea))
+                      }))
 
                   //                    require(area.drains.size == 1)
 //                    val drain = area.drains.head
@@ -285,8 +324,13 @@ object Main {
                   //                              ^.onClick --> selectLine(line),
                   //                              dataFor(line).name))))
                   //                  )
-                  case Some(Right(line)) ⇒
-                    LineInfo(line)
+                  case Some(Right(id)) ⇒
+                    LineInfo(LineInfo.Props(s.world.lineById(id).get,
+                      { newLine ⇒
+//                        println(s"modifying line $line (${line.unitCapacity} MW), new line $newLine (${newLine.unitCapacity} MW)")
+                        // todo: ctl set page if modified
+                        updateWorld(w ⇒ w.update(newLine))
+                      }))
                   //                      s"LINE: ${dataFor(line).name}", <.br,
                   //                      s"Between ",
                   //                      <.span(
@@ -328,6 +372,8 @@ object Main {
 
   val defaultPage = WithWorld(defaultWorld)
 
+  var ui: Option[Unmounted[InterfaceProps, State, InterfaceBackend]] = None
+
   val routerConfig = RouterConfigDsl[Pages].buildConfig {
     dsl =>
       import dsl._
@@ -335,8 +381,10 @@ object Main {
       val worldRoute =
         dynamicRouteCT("#" / string(".+").caseClass[WithWorld]) ~>
           dynRenderR((w: WithWorld, ctl) => {
-            val ui = UserInterfaceComponent(w.world, ctl)
-            ui
+            println(s"ROUTE #/<world>, ui = $ui")
+            if (ui.isEmpty)
+              ui = Some(UserInterfaceComponent(w.world, ctl))
+            ui.get
           })
 
 
@@ -345,7 +393,8 @@ object Main {
         ).notFound(redirectToPage(defaultPage)(Redirect.Replace))
   }
 
-  def UserInterfaceComponent(w: World, ctl: RouterCtl[Pages]) = {
+  def UserInterfaceComponent(w: World, ctl: RouterCtl[Pages]):
+  Unmounted[InterfaceProps, State, InterfaceBackend] = {
     val ctor = ScalaComponent.builder[InterfaceProps]("Interface")
       .initialState(State(w, collector = SimulationCollector(w)))
       .renderBackend[InterfaceBackend]
@@ -361,8 +410,8 @@ object Main {
 
     router().renderIntoDOM(dom.document.getElementById("playground"))
 
-    println(s"World: ${defaultWorld}")
-    println(s"units: ${defaultWorld.units}")
+//    println(s"World: ${defaultWorld}")
+//    println(s"units: ${defaultWorld.units}")
 
     // would need to wait for ready
 

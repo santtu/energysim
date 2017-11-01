@@ -69,6 +69,11 @@ class Source(id: String,
       case _ ⇒ false
     }
 
+  def copy(id: String = id, name: Option[String] = name,
+           capacity: Int = unitCapacity, capacityType: CapacityType = capacityType,
+           ghgPerCapacity: Double = ghgPerCapacity) =
+    Source(id, name, capacity, capacityType, ghgPerCapacity)
+
   override def toString: String = id
 //  override def toString: String = s"$name,$capacity,$capacityType,$ghgPerCapacity"
 }
@@ -103,6 +108,13 @@ class Line(id: String,
           (l.area1 == area2 && l.area2 == area1))
       case _ ⇒ false
     }
+
+  def copy(id: String = id, name: Option[String] = name,
+           capacity: Int = unitCapacity,
+           capacityType: CapacityType = capacityType,
+           area1: Area = area1,
+           area2: Area = area2) =
+    Line(id, name, capacity, capacityType, area1, area2)
 }
 
 object Line {
@@ -119,6 +131,13 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
 
   def drainByName(name: String): Option[Drain] = drains.find(_.name == name)
   def sourceByName(name: String): Option[Source] = sources.find(_.name == name)
+
+  def update(source: Source) =
+    copy(sources = sources.map {
+      case old if old.id == source.id ⇒ source
+      case old ⇒ old
+    })
+
 }
 
 object Area {
@@ -152,6 +171,18 @@ case class World (name: String,
     copy(areas = areas.map {
       case a if a == area ⇒ a.copy(drains = a.drains.filter(_ != drain))
       case a ⇒ a
+    })
+
+  def update(line: Line) =
+    copy(lines = lines.map {
+      case old if old.id == line.id ⇒ line
+      case old ⇒ old
+    })
+
+  def update(area: Area) =
+    copy(areas = areas.map {
+      case old if old.id == area.id ⇒ area
+      case old ⇒ old
     })
 
   def areaById(id: String): Option[Area] = areas.find(_.id == id)
