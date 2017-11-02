@@ -10,6 +10,63 @@ import org.scalajs.dom
 import scala.util.Try
 
 
+/**
+  * Generic number input with a "enabled" checkbox.
+  */
+
+object EnabledNumber {
+  case class State(checked: Boolean, value: Int)
+  case class Props(checked: Boolean, value: Int, label: String, updated: (Int, Boolean) ⇒ Callback)
+
+  class Backend($: BackendScope[Props, State]) {
+    def init: Callback =
+      $.props >>= { p ⇒ $.setState(State(p.checked, p.value)) }
+
+    def render(p: Props, s: State): VdomElement = {
+      <.div(^.className := "form-group",
+        <.input(^.`type` := "checkbox",
+          ^.checked := s.checked,
+          ^.onChange ==> { e: ReactEventFromInput ⇒
+            val checked = e.target.checked
+            $.setState(s.copy(checked = checked)) >>
+              p.updated(s.value, checked)
+          }),
+        " ",
+        <.label(p.label,
+          <.input(
+            ^.`type` := "number",
+            ^.className := "form-control",
+            (^.className := "edited").when(p.value != s.value),
+            ^.defaultValue := p.value.toString,
+            ^.onKeyDown ==> { e: ReactEventFromInput ⇒
+              e.nativeEvent match {
+                case key: dom.KeyboardEvent if key.key == "Enter" ⇒
+                  p.updated(s.value, s.checked)
+                case _ ⇒
+                  Callback {}
+              }
+            },
+            ^.onChange ==> { e: ReactEventFromInput ⇒
+              Try(e.target.value.toInt).toOption match {
+                case Some(value) ⇒
+                  $.modState(s ⇒ s.copy(value = value))
+                case None ⇒ Callback {}
+              }
+            })))
+    }
+  }
+
+  private val component = ScalaComponent.builder[Props]("LineInfo")
+    .initialState(State(true, 0))
+    .renderBackend[Backend]
+    .componentWillMount(_.backend.init)
+    .build
+
+  def apply(label: String = "", value: Int = 0, checked: Boolean = true, updated: (Int, Boolean) ⇒ Callback) =
+    component(Props(checked, value, label, updated))
+}
+
+
 /*
  * Various sub-components for displaying different portions of the
  * user interface:
@@ -84,38 +141,19 @@ object AreaInfo {
       }
 
     def render(values: Map[String, Int], p: Props): VdomElement = {
-//      println(s"render: values=$values")
       <.div(
         <.div(s"AREA: ${p.area}"), <.br,
         p.area.sources.toVdomArray(source ⇒
           <.div(^.className := "source",
             ^.key := source.id,
-            <.div(^.className := "form-group",
-              <.label(^.`for` := s"source-${source.id}-mw",
-                s"$source capacity (MW)"),
-              <.input(
-                ^.className := "form-control",
-                (^.className := "edited").when(source.unitCapacity != values(source.id)),
-                ^.`type` := "number",
-                ^.key := s"${source.id}",
-                ^.defaultValue := s"${values(source.id)}",
-                ^.id := s"source-${source.id}-mw",
-                ^.onKeyDown ==> { e: ReactEventFromInput ⇒
-                  e.nativeEvent match {
-                    case key: dom.KeyboardEvent if key.key == "Enter" ⇒
-                      p.areaUpdated(p.area.update(source.copy(capacity = values(source.id))))
-                    case _ ⇒
-                      Callback {}
-                  }
-                },
-                ^.onChange ==> { e: ReactEventFromInput ⇒
-                  Try(e.target.value.toInt).toOption match {
-                    case Some(value) ⇒
-                      $.setState(values.updated(source.id, value)) >>
-                        $.forceUpdate // uuugly
-                    case None ⇒ Callback {}
-                  }
-                })))))
+            EnabledNumber(s"${source.name.getOrElse(source.id)} (MW)",
+              source.unitCapacity,
+              !source.disabled,
+              { (value, enabled) ⇒
+                p.areaUpdated(p.area.update(source.copy(
+                  capacity = value,
+                  disabled = !enabled)))
+              }))))
     }
   }
 
@@ -140,34 +178,13 @@ object LineInfo {
     def render(p: Props): VdomElement = {
       <.div(
         <.div(s"LINE: ${p.line}"),
-        <.div(^.className := "form-group",
-          <.label(^.`for` := s"line-${p.line.id}-mw",
-            "Transmission capacity (MW)"),
-          <.input(
-            ^.className := "form-control",
-            (^.className := "edited").when(p.line.unitCapacity != inputValue),
-            ^.`type` := "number",
-            ^.key := s"${p.line.id}",
-            ^.defaultValue := s"${inputValue}",
-            ^.id := s"line-${p.line.id}-mw",
-            ^.onKeyDown ==> { e: ReactEventFromInput ⇒
-              e.nativeEvent match {
-                case key: dom.KeyboardEvent if key.key == "Enter" ⇒
-                  p.lineUpdated(p.line.copy(capacity = inputValue))
-                case _ ⇒
-                  Callback {}
-              }
-            },
-            ^.onChange ==> { e: ReactEventFromInput ⇒
-              Try(e.target.value.toInt).toOption match {
-                case Some(value) ⇒
-                  Callback {
-                    inputValue = value
-                  } >>
-                    $.forceUpdate // uuugly
-                case None ⇒ Callback {}
-              }
-            })))
+        EnabledNumber(
+          "Transmission capacity (MW)",
+          p.line.unitCapacity,
+          !p.line.disabled,
+          { (v, c) ⇒
+            p.lineUpdated(p.line.copy(disabled = !c, capacity = v)) }))
+
     }
   }
 

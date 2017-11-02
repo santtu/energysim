@@ -129,8 +129,9 @@ class Line(id: String,
            capacity: Int = unitCapacity,
            capacityType: CapacityType = capacityType,
            area1: Area = area1,
-           area2: Area = area2) =
-    Line(id, name, capacity, capacityType, area1, area2)
+           area2: Area = area2,
+           disabled: Boolean = disabled) =
+    Line(id, name, capacity, capacityType, area1, area2, disabled)
 }
 
 object Line {

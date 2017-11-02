@@ -127,7 +127,6 @@ object Main {
             println("world is different, updating state")
             $.props >>= {
               p ⇒
-                println("change in world, setting new page")
                 // when updating world, reset also collector statistics
                 $.modState(s ⇒ {
                   s.copy(world = newWorld,
@@ -135,8 +134,9 @@ object Main {
                 }) >>
                 // send world only if playing
                   Callback(if (oldState.playing) sendWorld(newWorld)) >>
-                  p.ctl.set(WithWorld(newWorld)) >>
-                  Callback.log(s"updated world to $newWorld via $fn")
+                  p.ctl.set(WithWorld(newWorld))
+//                >>
+//                  Callback.log(s"updated world to $newWorld via $fn")
             }
           } else
             Callback.log("no change in world")
@@ -325,10 +325,10 @@ object Main {
                   //                              dataFor(line).name))))
                   //                  )
                   case Some(Right(id)) ⇒
-                    LineInfo(LineInfo.Props(s.world.lineById(id).get,
+                    val line = s.world.lineById(id).get
+                    LineInfo(LineInfo.Props(line,
                       { newLine ⇒
-//                        println(s"modifying line $line (${line.unitCapacity} MW), new line $newLine (${newLine.unitCapacity} MW)")
-                        // todo: ctl set page if modified
+                        println(s"old line: ${line.unitCapacity} ${line.disabled} new ${newLine.unitCapacity} ${newLine.disabled}")
                         updateWorld(w ⇒ w.update(newLine))
                       }))
                   //                      s"LINE: ${dataFor(line).name}", <.br,
@@ -381,7 +381,7 @@ object Main {
       val worldRoute =
         dynamicRouteCT("#" / string(".+").caseClass[WithWorld]) ~>
           dynRenderR((w: WithWorld, ctl) => {
-            println(s"ROUTE #/<world>, ui = $ui")
+//            println(s"ROUTE #/<world>, ui = $ui")
             if (ui.isEmpty)
               ui = Some(UserInterfaceComponent(w.world, ctl))
             ui.get
