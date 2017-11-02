@@ -33,12 +33,12 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
       drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
   val constantType = CapacityType("constant", None, 0, ConstantCapacityModel)
-  def D(c: Int) = Drain(makeId, capacity = c, capacityType = constantType)
-  def Dn(id: String, c: Int) = Drain(id = id, capacity = c, capacityType = constantType)
-  def S(c: Int, ghg: Double = 0.0) = Source(makeId, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
-  def Sn(id: String, c: Int, ghg: Double = 0.0) = Source(id = id, capacity = c, capacityType = constantType, ghgPerCapacity = ghg)
-  def L(c: Int, a1: Area, a2: Area) = Line(makeId, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
-  def Ln(id: String, c: Int, a1: Area, a2: Area) = Line(id = id, capacity = c, capacityType = constantType, area1 = a1, area2 = a2)
+  def D(c: Int, disabled: Boolean = false) = Drain(makeId, capacity = c, capacityType = constantType, disabled = disabled)
+  def Dn(id: String, c: Int, disabled: Boolean = false) = Drain(id = id, capacity = c, capacityType = constantType, disabled = disabled)
+  def S(c: Int, ghg: Double = 0.0, disabled: Boolean = false) = Source(makeId, capacity = c, capacityType = constantType, ghgPerCapacity = ghg, disabled = disabled)
+  def Sn(id: String, c: Int, ghg: Double = 0.0, disabled: Boolean = false) = Source(id = id, capacity = c, capacityType = constantType, ghgPerCapacity = ghg, disabled = disabled)
+  def L(c: Int, a1: Area, a2: Area, disabled: Boolean = false) = Line(makeId, capacity = c, capacityType = constantType, area1 = a1, area2 = a2, disabled = disabled)
+  def Ln(id: String, c: Int, a1: Area, a2: Area, disabled: Boolean = false) = Line(id = id, capacity = c, capacityType = constantType, area1 = a1, area2 = a2, disabled = disabled)
 
   "Single area" should "use local sources only" in {
     val world = W(An("a", Dn("d", 100), Sn("s1", 90, 0.0), Sn("s2", 10, 1.0), Sn("s3", 1000, 10.0)))
@@ -184,5 +184,26 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     r.units("source-a-2") shouldBe UnitData(100, 0, 100)
     r.units("source-b-1") shouldBe UnitData(5, 0, 5)
     r.units("source-b-2") shouldBe UnitData(110, 90, 200)
+  }
+
+  "Disabled resources" should "have no effect in results" in {
+    val w1 = W(An("a", Dn("a1", 1000, disabled = true),
+      Sn("a2", 1000, disabled = true), Dn("a3", 10), Sn("a4", 10)))
+    val r1 = ScalaSimulation.simulate(w1)
+    r1.areas("a") shouldBe AreaData(0, 0, 10, -10, 0)
+    r1.units("a1") shouldBe UnitData(0, 0, 0)
+    r1.units("a2") shouldBe UnitData(0, 0, 0)
+    r1.units("a3") shouldBe UnitData(-10, 0, -10)
+    r1.units("a4") shouldBe UnitData(10, 0, 10)
+
+    val (a1, a2) = (An("a", Dn("a1", 1000)), An("b", Sn("b1", 1000)))
+    val l = Ln("l", 1000, a1, a2, disabled = true)
+    val w2 = W(a1, a2, l)
+    val r2 = ScalaSimulation.simulate(w2)
+    r2.areas("a") shouldBe AreaData(-1000, 0, 0, -1000, 0)
+    r2.areas("b") shouldBe AreaData(0, 1000, 1000, 0, 0)
+    r2.units("a1") shouldBe UnitData(-1000, 0, -1000)
+    r2.units("b1") shouldBe UnitData(0, 1000, 1000)
+    r2.units("l") shouldBe UnitData(0, 0, 0)
   }
 }

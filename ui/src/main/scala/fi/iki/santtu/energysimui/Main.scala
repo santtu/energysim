@@ -198,13 +198,13 @@ object Main {
               ^.className := "btn btn-primary",
               ^.onClick --> start,
               ^.disabled := s.running,
-              "PLAY").when(!s.playing),
+              "START").when(!s.playing),
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-primary",
               ^.onClick --> stop,
               ^.disabled := !s.running,
-              "STOP").when(s.playing),
+              "PAUSE").when(s.playing),
           ),
 
           // graphs come here
@@ -250,7 +250,7 @@ object Main {
 //                  ^.key := p._1,
 //                  ^.className := "col",
 //                  line(s.world.lineById(p._1).get, p._2)))),
-            <.div(^.className := "col-md-8 row",
+            <.div(^.className := "col-md-8",
               AreasMap(AreasMap.Props(
                 world = s.world,
                 areaData = s.world.areas.map(area ⇒ area → areas(area.id)).toMap,

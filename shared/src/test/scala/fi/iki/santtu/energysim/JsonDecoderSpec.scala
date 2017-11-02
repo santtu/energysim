@@ -6,8 +6,16 @@ import io.circe._
 import org.scalatest.{FlatSpec, Matchers}
 
 class JsonDecoderSpec extends FlatSpec with Matchers {
-  def dec(str: String) = JsonDecoder.decode(str)
-  def enc(w: World) = decode[Json](JsonDecoder.encode(w)).right.get
+  def dec(str: String): World = {
+    val w = JsonDecoder.decode(str)
+    // json should always be roundtrippable, verify that
+    JsonDecoder.decode(enc(w).toString()) shouldBe w
+    w
+  }
+
+  def enc(w: World) = {
+    decode[Json](JsonDecoder.encode(w)).right.get
+  }
 
   val complexData =
     """{
@@ -190,6 +198,53 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     world.types.size shouldBe 5
   }
 
+
+
+  it should "recodnize disabled units" in {
+    val data =
+      """{
+        |    "areas": {
+        |        "a": {
+        |            "drains": [
+        |                {
+        |                    "capacity": 1000,
+        |                    "disabled": true,
+        |                    "id": "a-2",
+        |                    "type": "constant"
+        |                }
+        |            ],
+        |            "sources": [
+        |                {
+        |                    "capacity": 1000,
+        |                    "disabled": true,
+        |                    "id": "a-1",
+        |                    "type": "constant"
+        |                }
+        |            ]
+        |        },
+        |        "b": {
+        |            "name": "b area"
+        |        }
+        |    },
+        |    "lines": [
+        |        {
+        |            "areas": [
+        |                "a",
+        |                "b"
+        |            ],
+        |            "capacity": 1000,
+        |            "disabled": true,
+        |            "id": "l-1"
+        |        }
+        |    ]
+        |}""".stripMargin
+
+    val w = dec(data)
+    w.units(0).disabled shouldBe true
+    w.units(1).disabled shouldBe true
+    w.lines(0).disabled shouldBe true
+  }
+
   "JSON world encoder" should "serialize an empty world" in {
     val w = World(name="a world")
     val j = enc(w)
@@ -276,7 +331,8 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
               "name" → Json.Null,
               "capacity" → Json.fromInt(100),
               "type" → Json.fromString("constant"),
-              "ghg" → Json.fromDoubleOrNull(1.0))))),
+              "ghg" → Json.fromDoubleOrNull(1.0),
+              "disabled" → Json.fromBoolean(false))))),
           "drains" → Json.fromValues(Seq()))))),
       "lines" → Json.fromValues(Seq()),
       "types" → Json.fromFields(Seq())))

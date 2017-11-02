@@ -10,6 +10,8 @@ class ConstantCapacityModel() extends CapacityModel {
 
   override def equals(obj: scala.Any): Boolean =
     obj.isInstanceOf[ConstantCapacityModel]
+
+  override def hashCode(): Int = 0
 }
 
 object ConstantCapacityModel extends ConstantCapacityModel {
@@ -31,6 +33,8 @@ class UniformCapacityModel(val low: Double = 0.0, val high: Double = 1.0) extend
       case _ ⇒ false
     }
 
+  override def hashCode(): Int = Seq(low, high).hashCode()
+
   override def toString: String = s"Uniform()"
 }
 
@@ -50,6 +54,8 @@ class BetaCapacityModel(val alpha: Double, val beta: Double) extends CapacityMod
       case _ ⇒ false
     }
 
+  override def hashCode(): Int = Seq(alpha, beta).hashCode()
+
   override def toString: String = s"Beta($alpha,$beta)"
 }
 
@@ -65,8 +71,6 @@ case class Step(probability: Double, low: Double, high: Double)
   * The data is a seq of steps where prob is individual,
   * unscaled probability, and low/high are the uniform distribution portions
   * (e.g. 0 to 1 values).
-  *
-  * @param _steps
   */
 
 class StepCapacityModel(val steps: Seq[Step]) extends CapacityModel {
@@ -101,7 +105,9 @@ class StepCapacityModel(val steps: Seq[Step]) extends CapacityModel {
       case _ ⇒ false
     }
 
-  override def toString: String = s"Step(steps)"
+  override def hashCode(): Int = steps.hashCode()
+
+  override def toString: String = s"Step($steps)"
 }
 
 object StepCapacityModel {
@@ -118,9 +124,13 @@ class ScaledCapacityModel(val mean: Double, _steps: Seq[Step]) extends StepCapac
       case _ ⇒ false
     }
 
+  override def hashCode(): Int = super.hashCode()
+
   override def capacity(amount: Int) = {
     Capacity((super.capacity(1).amount * (amount / mean)).toInt)
   }
+  def dummy = 1
+  override def toString: String = s"Scaled($mean,$steps)"
 }
 
 object ScaledCapacityModel {

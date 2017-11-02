@@ -4,8 +4,33 @@ import fi.iki.santtu.energysim.model._
 import org.scalatest.{FlatSpec, Matchers}
 
 class ModelSpec extends FlatSpec with Matchers {
-  "Equality tests" should "work for drains" in {
+  "Equality tests" should "work for types and models" in {
+    ConstantCapacityType shouldBe ConstantCapacityType
+    UniformCapacityType shouldBe UniformCapacityType
+
+    ConstantCapacityType shouldBe CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel)
+    ConstantCapacityType.hashCode() shouldBe CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel).hashCode()
+    UniformCapacityType shouldBe CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel)
+    UniformCapacityType.hashCode() shouldBe CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel).hashCode()
+
+    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("jest", None, 0, ConstantCapacityModel)
+    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", None, 0, UniformCapacityModel)
+    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", None, 1, ConstantCapacityModel)
+    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", Some("name"), 0, ConstantCapacityModel)
+
+    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) shouldBe CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2))))
+    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode() shouldBe CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode()
+    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 0, 2))))
+
+    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) shouldBe CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2))))
+    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode() shouldBe CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode()
+    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, ScaledCapacityModel(2.0, Seq(Step(1, 0, 1), Step(1, 1, 2))))
+    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 0, 2))))
+  }
+
+  it should "work for drains" in {
     Drain("id-1") shouldBe Drain("id-1")
+    Drain("id-1") should not be Drain("id-1", disabled = true)
     Drain("id-1", capacity = 1) should not be Drain("id-1")
     Drain("id-1", capacity = 1) shouldBe Drain("id-1", capacity = 1)
     Drain("id-1", name = Some("name")) should not be Drain("id-1")
@@ -19,6 +44,7 @@ class ModelSpec extends FlatSpec with Matchers {
 
   it should "work for sources" in {
     Source("id-1") shouldBe Source("id-1")
+    Source("id-1") should not be Source("id-1", disabled = true)
     Source("id-1", capacity = 1) should not be Source("id-1")
     Source("id-1", capacity = 1) shouldBe Source("id-1", capacity = 1)
     Source("id-1") should not be Source("id-1", ghgPerCapacity = 1.0)
@@ -47,6 +73,7 @@ class ModelSpec extends FlatSpec with Matchers {
   it should "work for lines" in {
     val (a1, a2, a3) = (Area("id-1"), Area("id-2"), Area("id-3"))
     Line("id-4", area1 = a1, area2 = a2) shouldBe Line("id-4", area1 = a1, area2 = a2)
+    Line("id-4", area1 = a1, area2 = a2) should not be Line("id-4", area1 = a1, area2 = a2, disabled = true)
     Line("id-4", area1 = a1, area2 = a2) shouldBe Line("id-4", area1 = a2, area2 = a1)
     Line("id-4", area1 = a1, area2 = a2) should not be Line("id-4", area1 = a1, area2 = a3)
     Line("id-4", area1 = a1, area2 = a2) should not be Line("id-4", capacity = 1, area1 = a1, area2 = a2)
@@ -69,5 +96,35 @@ class ModelSpec extends FlatSpec with Matchers {
     World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2)) shouldBe World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2))
     World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2)) shouldBe World(areas = Seq(a1, a2, a3), lines = Seq(l2, l1))
 
+    World(types = Seq(UniformCapacityType, ConstantCapacityType)) shouldBe World(types = Seq(UniformCapacityType, ConstantCapacityType))
+    World(types = Seq(UniformCapacityType, ConstantCapacityType)) shouldBe World(types = Seq(ConstantCapacityType, UniformCapacityType))
+    World(types = Seq(UniformCapacityType, ConstantCapacityType)) should not be World(types = Seq(UniformCapacityType))
+
+    // this is from a regression:
+    val w1 = World(name = "simple model",
+      areas = Seq(),
+      types = Seq(
+        CapacityType("b2", None, 100, UniformCapacityModel),
+        CapacityType("b3", None, 100, UniformCapacityModel),
+        CapacityType("a", None, 0, ConstantCapacityModel),
+        CapacityType("b1", None, 100, UniformCapacityModel),
+        CapacityType("c", None, 0, StepCapacityModel(Seq(
+          Step(1.0,0.0,0.0),
+          Step(1.0,1.0,1.0))))),
+      lines = Seq())
+    
+    val w2 = World(name = "simple model",
+      areas = Seq(),
+      types = Seq(
+        CapacityType("b1", None, 100, UniformCapacityModel),
+        CapacityType("b2", None, 100, UniformCapacityModel),
+        CapacityType("a", None, 0, ConstantCapacityModel),
+        CapacityType("b3", None, 100, UniformCapacityModel),
+        CapacityType("c", None, 0, StepCapacityModel(Seq(
+          Step(1.0,0.0,0.0),
+          Step(1.0,1.0,1.0))))),
+      lines = Seq())
+
+    w1 shouldBe w2
   }
 }

@@ -13,11 +13,12 @@ case class CapacityType(id: String, name: Option[String], size: Int, model: Capa
 object ConstantCapacityType extends CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel)
 object UniformCapacityType extends CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel)
 
-abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: CapacityType) {
+abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: CapacityType, val disabled: Boolean) {
   def capacity(): Capacity = {
-    capacityType.size match {
-      case 0 ⇒ capacityType.model.capacity(unitCapacity)
-      case size ⇒
+    (disabled, capacityType.size) match {
+      case (true, _) ⇒ Capacity(0)
+      case (false, 0) ⇒ capacityType.model.capacity(unitCapacity)
+      case (false, size) ⇒
         val result = (Seq.fill(unitCapacity / size) { capacityType.model.capacity(size) } ++
           (unitCapacity % size match {
             case 0 ⇒ Seq()
@@ -29,9 +30,11 @@ abstract class Unit(val id: String, val name: Option[String], val unitCapacity: 
         Capacity(result)
     }
   }
+
+  override def hashCode(): Int = Seq(id, name, unitCapacity, disabled).hashCode()
 }
 
-class Drain(id: String, name: Option[String], capacity: Int, capacityType: CapacityType) extends Unit(id, name, capacity, capacityType) {
+class Drain(id: String, name: Option[String], capacity: Int, capacityType: CapacityType, disabled: Boolean) extends Unit(id, name, capacity, capacityType, disabled) {
   override def toString: String = id
 
   override def equals(obj: scala.Any): Boolean =
@@ -40,7 +43,8 @@ class Drain(id: String, name: Option[String], capacity: Int, capacityType: Capac
         d.id == id &&
           d.name == name &&
           d.unitCapacity == unitCapacity &&
-          d.capacityType == capacityType
+          d.capacityType == capacityType &&
+          d.disabled == disabled
       case _ ⇒ false
     }
 }
@@ -49,15 +53,17 @@ object Drain {
   def apply(id: String,
             name: Option[String] = None,
             capacity: Int = 0,
-            capacityType: CapacityType = ConstantCapacityType): Drain =
-    new Drain(id, name, capacity, capacityType)
+            capacityType: CapacityType = ConstantCapacityType,
+            disabled: Boolean = false): Drain =
+    new Drain(id, name, capacity, capacityType, disabled)
 }
 
 class Source(id: String,
              name: Option[String],
              capacity: Int = 0,
              capacityType: CapacityType = ConstantCapacityType,
-             val ghgPerCapacity: Double = 0.0) extends Unit(id, name, capacity, capacityType) {
+             val ghgPerCapacity: Double = 0.0,
+             disabled: Boolean = false) extends Unit(id, name, capacity, capacityType, disabled) {
   override def equals(obj: scala.Any): Boolean =
     obj match {
       case o: Source ⇒
@@ -65,17 +71,22 @@ class Source(id: String,
           o.name == name &&
           o.unitCapacity == unitCapacity &&
           o.capacityType == capacityType &&
-          o.ghgPerCapacity == ghgPerCapacity
+          o.ghgPerCapacity == ghgPerCapacity &&
+          o.disabled == disabled
       case _ ⇒ false
     }
 
   def copy(id: String = id, name: Option[String] = name,
            capacity: Int = unitCapacity, capacityType: CapacityType = capacityType,
-           ghgPerCapacity: Double = ghgPerCapacity) =
-    Source(id, name, capacity, capacityType, ghgPerCapacity)
+           ghgPerCapacity: Double = ghgPerCapacity,
+           disabled: Boolean = disabled) =
+    Source(id, name, capacity, capacityType, ghgPerCapacity, disabled)
 
   override def toString: String = id
 //  override def toString: String = s"$name,$capacity,$capacityType,$ghgPerCapacity"
+
+  override def hashCode(): Int = super.hashCode() ^ ghgPerCapacity.hashCode()
+
 }
 
 object Source {
@@ -83,8 +94,9 @@ object Source {
             name: Option[String] = None,
             capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType,
-            ghgPerCapacity: Double = 0.0): Source =
-    new Source(id, name, capacity, capacityType, ghgPerCapacity)
+            ghgPerCapacity: Double = 0.0,
+            disabled: Boolean = false): Source =
+    new Source(id, name, capacity, capacityType, ghgPerCapacity, disabled)
 }
 
 class Line(id: String,
@@ -92,8 +104,9 @@ class Line(id: String,
            capacity: Int,
            capacityType: CapacityType,
            val area1: Area,
-           val area2: Area)
-  extends Unit(id, name, capacity, capacityType) {
+           val area2: Area,
+           disabled: Boolean)
+  extends Unit(id, name, capacity, capacityType, disabled) {
   override def toString: String = s"$area1<->$area2"
   val areas: (Area, Area) = (area1, area2)
   val areasSeq = Seq(area1, area2)
@@ -105,9 +118,12 @@ class Line(id: String,
         l.unitCapacity == unitCapacity &&
         l.capacityType == capacityType && (
         (l.area1 == area1 && l.area2 == area2) ||
-          (l.area1 == area2 && l.area2 == area1))
+          (l.area1 == area2 && l.area2 == area1)) &&
+        l.disabled == disabled
       case _ ⇒ false
     }
+
+  override def hashCode(): Int = super.hashCode() ^ Seq(area1, area2).hashCode()
 
   def copy(id: String = id, name: Option[String] = name,
            capacity: Int = unitCapacity,
@@ -122,8 +138,9 @@ object Line {
             name: Option[String] = None,
             capacity: Int = 0,
             capacityType: CapacityType = ConstantCapacityType,
-            area1: Area, area2: Area): Line =
-    new Line(id, name, capacity, capacityType, area1, area2)
+            area1: Area, area2: Area,
+            disabled: Boolean = false): Line =
+    new Line(id, name, capacity, capacityType, area1, area2, disabled)
 }
 
 case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: Seq[Source]) {
@@ -137,7 +154,6 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
       case old if old.id == source.id ⇒ source
       case old ⇒ old
     })
-
 }
 
 object Area {
@@ -199,6 +215,12 @@ case class World (name: String,
           w.lines.toSet == lines.toSet
       case _ ⇒ false
     }
+
+  override def hashCode(): Int =
+    name.hashCode() ^
+    types.toSet.hashCode() ^
+    areas.toSet.hashCode() ^
+    lines.toSet.hashCode()
 }
 
 object World {

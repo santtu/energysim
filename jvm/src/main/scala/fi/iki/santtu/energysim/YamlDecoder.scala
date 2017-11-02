@@ -67,7 +67,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
                         capacity: Option[Int],
                         `type`: Option[String],
                         ghg: Option[Double],
-                        areas: Option[Tuple2[String, String]])
+                        areas: Option[Tuple2[String, String]],
+                        disabled: Option[Boolean])
 
   case class AreaHolder(name: Option[String],
                         sources: Option[Seq[UnitHolder]],
@@ -82,7 +83,7 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
   }
 
   implicit val typeHolderFormat = yamlFormat4(TypeHolder)
-  implicit val unitHolderFormat = yamlFormat6(UnitHolder)
+  implicit val unitHolderFormat = yamlFormat7(UnitHolder)
   implicit val areaHolderFormat = yamlFormat3(AreaHolder)
   implicit val worldHolderFormat = yamlFormat4(WorldHolder)
 
@@ -125,7 +126,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
                 unitHolder.name,
                 unitHolder.capacity.getOrElse(0),
                 getType(unitHolder.`type`.getOrElse("constant")),
-                unitHolder.ghg.getOrElse(0.0))
+                unitHolder.ghg.getOrElse(0.0),
+                unitHolder.disabled.getOrElse(false))
           }
           val drains = areaHolder.drains.getOrElse(Seq.empty[UnitHolder]).map {
             unitHolder ⇒
@@ -133,7 +135,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
                 orId(unitHolder.id),
                 unitHolder.name,
                 unitHolder.capacity.getOrElse(0),
-                getType(unitHolder.`type`.getOrElse("constant")))
+                getType(unitHolder.`type`.getOrElse("constant")),
+                unitHolder.disabled.getOrElse(false))
           }
 
           id → Area(id, name = areaHolder.name, sources = sources, drains = drains)
@@ -150,7 +153,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
             lineHolder.name,
             lineHolder.capacity.getOrElse(0),
             getType(lineHolder.`type`.getOrElse("constant")),
-            area1, area2)
+            area1, area2,
+            lineHolder.disabled.getOrElse(false))
       }
 
       World(worldHolder.name.getOrElse("unnamed world"),

@@ -17,12 +17,14 @@ object JsonDecoder extends ModelDecoder {
   private case class DrainHolder(id: Option[String],
                                 name: Option[String],
                                 capacity: Option[Double],
-                                 `type`: Option[String])
+                                 `type`: Option[String],
+                                 disabled: Option[Boolean])
   private case class SourceHolder(id: Option[String],
                                   name: Option[String],
                                   capacity: Option[Double],
                                   `type`: Option[String],
-                                  ghg: Option[Double])
+                                  ghg: Option[Double],
+                                  disabled: Option[Boolean])
   private case class AreaHolder(name: Option[String],
                                 sources: Option[Seq[SourceHolder]],
                                 drains: Option[Seq[DrainHolder]])
@@ -30,7 +32,8 @@ object JsonDecoder extends ModelDecoder {
                                 name: Option[String],
                                 capacity: Option[Double],
                                 `type`: Option[String],
-                                areas: Tuple2[String, String])
+                                areas: Tuple2[String, String],
+                                disabled: Option[Boolean])
   private case class WorldHolder(name: Option[String],
                                  types: Option[Map[String, TypeHolder]],
                                  areas: Option[Map[String, AreaHolder]],
@@ -163,14 +166,16 @@ object JsonDecoder extends ModelDecoder {
         val drains = a.drains.getOrElse(Seq.empty[DrainHolder]).map(
           d ⇒ Drain(orId(d.id), d.name,
             d.capacity.getOrElse(0.0).toInt,
-            getType(d.`type`.getOrElse("constant"))))
+            getType(d.`type`.getOrElse("constant")),
+            d.disabled.getOrElse(false)))
 
         val sources = a.sources.getOrElse(Seq.empty[SourceHolder]).map(
           s ⇒ Source(orId(s.id),
             s.name,
             s.capacity.getOrElse(0.0).toInt,
             getType(s.`type`.getOrElse("constant")),
-            s.ghg.getOrElse(0)))
+            s.ghg.getOrElse(0),
+            s.disabled.getOrElse(false)))
 
         id → Area(id = id, name = a.name, sources = sources, drains = drains)
     }
@@ -181,7 +186,8 @@ object JsonDecoder extends ModelDecoder {
         l.name,
         l.capacity.getOrElse(0.0).toInt,
         getType(l.`type`.getOrElse("constant")),
-        areas(l.areas._1), areas(l.areas._2))
+        areas(l.areas._1), areas(l.areas._2),
+        l.disabled.getOrElse(false))
     }
 
     World(name = model.name.getOrElse("unnamed world"),
@@ -216,14 +222,16 @@ object JsonDecoder extends ModelDecoder {
               name = s.name,
               `type` = Some(s.capacityType.id),
               capacity = Some(s.unitCapacity),
-              ghg = Some(s.ghgPerCapacity))
+              ghg = Some(s.ghgPerCapacity),
+              disabled = Some(s.disabled))
           }),
           drains = Some(a.drains.map {
             d ⇒ DrainHolder(
               id = Some(d.id),
               name = d.name,
               `type` = Some(d.capacityType.id),
-              capacity = Some(d.unitCapacity))
+              capacity = Some(d.unitCapacity),
+              disabled = Some(d.disabled))
           })
         )
       }.toMap),
@@ -233,8 +241,8 @@ object JsonDecoder extends ModelDecoder {
           name = l.name,
           capacity = Some(l.unitCapacity),
           `type` = Some(l.capacityType.id),
-          areas = (l.area1.id, l.area2.id)
-        )
+          areas = (l.area1.id, l.area2.id),
+          disabled = Some(l.disabled))
       })
     ).asJson
   }

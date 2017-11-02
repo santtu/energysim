@@ -127,4 +127,33 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
     world.units.size shouldBe 0
     world.types.size shouldBe 5
   }
+
+  it should "recodnize disabled units" in {
+    val data =
+      """areas:
+        |  a:
+        |    sources:
+        |      - id: a-1
+        |        type: constant
+        |        capacity: 1000
+        |        disabled: true
+        |    drains:
+        |      - id: a-2
+        |        type: constant
+        |        capacity: 1000
+        |        disabled: true
+        |  b:
+        |     name: "b area"
+        |lines:
+        |  - id: l-1
+        |    areas: [a, b]
+        |    capacity: 1000
+        |    disabled: true
+      """.stripMargin
+    val w = decode(data)
+
+    w.units(0).disabled shouldBe true
+    w.units(1).disabled shouldBe true
+    w.lines(0).disabled shouldBe true
+  }
 }
