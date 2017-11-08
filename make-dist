@@ -1,0 +1,6 @@
+#!/bin/sh -e
+[ -d dist ] && rm -rf dist
+sbt clean worker/fastOptJS ui/fastOptJS::webpack
+mkdir -p dist
+cp -rL site dist
+exit 0
