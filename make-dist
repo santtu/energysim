@@ -1,6 +1,10 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 [ -d dist ] && rm -rf dist
 sbt clean worker/fastOptJS ui/fastOptJS::webpack
 mkdir -p dist
-cp -rL site dist
+cp -RL site/ dist
+if [ "$1" = "--s3" ]; then
+    aws s3 sync dist s3://ofairootohtaecashogh
+fi
+echo "Finished!"
 exit 0

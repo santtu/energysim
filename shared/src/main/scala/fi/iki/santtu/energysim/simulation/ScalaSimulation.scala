@@ -181,7 +181,7 @@ object ScalaSimulation extends Simulation {
             scribe.debug(s"transfer=$transfer: $t demand=$demand $f->$t excess=$excess")
 
             areas(t) = td.copy(
-              // part satifsying local demand
+              // part satisfying local demand
               total = td.total + demand,
 
               // this wasn't needed locally, so it is now counted
@@ -194,21 +194,33 @@ object ScalaSimulation extends Simulation {
           }
 
           {
-            // fd.excess .. can be 0 or negative temporarily, so
-            // we need to consider the case where some power
-            // is "loaned" from transfer
-            val unmet = min(0, fd.excess) - transfer
+            // this is the `from` part, we know we have transferred
+            // `transfer` amount of power from here, so ..  transfer
+            // (which can be temporarily negative) .. so split into
+            // part that we can produce locally, and part that still
+            // needs to be balanced later on transfer through total
+            // (note that we should never hae a negative excess value,
+            // so anything "missing" must be temporarily be marked as
+            // out-of-power total in this area to get balances work
+            // out correctly)
 
-            scribe.debug(s"transfer=$transfer: $f excess=${fd.excess} unmnet=$unmet")
+            val met = min(fd.excess, transfer)
+            val unmet = transfer - met
+
+            scribe.debug(s"transfer=$transfer: $f excess=${fd.excess} met=$met unmet=$unmet")
+            require(unmet >= 0)
+            require(met >= 0)
 
             areas(f) = fd.copy(
+              total = fd.total - unmet,
+
               // regardless where the power comes, it must be counted
               // via excess (which can turn negative temporarily)
-              excess = fd.excess - transfer,
+              excess = fd.excess - met,
 
               // anything not supplied locally needs to be loaned
               // from transfers
-              transfer =  fd.transfer + unmet
+              transfer =  fd.transfer - transfer
             )
           }
 

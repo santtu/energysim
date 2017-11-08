@@ -27,11 +27,11 @@ object Main {
   case class AreaData(name: String)
 
   val areas: Map[String, AreaData] = Map(
-    "north" → AreaData("Pohjoinen"),
-    "south" → AreaData("Eteläinen"),
-    "east" → AreaData("Itäinen"),
-    "west" → AreaData("Läntinen"),
-    "central" → AreaData("Keskinen"),
+    "north" → AreaData("North"),
+    "south" → AreaData("South"),
+    "east" → AreaData("East"),
+    "west" → AreaData("West"),
+    "central" → AreaData("Central"),
   )
 
   /**
@@ -41,12 +41,12 @@ object Main {
   case class LineData(name: String)
 
   val lines: Map[String, LineData] = Map(
-    "west-south" → LineData("L-E"),
-    "west-central" → LineData("L-K"),
-    "south-east" → LineData("E-I"),
-    "south-central" → LineData("E-K"),
-    "east-central" → LineData("I-K"),
-    "central-north" → LineData("K-P")
+    "west-south" → LineData("West-South"),
+    "west-central" → LineData("West-Central"),
+    "south-east" → LineData("South-East"),
+    "south-central" → LineData("South-Central"),
+    "east-central" → LineData("East-Central"),
+    "central-north" → LineData("Central-North")
   )
 
   case class State(world: World,
