@@ -18,6 +18,11 @@ import scala.scalajs.js.annotation._
 
 @JSExportTopLevel("EnergySim")
 object Main {
+  /**
+    * Scale factor to convert kg/MWh -> kg -> t/a values for display.
+    */
+  val ghgScaleFactor = 1e-3 * 365 * 24
+  
   val defaultWorld = Model.from(Data.finland, JsonDecoder)
 
   /**
@@ -216,7 +221,8 @@ object Main {
             <.br,
             <.small(
               f"Loss: ${s.collector.global.loss.percentage}%.1f%%", <.br,
-              f"Generation: ${s.collector.global.generation.mean}%.0f±${s.collector.global.generation.dev}%.0f MW", <.br
+              f"Generation: ${s.collector.global.generation.mean}%.0f±${s.collector.global.generation.dev}%.0f MW", <.br,
+              f"GHG: ${s.collector.global.ghg.mean * ghgScaleFactor}%.0f±${s.collector.global.ghg.dev * ghgScaleFactor}%.0f t/a", <.br
             ).when(s.collector.rounds > 0)),
 
           // summary information

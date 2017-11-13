@@ -8,7 +8,11 @@ import scribe.Logger
 
 object Command {
   case class Config(file: String = "world.yml", rounds: Int = 1,
-                    verbose: Boolean = false)
+                    verbose: Boolean = false,
+                    printAreas: Boolean = true,
+                    printGlobal: Boolean = true,
+                    printLines: Boolean = true,
+                    printTypes: Boolean = true)
 
   val parser = new scopt.OptionParser[Config]("energysim") {
     head("energysim", getClass.getPackage.getImplementationVersion)
@@ -21,6 +25,18 @@ object Command {
     opt[Unit]('v', "verbose")
       .action((_, config) ⇒ config.copy(verbose = true))
       .text("increase verbosity")
+
+    opt[Unit]("no-areas")
+      .action((_, config) ⇒ config.copy(printAreas = false))
+
+    opt[Unit]("no-lines")
+      .action((_, config) ⇒ config.copy(printLines = false))
+
+    opt[Unit]("no-types")
+      .action((_, config) ⇒ config.copy(printTypes = false))
+
+    opt[Unit]("no-global")
+      .action((_, config) ⇒ config.copy(printGlobal = false))
 
     arg[String]("FILE")
       .optional()
@@ -76,7 +92,16 @@ object Command {
 //    println(s"result: $result")
 //    println(s"collector: $collector")
 
-    println(SimulationCollector.summary(collector))
+    if (config.printGlobal)
+      println(SimulationCollector.globalSummary(collector).mkString("\n"))
 
+    if (config.printTypes)
+      println(SimulationCollector.typesSummary(collector).mkString("\n"))
+
+    if (config.printAreas)
+      println(SimulationCollector.areasSummary(collector).mkString("\n"))
+
+    if (config.printLines)
+      println(SimulationCollector.linesSummary(collector).mkString("\n"))
   }
 }

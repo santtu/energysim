@@ -52,8 +52,9 @@ object ScalaSimulation extends Simulation {
     assert(areas.values.map(_.total).sum == units.values.map(_.used).sum)
 
     // go through ghg levels, adding capacity at each step
-    world.areas.flatMap(_.sources).map(_.ghgPerCapacity).distinct.foreach {
+    val ghgOrder = world.areas.flatMap(_.sources).map(_.ghgPerCapacity).distinct.sorted
 
+    ghgOrder.foreach {
       // see if there is any need to actually add sources
       case ghg if areas.values.forall(_.total >= 0) ⇒
         scribe.debug(s"GHG $ghg not needed, all areas have power")

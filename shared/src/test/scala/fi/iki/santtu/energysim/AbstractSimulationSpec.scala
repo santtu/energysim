@@ -230,4 +230,42 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     // whereas b has only non-aggregated
     w.areaById("b").get.sources.map { s ⇒ r.units(s.id).capacity }.toSet.size should be > 1
   }
+
+  "Different sources" should "be prioritised by lowest GHG emitter" in {
+    def t(drain: Int, used: Seq[String]) = {
+      // sources by ghg order: a1 (0), b1 (1), a2 (2), b2 (3), b3 (100)
+      val (a, b) = (
+        An("a",
+          D(drain),
+          Sn("a1", 100, 0),
+          Sn("a2", 500, 2)),
+        An("b",
+          Sn("b1", 100, 1),
+          Sn("b2", 300, 3),
+          Sn("b3", 1000, 100)))
+      val l = Ln("l", 10000, a, b)
+      val w = W(a, b, l)
+      val r = ScalaSimulation.simulate(w)
+
+      val actuallyUsed = w.units.flatMap {
+        case s: Source if r.units(s.id).used > 0 ⇒ Seq(s.id)
+        case _ ⇒ Seq()
+      }
+
+      used.toSet shouldBe actuallyUsed.toSet
+    }
+
+    t(0, Seq())
+    t(90, Seq("a1"))
+    t(100, Seq("a1"))
+    t(150, Seq("a1", "b1"))
+    t(200, Seq("a1", "b1"))
+    t(250, Seq("a1", "b1", "a2"))
+    t(700, Seq("a1", "b1", "a2"))
+    t(750, Seq("a1", "b1", "a2", "b2"))
+    t(1000, Seq("a1", "b1", "a2", "b2"))
+    t(1050, Seq("a1", "b1", "a2", "b2", "b3"))
+    t(2000, Seq("a1", "b1", "a2", "b2", "b3"))
+    t(2050, Seq("a1", "b1", "a2", "b2", "b3")) // drain over all capacity
+  }
 }

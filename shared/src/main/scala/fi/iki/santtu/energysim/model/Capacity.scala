@@ -1,9 +1,9 @@
 package fi.iki.santtu.energysim.model
 
-class ConstantDistributionModel() extends DistributionModel {
-  override def sampleScaleFactor() = 1.0
+class ConstantDistributionModel(scale: Double = 1.0) extends DistributionModel {
+  override def sampleScaleFactor() = scale
 
-  override def toString: String = s"Constant()"
+  override def toString: String = s"Constant($scale)"
 
   override def equals(obj: scala.Any): Boolean =
     obj.isInstanceOf[ConstantDistributionModel]
@@ -11,8 +11,9 @@ class ConstantDistributionModel() extends DistributionModel {
   override def hashCode(): Int = 0
 }
 
-object ConstantDistributionModel extends ConstantDistributionModel {
+object ConstantDistributionModel extends ConstantDistributionModel(1.0) {
   def apply() = this
+  def apply(scale: Double) = new ConstantDistributionModel(scale)
 }
 
 class UniformDistributionModel(val low: Double = 0.0, val high: Double = 1.0) extends DistributionModel {

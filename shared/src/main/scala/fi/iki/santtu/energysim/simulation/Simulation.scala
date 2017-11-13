@@ -7,6 +7,9 @@ case class UnitData(used: Int, excess: Int, capacity: Int) {
     s"$used + $excess (=${used + excess}) != $capacity")
 
   def toSeq: Seq[Int] = Seq(used, excess, capacity)
+
+  def +(o: UnitData) =
+    UnitData(used + o.used, excess + o.excess, capacity + o.capacity)
 }
 
 case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transfer: Int) {

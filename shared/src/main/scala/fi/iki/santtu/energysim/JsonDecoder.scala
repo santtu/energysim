@@ -107,9 +107,14 @@ object JsonDecoder extends ModelDecoder {
               case (_, Right(Seq(l, h))) ⇒ UniformDistributionModel(l, h)
             }
         }
-        UniformDistributionModel
       case "constant" ⇒
-        ConstantDistributionModel
+        data match {
+          case None ⇒ ConstantDistributionModel
+          case Some(json) ⇒
+            json.as[Double] match {
+              case Right(c) ⇒ ConstantDistributionModel(c)
+            }
+        }
       case "step" ⇒
         data.get.as[Seq[Seq[Double]]] match {
           case Right(ary) ⇒

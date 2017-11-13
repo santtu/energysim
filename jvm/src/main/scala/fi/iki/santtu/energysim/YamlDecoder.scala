@@ -16,9 +16,11 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
           case Some(YamlNumber(v)) ⇒ UniformDistributionModel(v.toDouble, 1.0)
           case Some(YamlArray(Seq(YamlNumber(l), YamlNumber(h)))) ⇒ UniformDistributionModel(l.toDouble, h.toDouble)
         }
-        UniformDistributionModel
       case "constant" ⇒
-        ConstantDistributionModel
+        data match {
+          case None => ConstantDistributionModel
+          case Some(YamlNumber(v)) ⇒ ConstantDistributionModel(v.toDouble)
+        }
       case "step" ⇒
         data match {
           case Some(YamlArray(ary)) ⇒
