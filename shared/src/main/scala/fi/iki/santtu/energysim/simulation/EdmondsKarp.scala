@@ -39,7 +39,8 @@ class EdmondsKarp(initialGraph: Graph) {
 
     val lb = graph(from)
     scribe.trace(s"size now ${graph.size} lb=$lb")
-    require(!lb.exists(_ match { case (t, _) ⇒ t == to }))
+    require(!lb.exists(_ match { case (t, _) ⇒ t == to }),
+      s"a connection from $from to $to already exists")
     lb.append((to, capacity))
   }
 

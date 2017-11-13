@@ -62,7 +62,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
 
   case class AreaHolder(name: Option[String],
                         sources: Option[Seq[UnitHolder]],
-                        drains: Option[Seq[UnitHolder]])
+                        drains: Option[Seq[UnitHolder]],
+                        external: Option[Boolean])
 
   case class WorldHolder(name: Option[String],
                          types: Option[Map[String, TypeHolder]],
@@ -74,7 +75,7 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
 
   implicit val typeHolderFormat = yamlFormat4(TypeHolder)
   implicit val unitHolderFormat = yamlFormat7(UnitHolder)
-  implicit val areaHolderFormat = yamlFormat3(AreaHolder)
+  implicit val areaHolderFormat = yamlFormat4(AreaHolder)
   implicit val worldHolderFormat = yamlFormat4(WorldHolder)
 
 
@@ -132,7 +133,11 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
                 unitHolder.disabled.getOrElse(false))
           }
 
-          id → Area(id, name = areaHolder.name, sources = sources, drains = drains)
+          id → Area(id,
+            name = areaHolder.name,
+            sources = sources,
+            drains = drains,
+            external = areaHolder.external.getOrElse(false))
       }
 
       // lines needs areas, so these come last

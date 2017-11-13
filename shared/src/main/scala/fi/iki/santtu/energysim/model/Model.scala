@@ -166,7 +166,7 @@ object Line {
     new Line(id, name, capacity, capacityType, area1, area2, disabled)
 }
 
-case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: Seq[Source]) {
+case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: Seq[Source], external: Boolean) {
   override def toString: String = id
 
   def drainByName(name: String): Option[Drain] = drains.find(_.name == name)
@@ -183,8 +183,9 @@ object Area {
   def apply(id: String,
             name: Option[String] = None,
             drains: Seq[Drain] = Seq.empty[Drain],
-            sources: Seq[Source] = Seq.empty[Source]) =
-    new Area(id, name, drains, sources)
+            sources: Seq[Source] = Seq.empty[Source],
+            external: Boolean = false) =
+    new Area(id, name, drains, sources, external)
 }
 
 case class World (name: String,

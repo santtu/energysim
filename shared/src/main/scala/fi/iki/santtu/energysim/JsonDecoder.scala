@@ -27,7 +27,8 @@ object JsonDecoder extends ModelDecoder {
                                   disabled: Option[Boolean])
   private case class AreaHolder(name: Option[String],
                                 sources: Option[Seq[SourceHolder]],
-                                drains: Option[Seq[DrainHolder]])
+                                drains: Option[Seq[DrainHolder]],
+                                external: Option[Boolean])
   private case class LineHolder(id: Option[String],
                                 name: Option[String],
                                 capacity: Option[Double],
@@ -170,7 +171,11 @@ object JsonDecoder extends ModelDecoder {
             s.ghg.getOrElse(0),
             s.disabled.getOrElse(false)))
 
-        id → Area(id = id, name = a.name, sources = sources, drains = drains)
+        id → Area(id = id,
+          name = a.name,
+          sources = sources,
+          drains = drains,
+          external = a.external.getOrElse(false))
     }
 
     val lines = model.lines.getOrElse(Seq.empty[LineHolder]).map {
@@ -225,7 +230,8 @@ object JsonDecoder extends ModelDecoder {
               `type` = Some(d.capacityType.id),
               capacity = Some(d.unitCapacity),
               disabled = Some(d.disabled))
-          })
+          }),
+          external = Some(a.external)
         )
       }.toMap),
       lines = Some(w.lines.map { l ⇒

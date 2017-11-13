@@ -146,6 +146,7 @@ class DrainStatistics extends UnitStatistics {
 class SourceStatistics extends UnitStatistics {
   val ghg = MeanVariance()
   val atCapacity = Portion()
+  val proportion = MeanVariance()
 
   override def +=(sd: UnitData): Unit = {
     super.+=(sd)
@@ -207,6 +208,7 @@ class SimulationCollector(private val world: World) {
   val types: Map[String, TypeStatistics] =
     world.types.map { _.id → TypeStatistics() }.toMap
   val global = AreaStatistics()
+  val external = AreaStatistics()
 
   // some fields that are used only internally and not public
   private val sourcesByAreaId = world.areas.map(a ⇒ a.id → a.sources).toMap
@@ -222,45 +224,71 @@ class SimulationCollector(private val world: World) {
   def +=(r: Result): Unit = {
     r.rounds foreach {
       round ⇒
+        // calculate total power generation and drain, this is used for
+        // calculating proportions of units, types and areas
+        val totalGenerated = world.areas.filter(!_.external).flatMap(_.sources).map {
+          s ⇒ round.units(s.id).used
+        }.sum
+
         // to have proper round-to-round global statistics, we need
         // to add all areas together and add them to the global
         // statistics in one part
-        var total = 0
-        var excess = 0
-        var transfer = 0
-        var generation = 0
-        var drain = 0
-        var ghg = 0.0
+        var globalArea = AreaData(0, 0, 0, 0, 0)
+        var externalArea = AreaData(0, 0, 0, 0, 0)
+//        var total = 0
+//        var excess = 0
+//        var transfer = 0
+//        var generation = 0
+//        var drain = 0
+        var globalGhg = 0.0
+        var externalGhg = 0.0
 
         round.areas.foreach {
           case (a, ad) ⇒
+            val external = world.areaById(a).get.external
+
             areas(a) += ad
-            total += ad.total
-            excess += ad.excess
-            generation += ad.generation
-            drain += ad.drain
-            transfer += ad.transfer
 
             val ag = sourcesByAreaId(a).map(s ⇒ round.units(s.id).used * s.ghgPerCapacity).sum
             areas(a).ghg += ag
-            ghg += ag
+
+            if (external) {
+              externalArea += ad
+              externalGhg += ag
+            } else {
+              globalArea += ad
+              globalGhg += ag
+            }
         }
 
         unitsByType.foreach {
           case (t, units) ⇒
-            val ud = units.foldLeft(UnitData(0, 0, 0)) {
-              case (ud, u) ⇒ ud + round.units(u)
+            val (ud, ghg) = units.foldLeft((UnitData(0, 0, 0), 0.0)) {
+              case ((ud, ghg), u) ⇒ (
+                ud + round.units(u),
+                sourcesById.get(u) match {
+                  case Some(s) ⇒ ghg + round.units(u).used * s.ghgPerCapacity
+                  case None ⇒ ghg
+                })
             }
             types(t) += ud
+            types(t).ghg += ghg
+            types(t).proportion += ud.used.toDouble / totalGenerated
         }
 
-        global += AreaData(total, excess, generation, drain, transfer)
-        global.ghg += ghg
+        global += globalArea
+        global.ghg += globalGhg
+
+        external += externalArea
+        external.ghg += externalGhg
 
         round.units.foreach {
           case (s, sd) if sources.contains(s) ⇒
             sources(s) += sd
             sources(s).ghg += sd.used * sourcesById(s).ghgPerCapacity
+            sources(s).proportion += sd.used.toDouble / totalGenerated
+
+//            println(s"${sources(s).proportion * 100} ${sd.used} / $totalGenerated")
 //            typesByUnit(s) += sd
 //            typesByUnit(s).ghg += sd.used * sourcesById(s).ghgPerCapacity
           case (d, dd) if drains.contains(d) ⇒
@@ -307,6 +335,7 @@ object SimulationCollector {
     Seq(s"  > $id",
       f"    maxed     ${s.atCapacity.percentage}%.1f%%",
       f"    used      ${s.used}%s MW",
+      f"    of total  ${s.proportion * 100}%s%%",
       f"    excess    ${s.excess}%s MW",
       f"    capacity  ${s.capacity}%s MW",
       f"    ghg       ${s.ghg / 1e3 * 365 * 24}%s t/a")

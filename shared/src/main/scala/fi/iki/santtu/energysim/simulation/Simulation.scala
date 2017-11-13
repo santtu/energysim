@@ -22,6 +22,9 @@ case class AreaData(total: Int, excess: Int, generation: Int, drain: Int, transf
   //      require(excess >= 0)   // this can be <0 when transfers are pending
 
   def toSeq: Seq[Int] = Seq(total, excess, generation, drain, transfer)
+
+  def +(o: AreaData) =
+    AreaData(total + o.total, excess + o.excess, generation + o.generation, drain + o.drain, transfer + o.transfer)
 }
 
 case class Round(areas: Map[String, AreaData],
