@@ -5,23 +5,20 @@ import net.jcazevedo.moultingyaml._
 
 
 trait WorldYamlProtocol extends DefaultYamlProtocol {
-  case class ScaledHolder(mean: Double, bins: Seq[Seq[Double]])
-  implicit val scaledHolderFormat = yamlFormat2(ScaledHolder)
-
-  def capacityModel(model: String, data: Option[YamlValue]): CapacityModel =
+  def capacityModel(model: String, data: Option[YamlValue]): DistributionModel =
     model match {
       case "uniform" ⇒
         // uniform capacity model is assumed to be [0, 1] relative
         // of maximum value, but it can be given other values, either
         // LOW or [LOW, HIGH]
         data match {
-          case None ⇒ UniformCapacityModel
-          case Some(YamlNumber(v)) ⇒ UniformCapacityModel(v.toDouble, 1.0)
-          case Some(YamlArray(Seq(YamlNumber(l), YamlNumber(h)))) ⇒ UniformCapacityModel(l.toDouble, h.toDouble)
+          case None ⇒ UniformDistributionModel
+          case Some(YamlNumber(v)) ⇒ UniformDistributionModel(v.toDouble, 1.0)
+          case Some(YamlArray(Seq(YamlNumber(l), YamlNumber(h)))) ⇒ UniformDistributionModel(l.toDouble, h.toDouble)
         }
-        UniformCapacityModel
+        UniformDistributionModel
       case "constant" ⇒
-        ConstantCapacityModel
+        ConstantDistributionModel
       case "step" ⇒
         data match {
           case Some(YamlArray(ary)) ⇒
@@ -34,21 +31,12 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
               case YamlArray(Seq(YamlNumber(p), YamlNumber(l), YamlNumber(h))) ⇒
                 Step(p.toDouble, l.toDouble, h.toDouble)
             }
-            StepCapacityModel(steps)
-        }
-      case "scaled" ⇒
-        data.get.asYamlObject.convertTo[ScaledHolder] match {
-          case ScaledHolder(mean, bins) ⇒
-            val steps = bins.map {
-              case Seq(p, c) ⇒ Step(p, c, c)
-              case Seq(p, l, h) ⇒ Step(p, l, h)
-            }
-            ScaledCapacityModel(mean, steps)
+            StepDistributionModel(steps)
         }
       case "beta" ⇒
         data match {
           case Some(YamlArray(Seq(YamlNumber(alpha), YamlNumber(beta)))) ⇒
-            BetaCapacityModel(alpha.toDouble, beta.toDouble)
+            BetaDistributionModel(alpha.toDouble, beta.toDouble)
         }
       case other ⇒
         throw new IllegalArgumentException(s"capacity model type $other is not known")
@@ -56,7 +44,7 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
     }
 
   case class TypeHolder(name: Option[String],
-                        size: Option[Int],
+                        aggregated: Option[Boolean],
                         model: String,
                         data: Option[YamlValue])
 
@@ -105,13 +93,16 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
       // later too)
       val types = worldHolder.types.getOrElse(Map.empty[String, TypeHolder]).map {
         case (id, typeHolder) ⇒
-          id → CapacityType(id, typeHolder.name, typeHolder.size.getOrElse(0), capacityModel(typeHolder.model, typeHolder.data))
+          id → DistributionType(id,
+            typeHolder.name,
+            typeHolder.aggregated.getOrElse(false),
+            capacityModel(typeHolder.model, typeHolder.data))
       }
 
       def getType(name: String) =
         name match {
-          case "constant" ⇒ ConstantCapacityType
-          case "uniform" ⇒ UniformCapacityType
+          case "constant" ⇒ ConstantDistributionType
+          case "uniform" ⇒ UniformDistributionType
           case other ⇒ types(other)
         }
 

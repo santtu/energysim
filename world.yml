@@ -1,16 +1,18 @@
 name: simple model
 types:
   hydro:
-    size: 25
+    aggregate: true
     model: step
     data:
       - [0.1, 0, 0]
       - [0.9, 1, 1]
   city:
-    size: 0
+    aggregate: false
     model: beta
     data: [3, 5]
-  # there are a few predefined types: constant, uniform
+  # there are a few predefined types: constant and uniform is
+  # non-aggregate by default, if you really need aggregated U[0,1]
+  # then roll it up yourself, there is "uniform" model available too)
 areas:
   north:
     sources:

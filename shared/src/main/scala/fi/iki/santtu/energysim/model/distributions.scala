@@ -11,6 +11,8 @@ import scala.util.Random
 
 object distributions {
   def uniform() = Random.nextDouble()
+  def uniform(low: Double, high: Double) =
+    (Random.nextDouble() * (high - low) + low)
   def gaussian() = Random.nextGaussian()
 
   // the code below is adapted from breeze.stats.distributions.Beta, licensed

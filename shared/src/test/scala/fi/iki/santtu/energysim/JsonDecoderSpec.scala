@@ -262,11 +262,9 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
   it should "serialize types" in {
     val w = World(name="a world",
       types = Seq(
-        CapacityType("t-const", None, 0, ConstantCapacityModel),
-        CapacityType("t-uni", None, 100, UniformCapacityModel),
-        CapacityType("t-step", None, 0, StepCapacityModel(Seq(Step(1, 0, .5), Step(2, .5, 1)))),
-        CapacityType("t-scale", None, 0, ScaledCapacityModel(10.0,
-          Seq(Step(1.0, 0.0, 10.0), Step(1.0, 20.0, 20.0))))
+        DistributionType("t-const", None, false, ConstantDistributionModel),
+        DistributionType("t-uni", None, false, UniformDistributionModel),
+        DistributionType("t-step", None, true, StepDistributionModel(Seq(Step(1, 0, .5), Step(2, .5, 1)))),
       ))
     val j = enc(w)
 
@@ -277,32 +275,22 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
       "types" → Json.fromFields(Seq(
         "t-const" → Json.fromFields(Seq(
           "name" → Json.Null,
-          "size" → Json.fromInt(0),
+          "aggregated" → Json.fromBoolean(false),
           "model" → Json.fromString("constant"),
           "data" → Json.Null)) ,
         "t-uni" → Json.fromFields(Seq(
           "name" → Json.Null,
-          "size" → Json.fromInt(100),
+          "aggregated" → Json.fromBoolean(false),
           "model" → Json.fromString("uniform"),
           "data" → d(0.0, 1.0))),
         "t-step" → Json.fromFields(Seq(
           "name" → Json.Null,
-          "size" → Json.fromInt(0),
+          "aggregated" → Json.fromBoolean(true),
           "model" → Json.fromString("step"),
           "data" → Json.fromValues(Seq(
             d(1.0, 0.0, 0.5),
             d(2.0, 0.5, 1.0))))),
-        "t-scale" → Json.fromFields(Seq(
-          "name" → Json.Null,
-          "size" → Json.fromInt(0),
-          "model" → Json.fromString("scaled"),
-          "data" → Json.fromFields(Seq(
-            "mean" → Json.fromDoubleOrNull(10.0),
-            "bins" → Json.fromValues(Seq(
-              d(1.0, 0.0, 10.0),
-              d(1.0, 20.0, 20.0)))))))
-      ))
-    ))
+      ))))
 
     // of course it should be roundtrippable
     dec(j.toString()) shouldBe w
@@ -312,7 +300,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val w = World(name="a world",
       areas = Seq(
         Area("a"),
-        Area("b", sources = Seq(Source("s", None, 100, ConstantCapacityType, 1.0))))
+        Area("b", sources = Seq(Source("s", None, 100, ConstantDistributionType, 1.0))))
       )
     val j = enc(w)
 

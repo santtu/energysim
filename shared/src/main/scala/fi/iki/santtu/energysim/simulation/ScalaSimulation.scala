@@ -16,11 +16,22 @@ object ScalaSimulation extends Simulation {
     * @return
     */
   def simulate(world: World): Round = {
+    // each capacity type gets makeCapacity called only once, then
+    // the individual capacities can be used multiple times to
+    // get the actual unit value -- this is because makeCapacity
+    // generates a (potentially) *stateful* capacity, whileas
+    // calls to makeCapacity are guaranteed to be for independent
+    // runs.
+    val typeCapacity = mutable.Map.empty[DistributionType, Capacity]
+    def unitCapacity(unit: Unit) =
+      typeCapacity.getOrElseUpdate(unit.capacityType, unit.capacityType.makeCapacity)
+
     val units = mutable.Map(world.units.map {
-      u ⇒
-        (u, u.capacity().amount) match {
+      case u if u.disabled ⇒ u → UnitData(0, 0, 0)
+      case u ⇒
+        (u, unitCapacity(u).amount(u.unitCapacity)) match {
           case (d: Drain, c) ⇒ u → UnitData(-c, 0, -c)
-          case (o, c) ⇒ u → UnitData(0, c, c)
+          case (o, c) ⇒ u → UnitData(0, c, c)  // line or source
         }
     }:_*)
     val areas = mutable.Map(world.areas.map {

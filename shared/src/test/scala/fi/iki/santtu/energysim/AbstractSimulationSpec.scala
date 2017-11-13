@@ -1,6 +1,6 @@
 package fi.iki.santtu.energysim
 
-import fi.iki.santtu.energysim.model.{Area, CapacityType, ConstantCapacityModel, Drain, Line, Source, Unit, World}
+import fi.iki.santtu.energysim.model.{Area, ConstantDistributionModel, ConstantDistributionModel$, DistributionType, Drain, Line, Source, UniformDistributionModel, UniformDistributionType, Unit, World}
 import fi.iki.santtu.energysim.simulation.{AreaData, ScalaSimulation, Simulation, UnitData}
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -24,7 +24,8 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
 
   def W(stuff: Any*) =
     World(areas = stuff.collect { case a: Area ⇒ a },
-      lines = stuff.collect { case l: Line ⇒ l })
+      lines = stuff.collect { case l: Line ⇒ l },
+      types = stuff.collect { case t: DistributionType ⇒ t })
   def A(units: Unit*) =
     Area(makeId, drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
@@ -32,13 +33,13 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     Area(id = id,
       drains = units.collect { case d: Drain ⇒ d },
       sources = units.collect { case s: Source ⇒ s})
-  val constantType = CapacityType("constant", None, 0, ConstantCapacityModel)
-  def D(c: Int, disabled: Boolean = false) = Drain(makeId, capacity = c, capacityType = constantType, disabled = disabled)
-  def Dn(id: String, c: Int, disabled: Boolean = false) = Drain(id = id, capacity = c, capacityType = constantType, disabled = disabled)
-  def S(c: Int, ghg: Double = 0.0, disabled: Boolean = false) = Source(makeId, capacity = c, capacityType = constantType, ghgPerCapacity = ghg, disabled = disabled)
-  def Sn(id: String, c: Int, ghg: Double = 0.0, disabled: Boolean = false) = Source(id = id, capacity = c, capacityType = constantType, ghgPerCapacity = ghg, disabled = disabled)
-  def L(c: Int, a1: Area, a2: Area, disabled: Boolean = false) = Line(makeId, capacity = c, capacityType = constantType, area1 = a1, area2 = a2, disabled = disabled)
-  def Ln(id: String, c: Int, a1: Area, a2: Area, disabled: Boolean = false) = Line(id = id, capacity = c, capacityType = constantType, area1 = a1, area2 = a2, disabled = disabled)
+  val constantType = DistributionType("constant", None, false, ConstantDistributionModel)
+  def D(c: Int, disabled: Boolean = false, capacityType: DistributionType = constantType) = Drain(makeId, capacity = c, capacityType = capacityType, disabled = disabled)
+  def Dn(id: String, c: Int, disabled: Boolean = false, capacityType: DistributionType = constantType) = Drain(id = id, capacity = c, capacityType = capacityType, disabled = disabled)
+  def S(c: Int, ghg: Double = 0.0, disabled: Boolean = false, capacityType: DistributionType = constantType) = Source(makeId, capacity = c, capacityType = capacityType, ghgPerCapacity = ghg, disabled = disabled)
+  def Sn(id: String, c: Int, ghg: Double = 0.0, disabled: Boolean = false, capacityType: DistributionType = constantType) = Source(id = id, capacity = c, capacityType = capacityType, ghgPerCapacity = ghg, disabled = disabled)
+  def L(c: Int, a1: Area, a2: Area, disabled: Boolean = false, capacityType: DistributionType = constantType) = Line(makeId, capacity = c, capacityType = capacityType, area1 = a1, area2 = a2, disabled = disabled)
+  def Ln(id: String, c: Int, a1: Area, a2: Area, disabled: Boolean = false, capacityType: DistributionType = constantType) = Line(id = id, capacity = c, capacityType = capacityType, area1 = a1, area2 = a2, disabled = disabled)
 
   "Single area" should "use local sources only" in {
     val world = W(An("a", Dn("d", 100), Sn("s1", 90, 0.0), Sn("s2", 10, 1.0), Sn("s3", 1000, 10.0)))
@@ -205,5 +206,28 @@ abstract class AbstractSimulationSpec extends FlatSpec with Matchers {
     r2.units("a1") shouldBe UnitData(-1000, 0, -1000)
     r2.units("b1") shouldBe UnitData(0, 1000, 1000)
     r2.units("l") shouldBe UnitData(0, 0, 0)
+  }
+
+  "Aggregate types in world" should "result in identical capacities" in {
+    val t = DistributionType("uniform-aggregate", None, true, UniformDistributionModel)
+    val w = W(An("a", Dn("d", 1000, capacityType = t), Sn("s1", 500, capacityType = t), Sn("s2", 500, capacityType = t)),
+      An("b",
+        (1 to 100).map { i ⇒
+          Sn(s"b$i", 1000, capacityType = UniformDistributionType)
+        }:_*))
+
+    val r = ScalaSimulation.simulate(w)
+
+    // area a has only aggregated types in use
+    val ad = r.areas("a")
+    ad.drain shouldBe -ad.generation +- 1 // rounding off by one is possible
+
+    val (dd, s1d, s2d) = (r.units("d"), r.units("s1"), r.units("s2"))
+
+    s1d.capacity shouldBe s2d.capacity
+    -(s1d.capacity + s2d.capacity) shouldBe dd.capacity +- 1  // rounding can cause off by one
+
+    // whereas b has only non-aggregated
+    w.areaById("b").get.sources.map { s ⇒ r.units(s.id).capacity }.toSet.size should be > 1
   }
 }

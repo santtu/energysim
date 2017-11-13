@@ -11,7 +11,7 @@ import io.circe.syntax._
 object JsonDecoder extends ModelDecoder {
   private type CapacityHolder = Seq[Json]
   private case class TypeHolder(name: Option[String],
-                                size: Option[Int],
+                                aggregated: Option[Boolean],
                                 model: String,
                                 data: Option[Json])
   private case class DrainHolder(id: Option[String],
@@ -69,7 +69,7 @@ object JsonDecoder extends ModelDecoder {
         s"id-$counter"
     }
 
-  private def capacityData(model: CapacityModel): (String, Option[Json]) = {
+  private def capacityData(model: DistributionModel): (String, Option[Json]) = {
     def steps2json(steps: Seq[Step]) =
       Json.fromValues(steps.map(s ⇒
         Json.fromValues(
@@ -77,21 +77,17 @@ object JsonDecoder extends ModelDecoder {
             map(Json.fromDoubleOrNull))))
 
     model match {
-      case m: UniformCapacityModel ⇒ ("uniform", Some(Json.fromValues(
+      case m: UniformDistributionModel ⇒ ("uniform", Some(Json.fromValues(
         Seq(m.low, m.high).map(Json.fromDoubleOrNull))))
-      case _: ConstantCapacityModel ⇒ ("constant", None)
-      case m: ScaledCapacityModel ⇒ ("scaled", Some(
-        Json.fromFields(Seq(
-          "mean" → Json.fromDoubleOrNull(m.mean),
-          "bins" → steps2json(m.steps)))))
-      case m: StepCapacityModel ⇒ ("step", Some(steps2json(m.steps)))
-      case m: BetaCapacityModel ⇒ ("beta", Some(Json.fromValues(
+      case _: ConstantDistributionModel ⇒ ("constant", None)
+      case m: StepDistributionModel ⇒ ("step", Some(steps2json(m.steps)))
+      case m: BetaDistributionModel ⇒ ("beta", Some(Json.fromValues(
         Seq(Json.fromDoubleOrNull(m.alpha), Json.fromDoubleOrNull(m.beta)))))
       case _ ⇒ ???
     }
   }
 
-  private def capacityModel(model: String, data: Option[Json]): CapacityModel = {
+  private def distributionModel(model: String, data: Option[Json]): DistributionModel = {
     def ary2steps(ary: Seq[Seq[Double]]) =
       ary.map {
         case Seq(p, c) ⇒ Step(p, c, c)
@@ -104,37 +100,26 @@ object JsonDecoder extends ModelDecoder {
         // of maximum value, but it can be given other values, either
         // LOW or [LOW, HIGH]
         data match {
-          case None ⇒ UniformCapacityModel
+          case None ⇒ UniformDistributionModel
           case Some(json) ⇒
             (json.as[Double], json.as[Seq[Double]]) match {
-              case (Right(c), _) ⇒ UniformCapacityModel(c, 1.0)
-              case (_, Right(Seq(l, h))) ⇒ UniformCapacityModel(l, h)
+              case (Right(c), _) ⇒ UniformDistributionModel(c, 1.0)
+              case (_, Right(Seq(l, h))) ⇒ UniformDistributionModel(l, h)
             }
         }
-        UniformCapacityModel
+        UniformDistributionModel
       case "constant" ⇒
-        ConstantCapacityModel
+        ConstantDistributionModel
       case "step" ⇒
         data.get.as[Seq[Seq[Double]]] match {
           case Right(ary) ⇒
-            StepCapacityModel(ary2steps(ary))
+            StepDistributionModel(ary2steps(ary))
           case _ ⇒
             throw new IllegalArgumentException(s"'step' model parameters are invalid: $data")
         }
-      case "scaled" ⇒
-        val d = data.get
-
-        (d \\ "mean", d \\ "bins") match {
-          case (Seq(a), Seq(b)) ⇒
-            (a.as[Double], b.as[Seq[Seq[Double]]]) match {
-              case (Right(mean), Right(ary)) ⇒
-//                println(s"mean=$mean ary=$ary")
-                ScaledCapacityModel(mean, ary2steps(ary))
-            }
-        }
       case "beta" ⇒
         data.get.as[Seq[Double]] match {
-          case Right(Seq(alpha, beta)) ⇒ BetaCapacityModel(alpha, beta)
+          case Right(Seq(alpha, beta)) ⇒ BetaDistributionModel(alpha, beta)
         }
       case other ⇒
         throw new IllegalArgumentException(s"capacity model type $other is not known")
@@ -147,15 +132,18 @@ object JsonDecoder extends ModelDecoder {
     val types = (model.types match {
       case Some(types) ⇒
         types.map { case (id, data) ⇒ id →
-          CapacityType(id, data.name, data.size.getOrElse(0), capacityModel(data.model, data.data)) }
+          DistributionType(id,
+            data.name,
+            data.aggregated.getOrElse(false),
+            distributionModel(data.model, data.data)) }
       case None ⇒
         Nil
     }).toMap
 
     def getType(name: String) =
       name match {
-        case "constant" ⇒ ConstantCapacityType
-        case "uniform" ⇒ UniformCapacityType
+        case "constant" ⇒ ConstantDistributionType
+        case "uniform" ⇒ UniformDistributionType
         case other ⇒ types(other)
       }
 
@@ -208,7 +196,7 @@ object JsonDecoder extends ModelDecoder {
         val (model, data) = capacityData(t.model)
         t.id → TypeHolder(
           name = t.name,
-          size = Some(t.size),
+          aggregated = Some(t.aggregated),
           model = model,
           data = data
         )

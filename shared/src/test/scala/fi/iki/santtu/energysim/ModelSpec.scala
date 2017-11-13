@@ -5,27 +5,22 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ModelSpec extends FlatSpec with Matchers {
   "Equality tests" should "work for types and models" in {
-    ConstantCapacityType shouldBe ConstantCapacityType
-    UniformCapacityType shouldBe UniformCapacityType
+    ConstantDistributionType shouldBe ConstantDistributionType
+    UniformDistributionType shouldBe UniformDistributionType
 
-    ConstantCapacityType shouldBe CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel)
-    ConstantCapacityType.hashCode() shouldBe CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel).hashCode()
-    UniformCapacityType shouldBe CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel)
-    UniformCapacityType.hashCode() shouldBe CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel).hashCode()
+    ConstantDistributionType shouldBe DistributionType("constant", Some("Constant"), false, ConstantDistributionModel)
+    ConstantDistributionType.hashCode() shouldBe DistributionType("constant", Some("Constant"), false, ConstantDistributionModel).hashCode()
+    UniformDistributionType shouldBe DistributionType("uniform", Some("Uniform 0-1"), false, UniformDistributionModel)
+    UniformDistributionType.hashCode() shouldBe DistributionType("uniform", Some("Uniform 0-1"), false, UniformDistributionModel).hashCode()
 
-    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("jest", None, 0, ConstantCapacityModel)
-    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", None, 0, UniformCapacityModel)
-    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", None, 1, ConstantCapacityModel)
-    CapacityType("test", None, 0, ConstantCapacityModel) should not be CapacityType("test", Some("name"), 0, ConstantCapacityModel)
+    DistributionType("test", None, false, ConstantDistributionModel) should not be DistributionType("jest", None, false, ConstantDistributionModel)
+    DistributionType("test", None, false, ConstantDistributionModel) should not be DistributionType("test", None, false, UniformDistributionModel)
+    DistributionType("test", None, false, ConstantDistributionModel) should not be DistributionType("test", None, true, ConstantDistributionModel)
+    DistributionType("test", None, false, ConstantDistributionModel) should not be DistributionType("test", Some("name"), false, ConstantDistributionModel)
 
-    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) shouldBe CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2))))
-    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode() shouldBe CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode()
-    CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, StepCapacityModel(Seq(Step(1, 0, 1), Step(1, 0, 2))))
-
-    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) shouldBe CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2))))
-    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode() shouldBe CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode()
-    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, ScaledCapacityModel(2.0, Seq(Step(1, 0, 1), Step(1, 1, 2))))
-    CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be CapacityType("test", None, 0, ScaledCapacityModel(1.5, Seq(Step(1, 0, 1), Step(1, 0, 2))))
+    DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) shouldBe DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 1, 2))))
+    DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode() shouldBe DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))).hashCode()
+    DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 1, 2)))) should not be DistributionType("test", None, false, StepDistributionModel(Seq(Step(1, 0, 1), Step(1, 0, 2))))
   }
 
   it should "work for drains" in {
@@ -36,10 +31,10 @@ class ModelSpec extends FlatSpec with Matchers {
     Drain("id-1", name = Some("name")) should not be Drain("id-1")
     Drain("id-1", name = Some("name")) shouldBe Drain("id-1", name = Some("name"))
     Drain("id-1", name = Some("name")) should not be Drain("id-1", name = Some("other name"))
-    Drain("id-1", capacityType = ConstantCapacityType) shouldBe Drain("id-1", capacityType = ConstantCapacityType)
-    Drain("id-1", capacityType = ConstantCapacityType) should not be Drain("id-1", capacityType = UniformCapacityType)
-    Drain("id-1", capacityType = UniformCapacityType) should not be Drain("id-1", capacityType =
-      CapacityType("uniform", Some("uniform"), 0, UniformCapacityModel(0.5)))
+    Drain("id-1", capacityType = ConstantDistributionType) shouldBe Drain("id-1", capacityType = ConstantDistributionType)
+    Drain("id-1", capacityType = ConstantDistributionType) should not be Drain("id-1", capacityType = UniformDistributionType)
+    Drain("id-1", capacityType = UniformDistributionType) should not be Drain("id-1", capacityType =
+      DistributionType("uniform", Some("uniform"), false, UniformDistributionModel(0.5)))
   }
 
   it should "work for sources" in {
@@ -52,10 +47,10 @@ class ModelSpec extends FlatSpec with Matchers {
     Source("id-1", name = Some("name")) should not be Source("id-1")
     Source("id-1", name = Some("name")) shouldBe Source("id-1", name = Some("name"))
     Source("id-1", name = Some("name")) should not be Source("id-1", name = Some("other name"))
-    Source("id-1", capacityType = ConstantCapacityType) shouldBe Source("id-1", capacityType = ConstantCapacityType)
-    Source("id-1", capacityType = ConstantCapacityType) should not be Source("id-1", capacityType = UniformCapacityType)
-    Source("id-1", capacityType = UniformCapacityType) should not be Source("id-1", capacityType =
-      CapacityType("uniform", Some("uniform"), 0, UniformCapacityModel(0.5)))
+    Source("id-1", capacityType = ConstantDistributionType) shouldBe Source("id-1", capacityType = ConstantDistributionType)
+    Source("id-1", capacityType = ConstantDistributionType) should not be Source("id-1", capacityType = UniformDistributionType)
+    Source("id-1", capacityType = UniformDistributionType) should not be Source("id-1", capacityType =
+      DistributionType("uniform", Some("uniform"), false, UniformDistributionModel(0.5)))
   }
 
   it should "work for areas" in {
@@ -96,19 +91,19 @@ class ModelSpec extends FlatSpec with Matchers {
     World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2)) shouldBe World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2))
     World(areas = Seq(a1, a2, a3), lines = Seq(l1, l2)) shouldBe World(areas = Seq(a1, a2, a3), lines = Seq(l2, l1))
 
-    World(types = Seq(UniformCapacityType, ConstantCapacityType)) shouldBe World(types = Seq(UniformCapacityType, ConstantCapacityType))
-    World(types = Seq(UniformCapacityType, ConstantCapacityType)) shouldBe World(types = Seq(ConstantCapacityType, UniformCapacityType))
-    World(types = Seq(UniformCapacityType, ConstantCapacityType)) should not be World(types = Seq(UniformCapacityType))
+    World(types = Seq(UniformDistributionType, ConstantDistributionType)) shouldBe World(types = Seq(UniformDistributionType, ConstantDistributionType))
+    World(types = Seq(UniformDistributionType, ConstantDistributionType)) shouldBe World(types = Seq(ConstantDistributionType, UniformDistributionType))
+    World(types = Seq(UniformDistributionType, ConstantDistributionType)) should not be World(types = Seq(UniformDistributionType))
 
     // this is from a regression:
     val w1 = World(name = "simple model",
       areas = Seq(),
       types = Seq(
-        CapacityType("b2", None, 100, UniformCapacityModel),
-        CapacityType("b3", None, 100, UniformCapacityModel),
-        CapacityType("a", None, 0, ConstantCapacityModel),
-        CapacityType("b1", None, 100, UniformCapacityModel),
-        CapacityType("c", None, 0, StepCapacityModel(Seq(
+        DistributionType("b2", None, false, UniformDistributionModel),
+        DistributionType("b3", None, false, UniformDistributionModel),
+        DistributionType("a", None, false, ConstantDistributionModel),
+        DistributionType("b1", None, false, UniformDistributionModel),
+        DistributionType("c", None, true, StepDistributionModel(Seq(
           Step(1.0,0.0,0.0),
           Step(1.0,1.0,1.0))))),
       lines = Seq())
@@ -116,11 +111,11 @@ class ModelSpec extends FlatSpec with Matchers {
     val w2 = World(name = "simple model",
       areas = Seq(),
       types = Seq(
-        CapacityType("b1", None, 100, UniformCapacityModel),
-        CapacityType("b2", None, 100, UniformCapacityModel),
-        CapacityType("a", None, 0, ConstantCapacityModel),
-        CapacityType("b3", None, 100, UniformCapacityModel),
-        CapacityType("c", None, 0, StepCapacityModel(Seq(
+        DistributionType("b1", None, false, UniformDistributionModel),
+        DistributionType("b2", None, false, UniformDistributionModel),
+        DistributionType("a", None, false, ConstantDistributionModel),
+        DistributionType("b3", None, false, UniformDistributionModel),
+        DistributionType("c", None, true, StepDistributionModel(Seq(
           Step(1.0,0.0,0.0),
           Step(1.0,1.0,1.0))))),
       lines = Seq())

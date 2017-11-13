@@ -1,40 +1,62 @@
 package fi.iki.santtu.energysim.model
 
-case class Capacity(amount: Int = 0) {
-  override def toString: String = s"${amount}MW"
+trait Capacity {
+  def aggregated: Boolean
+  def independent: Boolean = !aggregated
+
+  def amount(value: Int): Int
 }
 
-abstract class CapacityModel {
-  def capacity(amount: Int): Capacity
+object NullCapacity extends Capacity {
+  def aggregated = false
+  def amount(value: Int) = 0
 }
 
-case class CapacityType(id: String, name: Option[String], size: Int, model: CapacityModel)
+case class AggregatedCapacity(scaleFactor: Double) extends Capacity {
+  def aggregated = true
+  def amount(value: Int): Int = (scaleFactor * value).toInt
 
-object ConstantCapacityType extends CapacityType("constant", Some("Constant"), 0, ConstantCapacityModel)
-object UniformCapacityType extends CapacityType("uniform", Some("Uniform 0-1"), 0, UniformCapacityModel)
+  override def toString: String = s"*$scaleFactor"
+}
 
-abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: CapacityType, val disabled: Boolean) {
-  def capacity(): Capacity = {
-    (disabled, capacityType.size) match {
-      case (true, _) ⇒ Capacity(0)
-      case (false, 0) ⇒ capacityType.model.capacity(unitCapacity)
-      case (false, size) ⇒
-        val result = (Seq.fill(unitCapacity / size) { capacityType.model.capacity(size) } ++
-          (unitCapacity % size match {
-            case 0 ⇒ Seq()
-            case pad ⇒ Seq(capacityType.model.capacity(pad))
-          })).foldLeft[Int](0) { case (v, c) ⇒ v + c.amount }
-        // yeah nicer would be to use .sum and define Capacity either as
-        // alias to Int, or implement summable for that .. but that'd
-        // be overkill
-        Capacity(result)
+case class IndependentCapacity(scaleGetter: () ⇒ Double) extends Capacity {
+  def aggregated = false
+  def amount(value: Int): Int = (scaleGetter() * value).toInt
+
+  override def toString: String = s"*($scaleGetter)"
+}
+
+//case class Capacity(amount: Int = 0) {
+//  override def toString: String = s"${amount}MW"
+//}
+
+abstract class DistributionModel {
+  /**
+    * Sample the distribution model once, and return its value.
+    *
+    * @return Scaling factor, typically in range [0, 1] (but depending on
+    *         context can also be in <0 or >0 range)
+    */
+  def sampleScaleFactor(): Double
+}
+
+case class DistributionType(id: String, name: Option[String], aggregated: Boolean, model: DistributionModel) {
+  def makeCapacity: Capacity =
+    if (aggregated) {
+      AggregatedCapacity(model.sampleScaleFactor())
+    } else {
+      IndependentCapacity(model.sampleScaleFactor)
     }
-  }
+}
 
+object ConstantDistributionType extends DistributionType("constant", Some("Constant"), false, ConstantDistributionModel)
+object UniformDistributionType extends DistributionType("uniform", Some("Uniform 0-1"), false, UniformDistributionModel)
+
+abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: DistributionType, val disabled: Boolean) {
   override def hashCode(): Int = Seq(id, name, unitCapacity, disabled).hashCode()
 }
 
-class Drain(id: String, name: Option[String], capacity: Int, capacityType: CapacityType, disabled: Boolean) extends Unit(id, name, capacity, capacityType, disabled) {
+class Drain(id: String, name: Option[String], capacity: Int, capacityType: DistributionType, disabled: Boolean) extends Unit(id, name, capacity, capacityType, disabled) {
   override def toString: String = id
 
   override def equals(obj: scala.Any): Boolean =
@@ -53,7 +75,7 @@ object Drain {
   def apply(id: String,
             name: Option[String] = None,
             capacity: Int = 0,
-            capacityType: CapacityType = ConstantCapacityType,
+            capacityType: DistributionType = ConstantDistributionType,
             disabled: Boolean = false): Drain =
     new Drain(id, name, capacity, capacityType, disabled)
 }
@@ -61,7 +83,7 @@ object Drain {
 class Source(id: String,
              name: Option[String],
              capacity: Int = 0,
-             capacityType: CapacityType = ConstantCapacityType,
+             capacityType: DistributionType = ConstantDistributionType,
              val ghgPerCapacity: Double = 0.0,
              disabled: Boolean = false) extends Unit(id, name, capacity, capacityType, disabled) {
   override def equals(obj: scala.Any): Boolean =
@@ -77,7 +99,7 @@ class Source(id: String,
     }
 
   def copy(id: String = id, name: Option[String] = name,
-           capacity: Int = unitCapacity, capacityType: CapacityType = capacityType,
+           capacity: Int = unitCapacity, capacityType: DistributionType = capacityType,
            ghgPerCapacity: Double = ghgPerCapacity,
            disabled: Boolean = disabled) =
     Source(id, name, capacity, capacityType, ghgPerCapacity, disabled)
@@ -93,7 +115,7 @@ object Source {
   def apply(id: String,
             name: Option[String] = None,
             capacity: Int = 0,
-            capacityType: CapacityType = ConstantCapacityType,
+            capacityType: DistributionType = ConstantDistributionType,
             ghgPerCapacity: Double = 0.0,
             disabled: Boolean = false): Source =
     new Source(id, name, capacity, capacityType, ghgPerCapacity, disabled)
@@ -102,7 +124,7 @@ object Source {
 class Line(id: String,
            name: Option[String],
            capacity: Int,
-           capacityType: CapacityType,
+           capacityType: DistributionType,
            val area1: Area,
            val area2: Area,
            disabled: Boolean)
@@ -127,7 +149,7 @@ class Line(id: String,
 
   def copy(id: String = id, name: Option[String] = name,
            capacity: Int = unitCapacity,
-           capacityType: CapacityType = capacityType,
+           capacityType: DistributionType = capacityType,
            area1: Area = area1,
            area2: Area = area2,
            disabled: Boolean = disabled) =
@@ -138,7 +160,7 @@ object Line {
   def apply(id: String,
             name: Option[String] = None,
             capacity: Int = 0,
-            capacityType: CapacityType = ConstantCapacityType,
+            capacityType: DistributionType = ConstantDistributionType,
             area1: Area, area2: Area,
             disabled: Boolean = false): Line =
     new Line(id, name, capacity, capacityType, area1, area2, disabled)
@@ -166,10 +188,10 @@ object Area {
 }
 
 case class World (name: String,
-                  types: Seq[CapacityType] = Seq.empty[CapacityType],
+                  types: Seq[DistributionType] = Seq.empty[DistributionType],
                   areas: Seq[Area] = Seq.empty[Area],
                   lines: Seq[Line] = Seq.empty[Line]) {
-  
+
   val units: Seq[Unit] = areas.flatMap(_.drains) ++
     areas.flatMap(_.sources) ++
     lines
@@ -226,7 +248,7 @@ case class World (name: String,
 
 object World {
   def apply(name: String = "world",
-            types: Seq[CapacityType] = Seq.empty[CapacityType],
+            types: Seq[DistributionType] = Seq.empty[DistributionType],
             areas: Seq[Area] = Seq.empty[Area],
             lines: Seq[Line] = Seq.empty[Line]): World =
     new World(name, types, areas, lines)

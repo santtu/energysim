@@ -1,6 +1,6 @@
 package fi.iki.santtu.energysim
 
-import fi.iki.santtu.energysim.model.{ConstantCapacityModel, StepCapacityModel, UniformCapacityModel}
+import fi.iki.santtu.energysim.model.{ConstantDistributionModel$, StepDistributionModel, UniformDistributionModel$}
 import org.scalatest.{FlatSpec, Matchers}
 
 class YamlDecoderSpec extends FlatSpec with Matchers {
@@ -106,20 +106,18 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
                  |types:
                  |  a:
                  |    model: constant
-                 |    size: 0
                  |  b1:
                  |    model: uniform
-                 |    size: 100
                  |  b2:
                  |    model: uniform
-                 |    size: 100
+                 |    aggregate: true
                  |    data: .8
                  |  b3:
                  |    model: uniform
-                 |    size: 100
                  |    data: [0, .9]
                  |  c:
                  |    model: step
+                 |    aggregate: true
                  |    data: [[1, 0], [1, 1]]
                  |""".stripMargin
     val world = decode(data)
@@ -128,7 +126,7 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
     world.types.size shouldBe 5
   }
 
-  it should "recodnize disabled units" in {
+  it should "recognize disabled units" in {
     val data =
       """areas:
         |  a:
