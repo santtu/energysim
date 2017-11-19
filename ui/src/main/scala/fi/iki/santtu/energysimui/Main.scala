@@ -8,7 +8,9 @@ import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
 import org.scalajs.dom
 import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.html.Element
 
+import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation._
 import scala.util.{Failure, Success}
@@ -94,21 +96,57 @@ object Main {
     routerConfig()
   }
 
+  object Loader {
+    type Props = Seq[Future[Any]]
+
+    class Backend($: BackendScope[Props, Int]) {
+      def render(futures: Props, count: Int) = {
+        println(s"render: futures=$futures count=$count")
+        <.div(
+          ^.className := "loader",
+          <.div(
+            ^.className := "progress",
+            <.div(
+              ^.className := "progress-bar",
+              ^.role := "progressbar",
+              ^.width := s"${100 * count / futures.size}%")))
+      }
+
+      def init: Callback = $.props |> (_.foreach(_.onComplete(_ => $.modState(count ⇒ count + 1).runNow())))
+    }
+
+    val component = ScalaComponent.builder[Props]("Loader")
+      .initialState(0)
+      .renderBackend[Backend]
+      .componentWillMount(_.backend.init)
+      .build
+
+    def apply(futures: Future[Any]*) =
+      component(futures)
+  }
+
   @JSExport
   def main(args: Array[String]): Unit = {
+    val f1 = Ajax.get(Data.worldUrl)
+    val f2 = Ajax.get(Data.mapUrl)
+
+    val loaderElement = dom.document.querySelector("#loader")
+
+    Loader(f1, f2).renderIntoDOM(loaderElement)
+
     val loader = for {
-      w ← Ajax.get(Data.worldUrl)
-      m ← Ajax.get(Data.mapUrl)
+      w ← f1
+      m ← f2
+      _ ← Future { loaderElement.parentNode.removeChild(loaderElement) }
     } yield (Model.from(w.responseText, JsonDecoder), m.responseText)
 
     loader.onComplete {
       case Success((world, map)) ⇒
         println("Default world and world map loaded")
-        // TODO: hide spinner here
         router(world, map).renderIntoDOM(dom.document.getElementById("playground"))
 
       case Failure(ex) ⇒
-        // TODO: hide spinner and show errors somewhere
+        // TODO: show errors somewhere
         println(s"failed loading: $ex")
     }
   }
