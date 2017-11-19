@@ -53,10 +53,12 @@ object ConstantDistributionType extends DistributionType("constant", Some("Const
 object UniformDistributionType extends DistributionType("uniform", Some("Uniform 0-1"), false, UniformDistributionModel)
 
 abstract class Unit(val id: String, val name: Option[String], val unitCapacity: Int, val capacityType: DistributionType, val disabled: Boolean) {
-  override def hashCode(): Int = Seq(id, name, unitCapacity, disabled).hashCode()
+  override def hashCode(): Int =
+    Seq(id, name, unitCapacity, capacityType, disabled).hashCode()
 }
 
-class Drain(id: String, name: Option[String], capacity: Int, capacityType: DistributionType, disabled: Boolean) extends Unit(id, name, capacity, capacityType, disabled) {
+class Drain(id: String, name: Option[String], capacity: Int, capacityType: DistributionType, disabled: Boolean)
+  extends Unit(id, name, capacity, capacityType, disabled) {
   override def toString: String = id
 
   override def equals(obj: scala.Any): Boolean =
@@ -69,6 +71,8 @@ class Drain(id: String, name: Option[String], capacity: Int, capacityType: Distr
           d.disabled == disabled
       case _ ⇒ false
     }
+
+//  override def hashCode(): Int = super.hashCode()
 }
 
 object Drain {
@@ -145,7 +149,8 @@ class Line(id: String,
       case _ ⇒ false
     }
 
-  override def hashCode(): Int = super.hashCode() ^ Seq(area1, area2).hashCode()
+  override def hashCode(): Int =
+    super.hashCode() ^ Set(area1, area2).hashCode()
 
   def copy(id: String = id, name: Option[String] = name,
            capacity: Int = unitCapacity,

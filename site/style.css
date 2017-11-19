@@ -1,0 +1,94 @@
+#playground {
+    padding: 1em;
+}
+.source {
+}
+.drain {
+}
+.spinner {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+}
+.spinner img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    margin-top: -32px;
+    margin-left: -32px;
+}
+.area {
+    border: 1px solid black;
+    padding: 5pt;
+    margin: 5pt;
+}
+.line {
+    border: 1px solid black;
+    padding: 5pt;
+    margin: 5pt;
+}
+.focused {
+    background-color: rgba(0, 0, 0, .7);
+    color: white;
+}
+.related {
+    background-color: rgba(0, 0, 0, .1);
+}
+.main-right {
+    padding: 0;
+    word-wrap: break-word;
+    background-color: rgba(0, 0, 0, .05);
+}
+
+.main-right .info {
+    padding: 0.5rem;
+}
+.main-right .stats {
+    padding: 0.5rem;
+    border-bottom: 1px solid black;
+}
+.edited {
+    background: rgba(255, 0, 0, .2) !important;
+}
+
+.map {
+    height: 80vh;
+}
+
+#areas .selected path, #lines .selected path {
+    fill: blue !important;
+    opacity: 1.0 !important;
+    filter: url(#shadow) !important;
+}
+
+.some-selected #areas path, .some-selected #lines path {
+    opacity: 0.5;
+    filter: url(#blur);
+}
+
+#lines path {
+    fill: rgba(190, 190, 190, 1);
+}
+
+#areas g path {
+    stroke: #fff;
+    stroke-width: 20;
+    fill: #006919;
+    -webkit-svg-shadow: 0 0 7px #53BE12;
+    filter: url(#shadow);
+
+    fill-rule: evenodd;
+    clip-rule: evenodd;
+    stroke-linejoin: round;
+    stroke-miterlimit: 1.41421;
+}
+
+#areas path:hover, #lines path:hover {
+    fill: red;
+}
+
+/* .map path:hover, .map g:hover { */
+/*     fill: #00f; */
+/* } */

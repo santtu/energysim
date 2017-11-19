@@ -1,12 +1,16 @@
 package fi.iki.santtu.energysimui
 
-import fi.iki.santtu.energysim.model.{Area, Line, Source, World}
+import fi.iki.santtu.energysim.model.{Area, Line, World}
 import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics}
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData, Selection}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, _}
 import org.scalajs.dom
+import org.scalajs.dom.document
+import org.scalajs.dom.raw._
+import org.scalajs.dom.svg.SVG
 
+import scala.scalajs.js
 import scala.util.Try
 
 
@@ -19,9 +23,6 @@ object EnabledNumber {
   case class Props(checked: Boolean, value: Int, label: String, updated: (Int, Boolean) ⇒ Callback)
 
   class Backend($: BackendScope[Props, State]) {
-    def init: Callback =
-      $.props >>= { p ⇒ $.setState(State(p.checked, p.value)) }
-
     def render(p: Props, s: State): VdomElement = {
       <.div(^.className := "form-group",
         <.input(^.`type` := "checkbox",
@@ -37,7 +38,7 @@ object EnabledNumber {
             ^.`type` := "number",
             ^.className := "form-control",
             (^.className := "edited").when(p.value != s.value),
-            ^.defaultValue := p.value.toString,
+            ^.value := s.value.toString,
             ^.onKeyDown ==> { e: ReactEventFromInput ⇒
               e.nativeEvent match {
                 case key: dom.KeyboardEvent if key.key == "Enter" ⇒
@@ -54,12 +55,16 @@ object EnabledNumber {
               }
             })))
     }
+
+    def receiveProps(props: Props): Callback =
+      $.setState(State(props.checked, props.value))
   }
 
   private val component = ScalaComponent.builder[Props]("LineInfo")
     .initialState(State(true, 0))
     .renderBackend[Backend]
-    .componentWillMount(_.backend.init)
+    .componentWillMount(i ⇒ i.backend.receiveProps(i.props))
+    .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
   def apply(label: String = "", value: Int = 0, checked: Boolean = true, updated: (Int, Boolean) ⇒ Callback) =
@@ -133,34 +138,35 @@ object AreasMap {
 
 object AreaInfo {
   case class Props(area: Area, areaUpdated: (Area) ⇒ Callback)
+  type State = Map[String, (Int, Boolean)]
 
-  class Backend($: BackendScope[Props, Map[String, Int]]) {
-    def init: Callback =
-      $.props >>= { p ⇒
-        $.setState(p.area.sources.map(s ⇒ s.id → s.unitCapacity).toMap)
-      }
-
-    def render(values: Map[String, Int], p: Props): VdomElement = {
+  class Backend($: BackendScope[Props, State]) {
+    def render(state: State, p: Props): VdomElement = {
       <.div(
         <.div(s"AREA: ${p.area}"), <.br,
         p.area.sources.toVdomArray(source ⇒
           <.div(^.className := "source",
             ^.key := source.id,
             EnabledNumber(s"${source.name.getOrElse(source.id)} (MW)",
-              source.unitCapacity,
-              !source.disabled,
+              state(source.id)._1,
+              !state(source.id)._2,
               { (value, enabled) ⇒
                 p.areaUpdated(p.area.update(source.copy(
                   capacity = value,
-                  disabled = !enabled)))
+                  disabled = !enabled))) >>
+                $.modState(s ⇒ s.updated(source.id, (value, !enabled)))
               }))))
     }
+
+    def receiveProps(props: Props): Callback =
+      $.setState(props.area.sources.map(s ⇒ s.id → (s.unitCapacity, s.disabled)).toMap)
   }
 
   private val component = ScalaComponent.builder[Props]("AreaInfo")
-    .initialState(Map.empty[String, Int])
+    .initialState(Map.empty[String, (Int, Boolean)])
     .renderBackend[Backend]
-    .componentWillMount(_.backend.init)
+    .componentWillMount(i ⇒ i.backend.receiveProps(i.props))
+    .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
   def apply(p: Props) = component.withKey(p.area.id)(p)
@@ -168,13 +174,9 @@ object AreaInfo {
 
 object LineInfo {
   case class Props(line: Line, lineUpdated: (Line) ⇒ Callback)
+  type State = (Int, Boolean)
 
-  class Backend($: BackendScope[Props, Unit]) {
-    var inputValue = -1
-
-    def init: Callback =
-      $.props |> { p ⇒ inputValue = p.line.unitCapacity }
-
+  class Backend($: BackendScope[Props, State]) {
     def render(p: Props): VdomElement = {
       <.div(
         <.div(s"LINE: ${p.line}"),
@@ -184,13 +186,17 @@ object LineInfo {
           !p.line.disabled,
           { (v, c) ⇒
             p.lineUpdated(p.line.copy(disabled = !c, capacity = v)) }))
-
     }
+
+    def receiveProps(props: Props): Callback =
+      $.setState((props.line.unitCapacity, props.line.disabled))
   }
 
   private val component = ScalaComponent.builder[Props]("LineInfo")
+    .initialState((0, false))
     .renderBackend[Backend]
-    .componentWillMount(_.backend.init)
+    .componentWillMount(i ⇒ i.backend.receiveProps(i.props))
+    .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
   def apply(p: Props) = component.withKey(p.line.id)(p)
@@ -229,4 +235,81 @@ object LineStats {
     .build
 
   def apply(p: Props) = component.withKey(p._1.id)(p)
+}
+
+
+object WorldMap {
+  case class Props(map: String, selectedFn: Selection => Callback)
+
+  class Backend($: BackendScope[Props, Boolean]) {
+    var focused: Option[(Element, Element)] = None
+
+    def render(p: Props, selected: Boolean) = {
+      <.div(
+        ^.className := "map",
+        (^.className := "some-selected").when(selected),
+        // unfocus if click on the background
+        ^.onClick --> (Callback {
+          focused foreach {
+            case (el, anim) ⇒
+              el.classList.remove("selected")
+              anim.asInstanceOf[js.Dynamic].beginElement()
+              focused = None
+              p.selectedFn(None)
+          }
+        } >> $.setState(false)),
+        ^.dangerouslySetInnerHtml := p.map
+      )
+    }
+
+    def focus(s: Either[String, String], el: Element, fa: Element, ufa: Element) = {
+      focused = if (el.classList.toggle("selected")) {
+        focused foreach { case (ol, _) ⇒ ol.classList.remove("selected") }
+        fa.asInstanceOf[js.Dynamic].beginElement()
+        Some((el, ufa))
+      } else {
+        ufa.asInstanceOf[js.Dynamic].beginElement()
+        None
+      }
+
+      val selected = focused.map(_ ⇒ s)
+
+      ($.setState(selected.nonEmpty) >>
+        ($.props >>= (p ⇒ p.selectedFn(selected))))
+        .runNow()
+    }
+
+    def mounted: Callback = Callback {
+      val elements = Main.areas.map {
+        case (id, area) ⇒ (id, area.mapId, area.selectedAnimationId, area.unselectedAnimationId, Left(id))
+      } ++ Main.lines.map {
+        case (id, line) ⇒ (id, line.mapId, line.selectedAnimationId, line.unselectedAnimationId, Right(id))
+      }
+
+      for ((id, mapId, aId, faId, selection) ← elements) {
+        (document.querySelector(mapId),
+          document.querySelector(aId),
+          document.querySelector(faId)) match {
+
+          case bad@((null, _, _) | (_, null, _) | (_, _, null)) ⇒
+            println(s"Failed to find $mapId, $aId or $faId")
+
+          case (el: SVGElement, fa: Element, ufa: Element) ⇒
+            el.onclick = {
+              ev: dom.Event ⇒
+                focus(selection, el, fa, ufa)
+                ev.stopPropagation()
+            }
+        }
+      }
+    }
+  }
+
+  private val component = ScalaComponent.builder[Props]("WorldMap")
+    .initialState(false)
+    .renderBackend[Backend]
+    .componentDidMount(_.backend.mounted)
+    .build
+
+  def apply(map: String, selectedFn: Selection ⇒ Callback) = component(Props(map, selectedFn))
 }

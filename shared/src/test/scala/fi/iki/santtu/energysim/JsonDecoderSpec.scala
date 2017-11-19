@@ -310,7 +310,8 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
         "a" → Json.fromFields(Seq(
           "name" → Json.Null,
           "sources" → Json.fromValues(Seq()),
-          "drains" → Json.fromValues(Seq()))),
+          "drains" → Json.fromValues(Seq()),
+          "external" → Json.fromBoolean(false))),
         "b" → Json.fromFields(Seq(
           "name" → Json.Null,
           "sources" → Json.fromValues(Seq(
@@ -321,7 +322,8 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
               "type" → Json.fromString("constant"),
               "ghg" → Json.fromDoubleOrNull(1.0),
               "disabled" → Json.fromBoolean(false))))),
-          "drains" → Json.fromValues(Seq()))))),
+          "drains" → Json.fromValues(Seq()),
+          "external" → Json.fromBoolean(false))))),
       "lines" → Json.fromValues(Seq()),
       "types" → Json.fromFields(Seq())))
 
