@@ -36,15 +36,19 @@
 .related {
     background-color: rgba(0, 0, 0, .1);
 }
+
 .main-right {
-    padding: 0;
-    word-wrap: break-word;
-    background-color: rgba(0, 0, 0, .05);
+    /* padding: 0; */
+    /* /\* word-wrap: break-word; *\/ */
+    /* background-color: rgba(0, 0, 0, .05); */
+    /* border: 1px solid red; */
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .main-right .info {
-    padding: 0.5rem;
+    margin: 1rem;
 }
+
 .main-right .stats {
     padding: 0.5rem;
     border-bottom: 1px solid black;
@@ -114,4 +118,8 @@
 
 #loader .progress {
     height: 3rem;
+}
+
+.source input[type='checkbox'] {
+    transform: scale(1.5);
 }

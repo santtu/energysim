@@ -90,7 +90,7 @@ object UserInterface {
     // right now in which case we need to send the world to simulator
     // (and also to clear the collector)
     def updateWorld(newWorld: World): Callback = {
-      println(s"updateWorld: new=${newWorld.hashCode()}")
+//      println(s"updateWorld: new=${newWorld.hashCode()}")
       // we need to get both the props and old state
       ($.state |> {
         case state if state.playing ⇒
@@ -103,7 +103,7 @@ object UserInterface {
     // from the old) -- this will cause props change to propagate
     // to updateWorld later
     def changeWorld(world: World): Callback = {
-      println(s"changeWorld: new=${world.hashCode()}")
+//      println(s"changeWorld: new=${world.hashCode()}")
 
 //      val p = WorldPage(world)
 //      val p2 = WorldPage(p.world)

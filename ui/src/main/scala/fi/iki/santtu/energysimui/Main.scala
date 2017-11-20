@@ -60,6 +60,22 @@ object Main {
     "norway-north" → LineData("Norway", "#norway-north", "#norway-north-focus", "#world-focus"),
   )
 
+  // TODO: include icon (path to image) to use in UI, tooltip text
+  case class TypeData(name: String)
+
+  val types: Map[String, TypeData] = Map(
+    "bio" → TypeData("Biofuel"),
+    "peat" → TypeData("Peat"),
+    "wind" → TypeData("Wind"),
+    "hydro" → TypeData("Hydro"),
+    "oil" → TypeData("Oil"),
+    "solar" → TypeData("Solar"),
+    "nuclear" → TypeData("Nuclear"),
+    "other" → TypeData("Other"),
+    "gas" → TypeData("Natural gas"),
+    "coal" → TypeData("Coal")
+  )
+
   // these are ids, not direct references: left = area, right = line
   type Selection = Option[Either[String, String]]
 
@@ -83,14 +99,12 @@ object Main {
           val worldRoute =
             dynamicRouteCT("#" / string(".+").caseClass[WorldPage]) ~>
               dynRenderR((page: WorldPage, ctl) => {
-                println(s"#route got page")
                 UserInterface(page.world, defaultWorld, worldMap, ctl)
               })
 
           (worldRoute)
             .notFound(redirectToPage(defaultPage)(Redirect.Replace))
             .setPostRender((prev, cur) ⇒ Callback {
-              println(s"onPostRender: prev=${prev.hashCode()} cur=${cur.hashCode()}")
             })
       })
     routerConfig()
@@ -101,7 +115,6 @@ object Main {
 
     class Backend($: BackendScope[Props, Int]) {
       def render(futures: Props, count: Int) = {
-        println(s"render: futures=$futures count=$count")
         <.div(
           ^.className := "loader",
           <.div(

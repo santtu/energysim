@@ -11,49 +11,78 @@ import org.scalajs.dom.raw._
 import org.scalajs.dom.svg.SVG
 
 import scala.scalajs.js
+import scala.scalajs.js.annotation.JSImport
 import scala.util.Try
 
 
 /**
-  * Generic number input with a "enabled" checkbox.
+  * Specific slider that does not fire change until 
+  */
+object Slider {
+
+}
+
+/**
+  * Generic number input with a "enabled" checkbox. This puts off
+  * updates on the value until user has finished the input.
   */
 
 object EnabledNumber {
-  case class State(checked: Boolean, value: Int)
-  case class Props(checked: Boolean, value: Int, label: String, updated: (Int, Boolean) ⇒ Callback)
+  case class State(checked: Boolean, value: Double, inInput: Boolean = false)
+  case class Props(checked: Boolean, value: Double, label: String,
+                   callback: (Double, Boolean) ⇒ Callback,
+                   min: Double, max: Double, step: Double)
 
   class Backend($: BackendScope[Props, State]) {
     def render(p: Props, s: State): VdomElement = {
-      <.div(^.className := "form-group",
-        <.input(^.`type` := "checkbox",
-          ^.checked := s.checked,
-          ^.onChange ==> { e: ReactEventFromInput ⇒
-            val checked = e.target.checked
-            $.setState(s.copy(checked = checked)) >>
-              p.updated(s.value, checked)
-          }),
-        " ",
-        <.label(p.label,
-          <.input(
-            ^.`type` := "number",
-            ^.className := "form-control",
-            (^.className := "edited").when(p.value != s.value),
-            ^.value := s.value.toString,
-            ^.onKeyDown ==> { e: ReactEventFromInput ⇒
-              e.nativeEvent match {
-                case key: dom.KeyboardEvent if key.key == "Enter" ⇒
-                  p.updated(s.value, s.checked)
-                case _ ⇒
-                  Callback {}
-              }
-            },
-            ^.onChange ==> { e: ReactEventFromInput ⇒
-              Try(e.target.value.toInt).toOption match {
-                case Some(value) ⇒
-                  $.modState(s ⇒ s.copy(value = value))
-                case None ⇒ Callback {}
-              }
-            })))
+      def update(state: State) =
+          $.setState(state) >>
+          // send new state only if not in input and values have changed
+          (if (!state.inInput &&
+            (p.value != state.value ||
+              p.checked != state.checked))
+            p.callback(state.value, state.checked)
+          else
+            Callback.empty)
+
+      <.div(
+        <.div(
+          ^.className := "form-row",
+          <.div(
+            ^.className := "col",
+            <.input(
+              ^.`type` := "checkbox",
+              ^.className := "form-check-input",
+              ^.checked := s.checked,
+              ^.onChange ==> { e: ReactEventFromInput =>
+                update(s.copy(checked = e.target.checked))
+              }),
+            p.label)),
+        <.div(
+          ^.className := "form-row",
+          <.div(
+            ^.className := "col-10",
+            <.input(
+              ^.`type` := "range",
+              ^.className := "form-control",
+              ^.value := s.value.toString,
+              ^.min := p.min,
+              ^.max := p.max,
+              ^.step := p.step,
+              ^.onChange ==> { e: ReactEventFromInput ⇒
+                Try(e.target.value.toDouble).toOption match {
+                  case Some(value) if value != s.value ⇒ update(s.copy(value = value))
+                  case None ⇒ Callback.empty
+                }
+              },
+              ^.onMouseDown --> update(s.copy(inInput = true)),
+              ^.onMouseUp --> update(s.copy(inInput = false)),
+              ^.onTouchStart --> update(s.copy(inInput = true)),
+              ^.onTouchEnd --> update(s.copy(inInput = false)),
+              ^.onTouchCancel --> update(s.copy(value = p.value, inInput = false)))),
+          <.div(
+            ^.className := "col-2",
+            s.value.toString)))
     }
 
     def receiveProps(props: Props): Callback =
@@ -67,8 +96,9 @@ object EnabledNumber {
     .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
-  def apply(label: String = "", value: Int = 0, checked: Boolean = true, updated: (Int, Boolean) ⇒ Callback) =
-    component(Props(checked, value, label, updated))
+  def apply(label: String = "", value: Double = 0, checked: Boolean = true, callback: (Double, Boolean) ⇒ Callback,
+            min: Double, max: Double, step: Double = 1) =
+    component(Props(checked, value, label, callback, min, max, step))
 }
 
 
@@ -147,15 +177,20 @@ object AreaInfo {
         p.area.sources.toVdomArray(source ⇒
           <.div(^.className := "source",
             ^.key := source.id,
-            EnabledNumber(s"${source.name.getOrElse(source.id)} (MW)",
-              state(source.id)._1,
-              !state(source.id)._2,
-              { (value, enabled) ⇒
+            EnabledNumber(
+              label = Main.types.get(source.capacityType.id) match {
+                case Some(info) ⇒ info.name
+                case None ⇒ source.name.getOrElse(source.id)
+              },
+              value = state(source.id)._1,
+              checked = !state(source.id)._2,
+              callback = { (value, enabled) ⇒
                 p.areaUpdated(p.area.update(source.copy(
-                  capacity = value,
+                  capacity = value.toInt,
                   disabled = !enabled))) >>
-                $.modState(s ⇒ s.updated(source.id, (value, !enabled)))
-              }))))
+                $.modState(s ⇒ s.updated(source.id, (value.toInt, !enabled)))
+              },
+              min = 0, max = 10000, step = 5))))
     }
 
     def receiveProps(props: Props): Callback =
@@ -181,11 +216,12 @@ object LineInfo {
       <.div(
         <.div(s"LINE: ${p.line}"),
         EnabledNumber(
-          "Transmission capacity (MW)",
+          "Transmission capacity",
           p.line.unitCapacity,
           !p.line.disabled,
           { (v, c) ⇒
-            p.lineUpdated(p.line.copy(disabled = !c, capacity = v)) }))
+            p.lineUpdated(p.line.copy(disabled = !c, capacity = v.toInt)) },
+          min = 0, max = 10000, step = 100))
     }
 
     def receiveProps(props: Props): Callback =
