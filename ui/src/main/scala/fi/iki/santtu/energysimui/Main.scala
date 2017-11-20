@@ -33,11 +33,11 @@ object Main {
   case class AreaData(name: String, mapId: String, selectedAnimationId: String, unselectedAnimationId: String)
 
   val areas: Map[String, AreaData] = Map(
-    "north" → AreaData("North", "#north", "#north-focus", "#world-focus"),
-    "south" → AreaData("South", "#south", "#south-focus", "#world-focus"),
-    "east" → AreaData("East", "#east", "#east-focus", "#world-focus"),
-    "west" → AreaData("West", "#west", "#west-focus", "#world-focus"),
-    "central" → AreaData("Center", "#center", "#center-focus", "#world-focus"),
+    "north" → AreaData("Northern Finland", "#north", "#north-focus", "#world-focus"),
+    "south" → AreaData("Southern Finland", "#south", "#south-focus", "#world-focus"),
+    "east" → AreaData("Eastern Finland", "#east", "#east-focus", "#world-focus"),
+    "west" → AreaData("Western Finland", "#west", "#west-focus", "#world-focus"),
+    "central" → AreaData("Central Finland", "#center", "#center-focus", "#world-focus"),
   )
 
   /**
@@ -53,27 +53,27 @@ object Main {
     "south-central" → LineData("South-Central", "#south-center", "#south-center-focus", "#world-focus"),
     "east-central" → LineData("East-Central", "#center-east", "#center-east-focus", "#world-focus"),
     "central-north" → LineData("Central-North", "#north-center", "#north-center-focus", "#world-focus"),
-    "russia-east" → LineData("Russia", "#russia-east", "#russia-east-focus", "#world-focus"),
-    "sweden-west" → LineData("Sweden", "#sweden-west", "#sweden-west-focus", "#world-focus"),
-    "sweden-north" → LineData("Sweden", "#sweden-north", "#sweden-north-focus", "#world-focus"),
-    "estonia-south" → LineData("Estonia", "#estonia-south", "#estonia-south-focus", "#world-focus"),
-    "norway-north" → LineData("Norway", "#norway-north", "#norway-north-focus", "#world-focus"),
+    "russia-east" → LineData("Russia (import)", "#russia-east", "#russia-east-focus", "#world-focus"),
+    "sweden-west" → LineData("Sweden (import)", "#sweden-west", "#sweden-west-focus", "#world-focus"),
+    "sweden-north" → LineData("Sweden (import)", "#sweden-north", "#sweden-north-focus", "#world-focus"),
+    "estonia-south" → LineData("Estonia (import)", "#estonia-south", "#estonia-south-focus", "#world-focus"),
+    "norway-north" → LineData("Norway (import)", "#norway-north", "#norway-north-focus", "#world-focus"),
   )
 
   // TODO: include icon (path to image) to use in UI, tooltip text
-  case class TypeData(name: String)
+  case class TypeData(name: String, iconUrl: String)
 
   val types: Map[String, TypeData] = Map(
-    "bio" → TypeData("Biofuel"),
-    "peat" → TypeData("Peat"),
-    "wind" → TypeData("Wind"),
-    "hydro" → TypeData("Hydro"),
-    "oil" → TypeData("Oil"),
-    "solar" → TypeData("Solar"),
-    "nuclear" → TypeData("Nuclear"),
-    "other" → TypeData("Other"),
-    "gas" → TypeData("Natural gas"),
-    "coal" → TypeData("Coal")
+    "bio" → TypeData("Biofuel", ""),
+    "peat" → TypeData("Peat", "/images/icons/peat.svg"),
+    "wind" → TypeData("Wind", "/images/icons/wind.svg"),
+    "hydro" → TypeData("Hydro", "/images/icons/hydro.svg"),
+    "oil" → TypeData("Oil", "/images/icons/oil.svg"),
+    "solar" → TypeData("Solar", ""),
+    "nuclear" → TypeData("Nuclear", ""),
+    "other" → TypeData("Other", ""),
+    "gas" → TypeData("Natural gas", ""),
+    "coal" → TypeData("Coal", "")
   )
 
   // these are ids, not direct references: left = area, right = line

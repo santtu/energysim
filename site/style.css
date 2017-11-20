@@ -49,6 +49,11 @@
     margin: 1rem;
 }
 
+.main-right .info .description {
+    margin-bottom: 1rem;
+    font-size: 150%;
+}
+
 .main-right .stats {
     padding: 0.5rem;
     border-bottom: 1px solid black;

@@ -172,25 +172,27 @@ object AreaInfo {
 
   class Backend($: BackendScope[Props, State]) {
     def render(state: State, p: Props): VdomElement = {
+      val info = Main.areas(p.area.id)
+
       <.div(
-        <.div(s"AREA: ${p.area}"), <.br,
-        p.area.sources.toVdomArray(source ⇒
+        <.div(^.className := "description",
+          info.name),
+        p.area.sources.toVdomArray(source ⇒ {
+          val typeinfo = Main.types(source.capacityType.id)
           <.div(^.className := "source",
             ^.key := source.id,
             EnabledNumber(
-              label = Main.types.get(source.capacityType.id) match {
-                case Some(info) ⇒ info.name
-                case None ⇒ source.name.getOrElse(source.id)
-              },
+              label = typeinfo.name,
               value = state(source.id)._1,
               checked = !state(source.id)._2,
               callback = { (value, enabled) ⇒
                 p.areaUpdated(p.area.update(source.copy(
                   capacity = value.toInt,
                   disabled = !enabled))) >>
-                $.modState(s ⇒ s.updated(source.id, (value.toInt, !enabled)))
+                  $.modState(s ⇒ s.updated(source.id, (value.toInt, !enabled)))
               },
-              min = 0, max = 10000, step = 5))))
+              min = 0, max = 10000, step = 5))
+        }))
     }
 
     def receiveProps(props: Props): Callback =
@@ -213,8 +215,10 @@ object LineInfo {
 
   class Backend($: BackendScope[Props, State]) {
     def render(p: Props): VdomElement = {
+      val info = Main.lines(p.line.id)
+
       <.div(
-        <.div(s"LINE: ${p.line}"),
+        <.div(^.className := "description", info.name),
         EnabledNumber(
           "Transmission capacity",
           p.line.unitCapacity,

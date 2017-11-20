@@ -2,3 +2,4 @@
 project/target/
 target/
 dist/
+.DS_Store
