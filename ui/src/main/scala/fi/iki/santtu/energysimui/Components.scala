@@ -1,8 +1,10 @@
 package fi.iki.santtu.energysimui
 
+import com.payalabs.scalajs.react.bridge
+import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
 import fi.iki.santtu.energysim.model.{Area, Line, World}
 import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics}
-import fi.iki.santtu.energysimui.Main.{AreaData, LineData, Selection}
+import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, _}
 import org.scalajs.dom
@@ -14,13 +16,67 @@ import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
 import scala.util.Try
 
+/*
+data - the data set used to build the sparkline
 
-/**
-  * Specific slider that does not fire change until 
-  */
-object Slider {
+limit - optional, how many data points to display at once
 
+width, height - dimensions of the generated sparkline in the SVG viewbox. This will be automatically scaled (i.e. responsive) inside the parent container by default.
+
+svgWidth, svgHeight - If you want absolute dimensions instead of a responsive component set these attributes.
+
+preserveAspectRatio - default: 'none', set this to modify how the sparkline should scale
+
+margin - optional, offset the chart
+
+min, max - optional, bound the chart
+ */
+
+
+object Sparklines extends ReactBridgeComponent {
+  def apply(data: js.UndefOr[Seq[Double]] = js.undefined,
+            limit: js.UndefOr[Int] = js.undefined,
+            width: js.UndefOr[Int] = js.undefined,
+            height: js.UndefOr[Int] = js.undefined,
+            svgWidth: js.UndefOr[Int] = js.undefined,
+            svgHeight: js.UndefOr[Int] = js.undefined,
+            preserveAspectRatio: js.UndefOr[String] = js.undefined,
+            margin: js.UndefOr[Int] = js.undefined,
+            min: js.UndefOr[Double] = js.undefined,
+            max: js.UndefOr[Double] = js.undefined): WithProps = auto
+//             defaultValue: js.UndefOr[Seq[String]] = js.undefined,
+//            value: js.UndefOr[Seq[String]] = js.undefined,
+//            placeholder: js.UndefOr[String] = js.undefined,
+//            onChange: js.UndefOr[js.Array[String] => Callback] = js.undefined,
+//            validate: js.UndefOr[String => CallbackTo[Boolean]] = js.undefined,
+//            transform: js.UndefOr[String => CallbackTo[String]] = js.undefined): WithPropsNoChildren = autoNoChildren
 }
+
+object SparklinesLine extends ReactBridgeComponent {
+  def apply(color: js.UndefOr[String] = js.undefined,
+            style: js.UndefOr[Map[String, Any]] = js.undefined): WithProps = auto
+}
+
+object SparklinesSpots extends ReactBridgeComponent {
+  def apply(size: js.UndefOr[Int] = js.undefined,
+            style: js.UndefOr[Map[String, Any]] = js.undefined): WithProps = auto
+}
+
+/*
+
+    static propTypes = {
+        type: PropTypes.oneOf(['max', 'min', 'mean', 'avg', 'median', 'custom']),
+        value: PropTypes.number,
+        style: PropTypes.object
+    };
+ */
+object SparklinesReferenceLine extends ReactBridgeComponent {
+  def apply(`type`: js.UndefOr[String] = js.undefined,
+            value: js.UndefOr[Double] = js.undefined,
+            style: js.UndefOr[Map[String, Any]] = js.undefined,
+            margin: js.UndefOr[Int] = js.undefined): WithProps = auto
+}
+
 
 /**
   * Generic number input with a "enabled" checkbox. This puts off
@@ -123,38 +179,38 @@ object AreasMap {
     // selected can be
     def isRelated(p: Props, area: Area): Boolean =
       p.selected match {
-        case Some(Right(id)) ⇒ p.world.lineById(id).get.areasSeq.contains(area)
+        case LineSelection(id) ⇒ p.world.lineById(id).get.areasSeq.contains(area)
         case _ ⇒ false
       }
 
     def isRelated(p: Props, line: Line): Boolean =
       p.selected match {
-        case Some(Left(id)) ⇒ line.areasSeq.map(_.id).contains(id)
+        case AreaSelection(id) ⇒ line.areasSeq.map(_.id).contains(id)
         case _ ⇒ false
       }
 
     def render(p: Props) = {
       <.div(
         p.areaData.toVdomArray { case (area, info) ⇒
-          val focused = p.selected.contains(Left(area.id))
+          val focused = p.selected == AreaSelection(area.id)
           <.div(
             ^.key := area.id,
             ^.className := "col area",
             (^.className := "focused").when(focused),
             (^.className := "related").when(isRelated(p, area)),
-            (^.onClick --> p.updateSelection(Some(Left(area.id)))).when(!focused),
-            (^.onClick --> p.updateSelection(None)).when(focused),
+            (^.onClick --> p.updateSelection(AreaSelection(area.id))).when(!focused),
+            (^.onClick --> p.updateSelection(NoSelection)).when(focused),
             info.name)
         },
         p.lineData.toVdomArray { case (line, info) ⇒
-          val focused = p.selected.contains(Right(line.id))
+          val focused = p.selected == LineSelection(line.id)
           <.div(
             ^.key := line.id,
             ^.className := "col line",
             (^.className := "focused").when(focused),
             (^.className := "related").when(isRelated(p, line)),
-            (^.onClick --> p.updateSelection(Some(Right(line.id)))).when(!focused),
-            (^.onClick --> p.updateSelection(None)).when(focused),
+            (^.onClick --> p.updateSelection(LineSelection(line.id))).when(!focused),
+            (^.onClick --> p.updateSelection(NoSelection)).when(focused),
             info.name)
         })
     }
@@ -295,14 +351,14 @@ object WorldMap {
               el.classList.remove("selected")
               anim.asInstanceOf[js.Dynamic].beginElement()
               focused = None
-              p.selectedFn(None)
+              p.selectedFn(NoSelection)
           }
         } >> $.setState(false)),
         ^.dangerouslySetInnerHtml := p.map
       )
     }
 
-    def focus(s: Either[String, String], el: Element, fa: Element, ufa: Element) = {
+    def focus(selection: Selection, el: Element, fa: Element, ufa: Element) = {
       focused = if (el.classList.toggle("selected")) {
         focused foreach { case (ol, _) ⇒ ol.classList.remove("selected") }
         fa.asInstanceOf[js.Dynamic].beginElement()
@@ -312,18 +368,17 @@ object WorldMap {
         None
       }
 
-      val selected = focused.map(_ ⇒ s)
-
-      ($.setState(selected.nonEmpty) >>
-        ($.props >>= (p ⇒ p.selectedFn(selected))))
+      ($.setState(focused.nonEmpty) >>
+        ($.props >>= (p ⇒ p.selectedFn(
+          if (focused.nonEmpty) selection else NoSelection))))
         .runNow()
     }
 
     def mounted: Callback = Callback {
       val elements = Main.areas.map {
-        case (id, area) ⇒ (id, area.mapId, area.selectedAnimationId, area.unselectedAnimationId, Left(id))
+        case (id, area) ⇒ (id, area.mapId, area.selectedAnimationId, area.unselectedAnimationId, AreaSelection(id))
       } ++ Main.lines.map {
-        case (id, line) ⇒ (id, line.mapId, line.selectedAnimationId, line.unselectedAnimationId, Right(id))
+        case (id, line) ⇒ (id, line.mapId, line.selectedAnimationId, line.unselectedAnimationId, LineSelection(id))
       }
 
       for ((id, mapId, aId, faId, selection) ← elements) {

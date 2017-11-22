@@ -24,12 +24,12 @@ object WorkerOperation extends Enumeration {
 }
 
 @ScalaJSDefined
-class Message(val op: Int, val world: js.Any) extends js.Object {
+class Message(val op: Int, val value: js.Any) extends js.Object {
 }
 
 object Message {
-  def apply(op: Op, world: js.Any = js.undefined) =
-    new Message(op.id, world)
+  def apply(op: Op, value: js.Any = js.undefined) =
+    new Message(op.id, value)
 }
 
 @ScalaJSDefined
@@ -45,13 +45,13 @@ object Reply {
 }
 
 object SimulationWorker extends JSApp {
-  val roundsPerStep = 100
 
   import WorkerOperation._
   import WorkerState._
 
   var world: Option[World] = None
   var timer: Option[SetIntervalHandle] = None
+  var roundsPerStep = 20
 
   def simulateRound: Unit = {
     require(world.isDefined)
@@ -83,7 +83,7 @@ object SimulationWorker extends JSApp {
         case Nop ⇒ println("got nop")
 
         case SetWorld ⇒
-          val json = io.circe.scalajs.convertJsToJson(data.world) match {
+          val json = io.circe.scalajs.convertJsToJson(data.value) match {
             case Left(error) ⇒ throw error
             case Right(json) ⇒ json
           }
@@ -95,8 +95,9 @@ object SimulationWorker extends JSApp {
 
         case Start if world.isDefined && timer.isEmpty ⇒
           timer = Some(timers.setInterval(1.0)(simulateRound))
+          roundsPerStep = data.value.asInstanceOf[Int]
           reply(Reply(Started))
-          println(s"started worker with timer $timer")
+          println(s"started worker with timer $timer, $roundsPerStep rounds per step")
 
         case Stop if timer.nonEmpty ⇒
           println(s"stopping worker timer $timer")

@@ -35,7 +35,6 @@
     <meta name="msapplication-square310x310logo" content="images/favicon/mstile-310x310.png" />
 
     <link rel="stylesheet" href="style.css" />
-
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
@@ -47,9 +46,23 @@
 
     <div class="container" id="playground"></div>
 
+
     <!-- Include Scala.js compiled code -->
     <script type="text/javascript" src="js/energy-simulator-ui-fastopt-library.js"></script>
     <script type="text/javascript" src="js/energy-simulator-ui-fastopt-loader.js"></script>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/react-sparklines@1.7.0/build/index.js" integrity="sha256-TgNObJv9CDuyZVxmKa1CPhqLrbbC/znt4CjxIfPxxao=" crossorigin="anonymous"></script> -->
+    <script src="js/react-sparklines-custom.js"></script>
+    <script>
+      var Sparklines = ReactSparklines.Sparklines,
+      SparklinesLine = ReactSparklines.SparklinesLine
+      SparklinesSpots = ReactSparklines.SparklinesSpots,
+      SparklinesReferenceLine = ReactSparklines.SparklinesReferenceLine;
+    </script>
+
+
     <script type="text/javascript" src="js/energy-simulator-ui-fastopt.js"></script>
+
+
   </body>
 </html>

@@ -46,8 +46,10 @@ lazy val ui = (project in file("ui"))
       "precss" → "^2.0.0",
       "autoprefixer" → "^7.0.0",
     ),
+    resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
       "com.github.marklister" %%% "base64" % "0.2.3",
+      "com.payalabs" %%% "scalajs-react-bridge" % "0.4.0-SNAPSHOT",
     ),
     webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
     includeFilter in webpackMonitoredFiles := "*.sass",

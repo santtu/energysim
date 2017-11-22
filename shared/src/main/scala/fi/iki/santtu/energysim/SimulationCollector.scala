@@ -1,11 +1,12 @@
 package fi.iki.santtu.energysim
 
-import javax.sound.sampled.SourceDataLine
+
+import java.util.{Formattable, Formatter}
 
 import fi.iki.santtu.energysim.model.{Area, Drain, Line, Source, World}
 import fi.iki.santtu.energysim.simulation.{AreaData, Result, Simulation, UnitData}
 
-import scala.concurrent.Future
+import scala.reflect._
 
 case class Results(val rounds: Int)
 //
@@ -14,12 +15,64 @@ case class Results(val rounds: Int)
 //                   val sourceIndex: Map[Source, Int],
 //                   val lineIndex: Map[Line, Int])
 
-class MeanVariance {
+trait FixedBuffer[T] {
+  def length: Int
+  def size: Int
+  def +=(v: T): Unit
+  def update(v: Seq[T]): Unit
+  def toSeq: Seq[T]
+}
+
+object FixedBuffer {
+  class empty[T] extends FixedBuffer[T] {
+    override def length: Int = 0
+    override def size: Int = 0
+    override def +=(v: T): Unit = Unit
+    override def toSeq: Seq[T] = Seq.empty[T]
+    override def update(v: Seq[T]): Unit = Unit
+  }
+
+  class nonempty[T](val size: Int)(implicit tag: ClassTag[T]) extends FixedBuffer[T] {
+    private val data = tag.newArray(size)
+    private var pos = 0
+    var length = 0
+
+    def +=(v: T): Unit = {
+      data(pos) = v
+      pos = (pos + 1) % size
+      if (length < size)
+        length += 1
+    }
+
+    override def update(v: Seq[T]): Unit = {
+      if (v.length <= size) {
+        pos = v.length
+        length = v.length
+        v.copyToArray(data)
+      } else {
+        pos = size
+        length = size
+        v.copyToArray(data, v.length - size)
+      }
+    }
+
+    def toSeq = data.slice(pos, length) ++ data.slice(0, pos)
+  }
+
+  def apply[T](size: Int)(implicit tag: ClassTag[T]) = size match {
+    case 0 ⇒ new empty[T]()
+    case _ ⇒ new nonempty[T](size)
+  }
+}
+
+
+class MeanVariance(history: Int = 0) extends Formattable {
   private var n: Long = 0
   private var m: Double = 0.0
   private var M2: Double = 0.0
   private var high = Double.NegativeInfinity
   private var low = Double.PositiveInfinity
+  private var values = FixedBuffer[Double](history)
 
   def count: Long = n
   def mean: Double = m
@@ -41,19 +94,21 @@ class MeanVariance {
     M2 += delta * delta2
     high = Math.max(high, v)
     low = Math.min(low, v)
+    values += v
   }
 
   def *(v: Double): MeanVariance = {
-    val o = new MeanVariance()
+    val o = new MeanVariance(history)
     o.n = n
-
     o.m = m * v
-    o.M2 = M2 * v
+    o.M2 = M2 * v * v
     o.high = high * v
     o.low = low * v
-
+    o.values.update(values.toSeq.map(_ * v))
     o
   }
+
+  def -(): MeanVariance = this * -1.0
 
   def /(v: Double): MeanVariance = this * (1 / v)
 
@@ -70,6 +125,22 @@ class MeanVariance {
 //    head + tail
 
     head
+  }
+
+  def toSeq = values.toSeq
+
+  override def formatTo(formatter: Formatter, flags: Int, width: Int, precision: Int) = {
+    val fmt = (width, precision) match {
+      case (-1, -1) ⇒ "%f"
+      case (w, -1) ⇒ s"%${w}f"
+      case (-1, p) ⇒ s"%.${p}f"
+      case (w, p) ⇒ s"%${w}.${p}f"
+    }
+
+    formatter.format(s"$fmt", mean.asInstanceOf[AnyRef])
+
+    if (!(dev.isNaN || dev == 0.0))
+      formatter.format(s" ± $fmt", dev.asInstanceOf[AnyRef])
   }
 }
 
@@ -93,25 +164,25 @@ class Portion {
 }
 
 object MeanVariance {
-  def apply() = new MeanVariance()
+  def apply(history: Int = 0) = new MeanVariance(history)
 }
 
 object Portion {
   def apply() = new Portion()
 }
 
-class AreaStatistics {
-  val total = MeanVariance()
-  val excess = MeanVariance()
-  val generation = MeanVariance()
-  val drain = MeanVariance()
-  val transfer = MeanVariance()
+class AreaStatistics(history: Int) {
+  val total = MeanVariance(history)
+  val excess = MeanVariance(history)
+  val generation = MeanVariance(history)
+  val drain = MeanVariance(history)
+  val transfer = MeanVariance(history)
   val loss = Portion()
-  val ghg = MeanVariance()
+  val ghg = MeanVariance(history)
 
   def +=(a: AreaData): Unit = {
     loss += a.total < 0
-    total += a.total
+    total += (if (a.total < 0) a.total else a.excess)
     excess += a.excess
     generation += a.generation
     drain += a.drain
@@ -125,13 +196,13 @@ class AreaStatistics {
 }
 
 object AreaStatistics {
-  def apply() = new AreaStatistics()
+  def apply(history: Int = 0) = new AreaStatistics(history)
 }
 
-abstract class UnitStatistics {
-  val used = MeanVariance()
-  val excess = MeanVariance()
-  val capacity = MeanVariance()
+abstract class UnitStatistics(history: Int) {
+  val used = MeanVariance(history)
+  val excess = MeanVariance(history)
+  val capacity = MeanVariance(history)
 
   def +=(ud: UnitData): Unit = {
     used += ud.used
@@ -140,10 +211,10 @@ abstract class UnitStatistics {
   }
 }
 
-class DrainStatistics extends UnitStatistics {
+class DrainStatistics(history: Int) extends UnitStatistics(history) {
 }
 
-class SourceStatistics extends UnitStatistics {
+class SourceStatistics(history: Int) extends UnitStatistics(history) {
   val ghg = MeanVariance()
   val atCapacity = Portion()
   val proportion = MeanVariance()
@@ -158,12 +229,12 @@ class SourceStatistics extends UnitStatistics {
     s"[used=$used,excess=$excess,capacity=$capacity,ghg=$ghg,maxed=$atCapacity]"
 }
 
-class TypeStatistics extends SourceStatistics {
+class TypeStatistics(history: Int) extends SourceStatistics(history) {
   // actually no difference here, since we count sources (but
   // multiple of them)
 }
 
-class LineStatistics extends UnitStatistics {
+class LineStatistics(history: Int) extends UnitStatistics(history) {
   val transfer = MeanVariance() // abs of used
   val unused = MeanVariance() // abs against capacity
   val right = MeanVariance() // from first to second
@@ -189,26 +260,26 @@ class LineStatistics extends UnitStatistics {
     s"[transfer=$transfer,unused=$unused,right=$right,left=$left,full=$atCapacity]"
 }
 
-object SourceStatistics { def apply() = new SourceStatistics() }
-object DrainStatistics { def apply() = new DrainStatistics() }
-object LineStatistics { def apply() = new LineStatistics() }
-object TypeStatistics { def apply() = new TypeStatistics() }
+object SourceStatistics { def apply(history: Int = 0) = new SourceStatistics(history) }
+object DrainStatistics { def apply(history: Int = 0) = new DrainStatistics(history) }
+object LineStatistics { def apply(history: Int = 0) = new LineStatistics(history) }
+object TypeStatistics { def apply(history: Int = 0) = new TypeStatistics(history) }
 
 
-class SimulationCollector(private val world: World) {
+class SimulationCollector(private val world: World, history: Int) {
   var rounds: Int = 0
   val areas: Map[String, AreaStatistics] =
-    world.areas.map { _.id → AreaStatistics() }.toMap
+    world.areas.map { _.id → AreaStatistics(history) }.toMap
   val sources: Map[String, SourceStatistics] =
-    world.areas.flatMap(_.sources).map { _.id → SourceStatistics() }.toMap
+    world.areas.flatMap(_.sources).map { _.id → SourceStatistics(history) }.toMap
   val drains: Map[String, DrainStatistics] =
-    world.areas.flatMap(_.drains).map { _.id → DrainStatistics() }.toMap
+    world.areas.flatMap(_.drains).map { _.id → DrainStatistics(history) }.toMap
   val lines: Map[String, LineStatistics] =
-    world.lines.map { _.id → LineStatistics() }.toMap
+    world.lines.map { _.id → LineStatistics(history) }.toMap
   val types: Map[String, TypeStatistics] =
-    world.types.map { _.id → TypeStatistics() }.toMap
-  val global = AreaStatistics()
-  val external = AreaStatistics()
+    world.types.map { _.id → TypeStatistics(history) }.toMap
+  val global = AreaStatistics(history)
+  val external = AreaStatistics(history)
 
   // some fields that are used only internally and not public
   private val sourcesByAreaId = world.areas.map(a ⇒ a.id → a.sources).toMap
@@ -308,8 +379,8 @@ class SimulationCollector(private val world: World) {
 }
 
 object SimulationCollector {
-  def apply(world: World) =
-    new SimulationCollector(world)
+  def apply(world: World, history: Int = 0) =
+    new SimulationCollector(world, history)
 
   def simulate(world: World, simulation: Simulation, count: Int): SimulationCollector = {
     val collector = SimulationCollector(world)

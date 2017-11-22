@@ -12,20 +12,25 @@ import japgolly.scalajs.react.{BackendScope, Callback, ScalaComponent}
 import org.scalajs.dom.raw.Worker
 import japgolly.scalajs.react.vdom.html_<^._
 
+import scala.util.Random
+
 
 object UserInterface {
+  val roundsPerUpdate = 1
+  val historySize = 100
+
   case class Props(world: World,
                    defaultWorld: World,
-                   collector: SimulationCollector,
                    // actually svg
                    worldMap: String,
                    controller: RouterCtl[Pages])
 
-  case class State(selected: Selection = None,
+  case class State(selected: Selection = NoSelection,
                    playing: Boolean = false,
                    running: Boolean = false,
                    iterations: Int = 0,
-                   runningTime: Double = 0.0)
+                   runningTime: Double = 0.0,
+                   collector: Option[SimulationCollector] = None)
 
   class Backend($: BackendScope[Props, State]) {
     val worker = new Worker("worker.js")
@@ -49,14 +54,24 @@ object UserInterface {
           }
           // this is a bit evil, but simulation collector is an object,
           // not a case class, so we modify it directly ...
-          (($.props |> { p ⇒ p.collector += result }) >>
-            $.modState(s ⇒ s.copy(
-              iterations = s.iterations + reply.rounds,
-              runningTime = s.runningTime + reply.interval))).runNow()
+//          (($.props |> { p ⇒ p.collector += result }) >>
+            $.modState(s ⇒ {
+              s.collector.get += result
+              s.copy(
+                iterations = s.iterations + reply.rounds,
+                runningTime = s.runningTime + reply.interval)
+            }).runNow()
       }
     }
 
     worker.onmessage = receive
+
+    def init: Callback =
+      $.props >>= {
+        p ⇒
+          $.modState(s ⇒ s.copy(collector =
+            Some(SimulationCollector(p.world, historySize))))
+      }
 
     def uninit: Callback =
       Callback {
@@ -70,13 +85,14 @@ object UserInterface {
 
     def sendWorld(w: World) = {
       send(Message(WorkerOperation.SetWorld,
-        world = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(w))))
+        value = io.circe.scalajs.convertJsonToJs(JsonDecoder.encodeAsJson(w))))
     }
+
 
     val startSimulation = {
       $.modState(_.copy(playing = true)) >>
         ($.props |> { p ⇒ sendWorld(p.world) }) >>
-        Callback { send(Message(WorkerOperation.Start)) }
+        Callback { send(Message(WorkerOperation.Start, roundsPerUpdate)) }
     }
 
     val stopSimulation = {
@@ -119,6 +135,7 @@ object UserInterface {
 
     def render(s: State, p: Props): VdomElement = {
       val world = p.world
+      val collector: SimulationCollector = s.collector.get
 
       <.div(
         // header contains controllers and graphs
@@ -127,30 +144,33 @@ object UserInterface {
           <.div(^.className := "col-2",
             <.button(
               ^.`type` := "button",
-              ^.className := "btn btn-primary",
+              ^.className := "btn btn-primary start-stop",
               ^.onClick --> startSimulation,
               ^.disabled := s.running,
               "START").when(!s.playing),
             <.button(
               ^.`type` := "button",
-              ^.className := "btn btn-primary",
+              ^.className := "btn btn-primary start-stop",
               ^.onClick --> stopSimulation,
               ^.disabled := !s.running,
-              "PAUSE").when(s.playing),
-          ),
+              "STOP").when(s.playing)),
 
           // graphs come here
           <.div(^.className := "col",
-            <.small(
-              ^.className := "text-muted",
-              s"${s.iterations} iterations ",
-              f"in ${s.runningTime}%.1f seconds".when(s.runningTime > 0.0)),
-            <.br,
-            <.small(
-              f"Loss: ${p.collector.global.loss.percentage}%.1f%%", <.br,
-              f"Generation: ${p.collector.global.generation.mean}%.0f±${p.collector.global.generation.dev}%.0f MW", <.br,
-              f"GHG: ${p.collector.global.ghg.mean * ghgScaleFactor}%.0f±${p.collector.global.ghg.dev * ghgScaleFactor}%.0f t/a", <.br
-            ).when(p.collector.rounds > 0)),
+            <.div(
+              <.small(
+                ^.className := "text-muted",
+                s"${s.iterations} iterations ",
+                f"in ${s.runningTime}%.1f seconds"),
+//              <.br,
+//              <.small(
+//                f"Loss: ${p.collector.global.loss.percentage}%.1f%%", <.br,
+//                f"Generation: ${p.collector.global.generation.mean}%.0f±${p.collector.global.generation.dev}%.0f MW", <.br,
+//                f"GHG: ${p.collector.global.ghg.mean * ghgScaleFactor}%.0f±${p.collector.global.ghg.dev * ghgScaleFactor}%.0f t/a"
+//              )
+            ).when(s.iterations > 0),
+            <.img(^.className := "starting",
+              ^.src := "images/loading.svg").when(s.iterations == 0 && s.playing)),
 
           // summary information
           <.div(^.className := "col-2",
@@ -174,21 +194,84 @@ object UserInterface {
             ^.className := "col-md-4 main-right",
             // if rounds > 0 we have statistics to show, either
             // running or paused
-            if (p.collector.rounds > 0)
+            if (collector.rounds > 0)
               s.selected match {
-                case Some(Left(id)) ⇒
+                case AreaSelection(id) ⇒
                   val area = world.areaById(id).get
-                  val data = p.collector.areas(id)
+                  val data = collector.areas(id)
+//                  <.div(
+//                    ^.className := "stats",
+//                    AreaStats((area, data)))
                   <.div(
-                    ^.className := "stats",
-                    AreaStats((area, data)))
-                case Some(Right(id)) ⇒
+                    ^.className := "statistics",
+                    "Power balance", <.br,
+                    <.span(^.className := "current",
+                      f"${data.total / 1e3}%.1s GW"),
+                    Sparklines(data = data.total.toSeq)(
+                      SparklinesLine(style = Map("fill" → "none"))(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
+                    ),
+                    "Production",  <.br,
+                    <.span(^.className := "current",
+                      f"${data.generation / 1000}%.1s GW"),
+                    Sparklines(data = data.generation.toSeq, min = 0.0)(
+                      SparklinesLine(color = "#253e56")(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = data.generation.mean)(),
+                    ),
+                    "Transfer",  <.br,
+                    <.span(^.className := "current",
+                      f"${data.transfer / 1000}%.1s GW"),
+                    Sparklines(data = data.transfer.toSeq)(
+                      SparklinesLine(style = Map("fill" → "none"))(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
+                    ),
+                  ).when(collector.rounds > 0)
+
+                case LineSelection(id) ⇒
                   val line = world.lineById(id).get
-                  val data = p.collector.lines(id)
+                  val data = collector.lines(id)
                   <.div(
                     ^.className := "stats",
                     LineStats((line, data)))
-                case None ⇒ EmptyVdom // maybe global stats instead?
+                case NoSelection ⇒
+                  <.div(
+                    ^.className := "statistics",
+                    "Power balance", <.br,
+                    <.span(^.className := "current",
+                      f"${collector.global.total / 1e3}%.1s GW"),
+                    Sparklines(data = collector.global.total.toSeq)(
+                      SparklinesLine(style = Map("fill" → "none"))(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
+                    ),
+                    "Production", <.br,
+                    <.span(^.className := "current",
+                      f"${collector.global.generation / 1e3}%.1s GW"),
+                    Sparklines(data = collector.global.generation.toSeq, min = 0.0)(
+                      SparklinesLine()(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = collector.global.generation.mean)(),
+                    ),
+                    "CO2 emissions",  <.br,
+                    <.span(^.className := "current",
+                      f"${collector.global.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
+                    Sparklines(data = collector.global.ghg.toSeq, min = 0.0)(
+                      SparklinesLine(color = "#253e56")(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = collector.global.ghg.mean)(),
+                    ),
+                    "Import", <.br,
+                    <.span(^.className := "current",
+                      f"${collector.external.transfer / -1e3}%.1s GW"),
+                    Sparklines(data = (collector.external.transfer * -1).toSeq, min = 0.0)(
+                      SparklinesLine()(),
+                      SparklinesSpots()(),
+                      SparklinesReferenceLine(`type` = "custom", value = -collector.external.transfer.mean)(),
+                    ),
+                  ).when(collector.rounds > 0)
               }
             else
               EmptyVdom,
@@ -196,21 +279,24 @@ object UserInterface {
             <.div(
               ^.className := "info",
               s.selected match {
-                case Some(Left(id)) ⇒
+                case AreaSelection(id) ⇒
                   AreaInfo(AreaInfo.Props(world.areaById(id).get,
                     { newArea ⇒
                       changeWorld(world.update(newArea))
                     }))
-
-                case Some(Right(id)) ⇒
+                case LineSelection(id) ⇒
                   val line = world.lineById(id).get
                   LineInfo(LineInfo.Props(line,
                     { newLine ⇒
                       println(s"old line: ${line.unitCapacity} ${line.disabled} new ${newLine.unitCapacity} ${newLine.disabled}")
                       changeWorld(world.update(newLine))
                     }))
-                case None ⇒
-                  "No area or line selected"
+                case NoSelection ⇒
+                  // show global statistics here
+//                  "No area or line selected"
+//                  val data = Seq.fill(20)(Random.nextDouble() * 20000.0 - 10000.0)
+//                  println(s"data=$data")
+                  EmptyVdom // maybe global stats instead?
               }
             ))))
     }
@@ -219,6 +305,7 @@ object UserInterface {
   val component = ScalaComponent.builder[Props]("UserInterface")
     .initialState(State())
     .renderBackend[Backend]
+    .componentWillMount(_.backend.init)
     .componentWillUnmount(_.backend.uninit)
     .componentWillReceiveProps(i ⇒ i.backend.updateWorld(i.nextProps.world))
     .build
@@ -227,7 +314,7 @@ object UserInterface {
     component(Props(world = world,
       defaultWorld = defaultWorld,
       worldMap = worldMap,
-      collector = SimulationCollector(world),
+//      collector = SimulationCollector(world, historySize),
       controller = ctl))
   }
 }

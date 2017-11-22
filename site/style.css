@@ -63,7 +63,7 @@
 }
 
 .map {
-    height: 80vh;
+    height: 90vh;
 }
 
 #areas .selected path, #lines .selected path {
@@ -127,4 +127,12 @@
 
 .source input[type='checkbox'] {
     transform: scale(1.5);
+}
+
+img.starting {
+    height: 2rem;
+}
+
+.statistics .current {
+    font-size: small;
 }

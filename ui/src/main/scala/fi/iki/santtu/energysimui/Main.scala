@@ -2,7 +2,7 @@ package fi.iki.santtu.energysimui
 
 import com.github.marklister.base64.Base64._
 import fi.iki.santtu.energysim._
-import fi.iki.santtu.energysim.model.World
+import fi.iki.santtu.energysim.model.{Area, Line, World}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -15,6 +15,10 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js.annotation._
 import scala.util.{Failure, Success}
 
+abstract class Selection
+object NoSelection extends Selection
+sealed case class AreaSelection(id: String) extends Selection
+sealed case class LineSelection(id: String) extends Selection
 
 @JSExportTopLevel("EnergySim")
 object Main {
@@ -76,8 +80,8 @@ object Main {
     "coal" → TypeData("Coal", "")
   )
 
-  // these are ids, not direct references: left = area, right = line
-  type Selection = Option[Either[String, String]]
+//  // these are ids, not direct references: left = area, right = line
+//  type Selection = Option[Either[String, String]]
 
   sealed trait Pages
   case class WorldPage(encoded: String) extends Pages {
