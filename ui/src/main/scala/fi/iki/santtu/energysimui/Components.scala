@@ -350,10 +350,10 @@ object WorldMap {
             case (el, anim) ⇒
               el.classList.remove("selected")
               anim.asInstanceOf[js.Dynamic].beginElement()
-              focused = None
-              p.selectedFn(NoSelection)
           }
-        } >> $.setState(false)),
+          focused = None
+        } >> $.setState(false)
+          >> p.selectedFn(NoSelection)),
         ^.dangerouslySetInnerHtml := p.map
       )
     }
