@@ -6,7 +6,7 @@ import fi.iki.santtu.energysimui.Main._
 import fi.iki.santtu.energysimworker.WorkerState.{Result, Started, Stopped}
 import fi.iki.santtu.energysimworker.{Message, Reply, WorkerOperation, WorkerState}
 import japgolly.scalajs.react.extra.router.RouterCtl
-import japgolly.scalajs.react.vdom.VdomElement
+import japgolly.scalajs.react.vdom.{Attr, VdomElement}
 import org.scalajs.dom.raw.MessageEvent
 import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ScalaComponent}
 import org.scalajs.dom.raw.Worker
@@ -166,12 +166,15 @@ object UserInterface {
               ^.className := "btn btn-primary start-stop",
               ^.onClick --> startSimulation,
               ^.disabled := s.running,
-              "START").when(!s.playing),
+              tooltip := "Start simulation",
+              "START"
+            ).when(!s.playing),
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-primary start-stop",
               ^.onClick --> stopSimulation,
               ^.disabled := !s.running,
+              tooltip := s"Stop the simulation (it will stop after $maxRounds iterations automatically)",
               "STOP").when(s.playing)),
 
           // graphs come here
@@ -186,19 +189,26 @@ object UserInterface {
               ^.src := "images/loading.svg").when(s.iterations == 0 && s.playing)),
 
           // summary information
-          <.div(^.className := "col-4 text-right",
+          <.div(^.className := "col-5 text-right",
+            <.i(^.className := "fa fa-share-alt px-3",
+              ^.id := "share",
+              tooltip := "You can copy the page address directly, as it includes all of the model parameters (you can also bookmark it)."),
+            " ",
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-warning",
               ^.onClick --> changeWorld(p.world, reset = true),
               ^.disabled := (s.iterations == 0),
+              tooltip := "Clear statistics, but do not change changes to model",
               "CLEAR"),
+            " ",
             <.button(
               ^.`type` := "button",
               ^.className := "btn btn-danger",
               //|              ^.onClick --> p.ctl.set(defaultPage),
               ^.onClick --> changeWorld(p.defaultWorld, reset = true),
               ^.disabled := (s.playing || world == p.defaultWorld),
+              tooltip := "Resets all changes to the model",
               "RESET"))),
 
         <.div(^.className := "row",
@@ -218,7 +228,11 @@ object UserInterface {
             <.div(^.className := "description",
               s.selected match {
                 case AreaSelection(id) ⇒
-                  areas(id).name
+                  <.span(
+//                    ^.id := s"$id-area-name",
+//                    ^.key := id,
+                    areas(id).name,
+                    tooltip := areas(id).description)
 
                 case LineSelection(id) ⇒
                   lines(id).name

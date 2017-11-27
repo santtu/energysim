@@ -35,14 +35,14 @@ object Main {
     * Container for UI-related things for each area, e.g. visible name,
     * description etc.
     */
-  case class AreaData(name: String, mapId: String, selectedAnimationId: String, unselectedAnimationId: String)
+  case class AreaData(name: String, mapId: String, selectedAnimationId: String, unselectedAnimationId: String, description: String)
 
   val areas: Map[String, AreaData] = Map(
-    "north" → AreaData("Northern Finland", "#north", "#north-focus", "#world-focus"),
-    "south" → AreaData("Southern Finland", "#south", "#south-focus", "#world-focus"),
-    "east" → AreaData("Eastern Finland", "#east", "#east-focus", "#world-focus"),
-    "west" → AreaData("Western Finland", "#west", "#west-focus", "#world-focus"),
-    "central" → AreaData("Central Finland", "#center", "#center-focus", "#world-focus"),
+    "north" → AreaData("Northern Finland", "#north", "#north-focus", "#world-focus", "Northern Finland description"),
+    "south" → AreaData("Southern Finland", "#south", "#south-focus", "#world-focus", "Southern Finland is the most populous area of Finland and contains Loviisa nuclear power plant with two units."),
+    "east" → AreaData("Eastern Finland", "#east", "#east-focus", "#world-focus", ""),
+    "west" → AreaData("Western Finland", "#west", "#west-focus", "#world-focus", ""),
+    "central" → AreaData("Central Finland", "#center", "#center-focus", "#world-focus", ""),
   )
 
   /**
@@ -66,19 +66,19 @@ object Main {
   )
 
   // TODO: include icon (path to image) to use in UI, tooltip text
-  case class TypeData(name: String, iconUrl: String)
+  case class TypeData(name: String, iconUrl: String, description: String)
 
   val types: Map[String, TypeData] = Map(
-    "bio" → TypeData("Biofuel", ""),
-    "peat" → TypeData("Peat", "/images/icons/peat.svg"),
-    "wind" → TypeData("Wind", "/images/icons/wind.svg"),
-    "hydro" → TypeData("Hydro", "/images/icons/hydro.svg"),
-    "oil" → TypeData("Oil", "/images/icons/oil.svg"),
-    "solar" → TypeData("Solar", ""),
-    "nuclear" → TypeData("Nuclear", ""),
-    "other" → TypeData("Other", ""),
-    "gas" → TypeData("Natural gas", ""),
-    "coal" → TypeData("Coal", "")
+    "bio" → TypeData("Biofuel", "", ""),
+    "peat" → TypeData("Peat", "/images/icons/peat.svg", ""),
+    "wind" → TypeData("Wind", "/images/icons/wind.svg", ""),
+    "hydro" → TypeData("Hydro", "/images/icons/hydro.svg", ""),
+    "oil" → TypeData("Oil", "/images/icons/oil.svg", ""),
+    "solar" → TypeData("Solar", "", "Solar power is produced by photovoltaic (PV) cells converting light directly into electricity."),
+    "nuclear" → TypeData("Nuclear", "", ""),
+    "other" → TypeData("Other", "", ""),
+    "gas" → TypeData("Natural gas", "", ""),
+    "coal" → TypeData("Coal", "", "")
   )
 
 //  // these are ids, not direct references: left = area, right = line

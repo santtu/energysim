@@ -2,13 +2,15 @@ package fi.iki.santtu.energysimui
 
 import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
 import fi.iki.santtu.energysim.model.{Area, Line, World}
-import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics}
+import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, MeanVariance, Portion}
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
+import japgolly.scalajs.react.vdom.{Attr, TagOf}
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, _}
 import org.scalajs.dom
 import org.scalajs.dom.document
+import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw._
 
 import scala.collection.mutable
@@ -22,6 +24,32 @@ object utils {
       case (false, true) ⇒ Some(false)
       case _ ⇒ None
     }
+
+  def powerSecurity(loss: Portion): VdomTag =
+    <.div(
+      tooltip := "The time all demand can be met and no power outages occur. Anything less than 100% means there are power outages.",
+      "Power security", <.br,
+      <.span(^.className := "power-security",
+        f"${100.0 - loss.percentage}%.0f%%")),
+}
+
+import utils._
+
+
+object tooltip extends Attr[String]("tooltip") {
+  private val dataToggle = VdomAttr("data-toggle")
+  // the use of data-original-title is not per popper.js spec, but
+  // apparently due to bad interaction between selectors and react
+  // that seems the only way to consistently get the correct tooltip
+  // shown (when the same element is re-used by react, for example)
+  private val dataOriginalTitle = VdomAttr("data-original-title")
+  override def :=[A](text: A)(implicit t: Attr.ValueType[A, String]): TagMod =
+    EmptyVdom(
+      dataToggle := "tooltip",
+      dataOriginalTitle := text,
+//      ^.id := s"id-${text.hashCode().toHexString}",
+//      ^.title := text
+    )
 }
 
 /*
@@ -95,7 +123,7 @@ object EnabledNumber {
   case class State(checked: Option[Boolean], value: Double, inInput: Boolean = false)
   case class Props(checked: Option[Boolean], value: Double, label: String,
                    callback: (Double, Option[Boolean]) ⇒ Callback,
-                   min: Double, max: Double, step: Double)
+                   min: Double, max: Double, step: Double, tooltip: Option[String])
 
   class Backend($: BackendScope[Props, State]) {
     def render(p: Props, s: State): VdomElement = {
@@ -130,6 +158,7 @@ object EnabledNumber {
                 state,
                 update(s.copy(checked = Some(nextChecked)))
               ))),
+            tooltip :=? p.tooltip,
             p.label)),
         <.div(
           ^.className := "form-row",
@@ -173,8 +202,10 @@ object EnabledNumber {
             value: Double = 0,
             checked: Option[Boolean] = Some(true),
             callback: (Double, Option[Boolean]) ⇒ Callback,
-            min: Double, max: Double, step: Double = 1) =
-    component(Props(checked, value, label, callback, min, max, step))
+            min: Double, max: Double, step: Double = 1,
+            tooltip: String = "") =
+    component(Props(checked, value, label, callback, min, max, step,
+      if (tooltip.length > 0) Some(tooltip) else None))
 }
 
 
@@ -253,7 +284,7 @@ object AreaInfo {
 
       val (productionCapacity, productionEnabled) = (
         area.sources.map(_.unitCapacity).sum,
-        utils.tri(area.sources.map(!_.disabled)))
+        tri(area.sources.map(!_.disabled)))
 
       <.div(
         EnabledNumber(
@@ -283,6 +314,7 @@ object AreaInfo {
             else
               Callback.empty
           },
+          tooltip = s"The maximum production capacity in ${info.name}. Use the slider to adjust all production methods proportionally, and the checkbox to enable/disable all production in ${info.name} in one step.",
           min = 0, max = 10000, step = 100),
 
         area.sources.toVdomArray(source ⇒ {
@@ -369,11 +401,11 @@ object GlobalInfo {
 
       val (productionCapacity, productionEnabled) = (
         sources.map(_.unitCapacity).sum,
-        utils.tri(sources.map(!_.disabled)))
+        tri(sources.map(!_.disabled)))
 
       val (importCapacity, importEnabled) = (
         lines.map(_.unitCapacity).sum,
-        utils.tri(lines.map(!_.disabled)))
+        tri(lines.map(!_.disabled)))
 
 //      println(s"prod=${sources.map(!_.disabled)} -> $productionEnabled")
 //      println(s"import=${lines.map(!_.disabled)} -> $importEnabled")
@@ -396,12 +428,12 @@ object GlobalInfo {
             // see if we need to scale capacities up or down
             if (v != productionCapacity) {
               val scale = v.toDouble / productionCapacity
-              println(s"production capacity changes $productionCapacity --> $v, scale=$scale")
               w = w.scaleSourceCapacity(scale)
             }
 
             update(w)
           },
+          tooltip = "Total maximum production capacity in Finland, use slider to change capacities in all areas proportionally.",
           min = 5000, max = 100000, step = 100),
 
         Main.types.toVdomArray {
@@ -410,7 +442,7 @@ object GlobalInfo {
             val capacityType = world.typeById(id).get
             val (typeCapacity, typeEnabled) = (
               sources.map(_.unitCapacity).sum,
-              utils.tri(sources.map(!_.disabled)))
+              tri(sources.map(!_.disabled)))
             <.div(^.key := id,
               EnabledNumber(
                 data.name,
@@ -428,6 +460,7 @@ object GlobalInfo {
                   }
                   update(w)
                 },
+                tooltip = data.description,
                 min = 0, max = 20000, step = 100))
         },
 
@@ -460,6 +493,7 @@ object GlobalInfo {
 
             update(w)
           },
+          tooltip = "Total imports from neighbouring countries. Use the slider to adjust all imports proportionally and the checkbox to enable or disable all electricity imports in one step.",
           min = 0, max = 10000, step = 100),
       )
     }
@@ -488,19 +522,21 @@ object AreaStats {
 
       <.div(
         ^.className := "statistics",
-        "Power security", <.br,
-        <.span(^.className := "power-security",
-          f"${100.0 - data.loss.percentage}%.0f%%"), <.br,
+        powerSecurity(data.loss),
 
-        "Power balance", <.br,
-        <.span(^.className := "current",
-          f"${data.total / 1e3}%.1s GW",
-        ),
-        Sparklines(data = data.total.toSeq)(
-          SparklinesLine(style = Map("fill" → "none"))(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
-        ),
+//        <.br,
+
+        <.div(
+          tooltip := s"The power balance for ${area.name}, with values >0 showing unused or untransferred electricity production and <0 insufficient production and imports to meet demand.",
+          "Power balance", <.br,
+          <.span(^.className := "current",
+            f"${data.total / 1e3}%.1s GW",
+          ),
+          Sparklines(data = data.total.toSeq)(
+            SparklinesLine(style = Map("fill" → "none"))(),
+            SparklinesSpots()(),
+            SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
+          )),
 
         "Transfer",  <.br,
         <.span(^.className := "current",
@@ -592,9 +628,11 @@ object GlobalStats {
 
       <.div(
         ^.className := "statistics",
-        "Power security", <.br,
-        <.span(^.className := "power-security",
-          f"${100.0 - global.loss.percentage}%.0f%%"), <.br,
+//        "Power security", <.br,
+//        <.span(^.className := "power-security",
+//          f"${100.0 - global.loss.percentage}%.0f%%"), <.br,
+
+        powerSecurity(global.loss),
 
         "Power balance", <.br,
         <.span(^.className := "current",
