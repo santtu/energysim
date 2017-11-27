@@ -49,9 +49,9 @@
     margin: 1rem;
 }
 
-.main-right .info .description {
+.main-right .description {
     margin-bottom: 1rem;
-    font-size: 150%;
+    font-size: 2rem;
 }
 
 .main-right .stats {
@@ -67,7 +67,7 @@
 }
 
 #areas .selected path, #lines .selected path {
-    fill: blue !important;
+    /* fill: blue !important; */
     opacity: 1.0 !important;
     filter: url(#shadow) !important;
 }
@@ -84,7 +84,8 @@
 #areas g path {
     stroke: #fff;
     stroke-width: 20;
-    fill: #006919;
+    /* fill: #006919; */
+    fill: #a0a0a0;
     -webkit-svg-shadow: 0 0 7px #53BE12;
     filter: url(#shadow);
 
@@ -94,6 +95,32 @@
     stroke-miterlimit: 1.41421;
 }
 
+
+#areas g.power-0 path { fill: #db1600 }
+#areas g.power-1 path { fill: #d72d02; }
+#areas g.power-2 path { fill: #d34305; }
+#areas g.power-3 path { fill: #cf5708; }
+#areas g.power-4 path { fill: #ca690a; }
+#areas g.power-5 path { fill: #c67b0d; }
+#areas g.power-6 path { fill: #bf9911; }
+#areas g.power-7 path { fill: #b7b315; }
+#areas g.power-8 path { fill: #83ab1b; }
+#areas g.power-9 path { fill: #579f1f; }
+#areas g.power-10 path { fill: #288f23; }
+
+#lines g path { transform-origin: center; }
+#lines g.line-0 path { fill: #ebebeb; transform: scale(1.0,1.0); }
+#lines g.line-1 path { fill: #d7d7d7; transform: scale(1.05,1.05); }
+#lines g.line-2 path { fill: #c4c4c4; transform: scale(1.10,1.10); }
+#lines g.line-3 path { fill: #b1b1b1; transform: scale(1.15,1.15); }
+#lines g.line-4 path { fill: #9e9e9e; transform: scale(1.20,1.20); }
+#lines g.line-5 path { fill: #8b8b8b; transform: scale(1.25,1.25); }
+#lines g.line-6 path { fill: #777777; transform: scale(1.30,1.30); }
+#lines g.line-7 path { fill: #646464; transform: scale(1.35,1.35); }
+#lines g.line-8 path { fill: #515151; transform: scale(1.40,1.40); }
+#lines g.line-9 path { fill: #3e3e3e; transform: scale(1.45,1.45); }
+#lines g.line-10 path { fill: #2b2b2b; transform: scale(1.5,1.5); }
+
 #areas path:hover {
     fill: red;
     transform: scale(1.05,1.05);
@@ -102,12 +129,23 @@
 }
 
 /* lines get bigger scaling than areas */
-#lines path:hover {
+#imports path:hover, #internal path:hover {
     fill: red;
     transform: scale(1.3,1.3);
     transform-origin: center;
     z-index: 1;
 }
+
+#disabled path {
+    fill: red;
+    visibility: hidden;
+    pointer-events: none;
+
+}
+
+/* #disabled { */
+/*     display: none; */
+/* } */
 
 
 #loader {
@@ -135,4 +173,10 @@ img.starting {
 
 .statistics .current {
     font-size: small;
+    white-space: nowrap;
+}
+
+.power-security {
+    font-size: 2rem;
+    font-variant: bold;
 }

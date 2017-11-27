@@ -175,12 +175,35 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
   override def toString: String = id
 
   def drainByName(name: String): Option[Drain] = drains.find(_.name == name)
+
   def sourceByName(name: String): Option[Source] = sources.find(_.name == name)
 
   def update(source: Source) =
     copy(sources = sources.map {
       case old if old.id == source.id ⇒ source
       case old ⇒ old
+    })
+
+  def setSourcesDisabled(disabled: Boolean) =
+    copy(sources = sources.map(_.copy(disabled = disabled)))
+
+  def setSourcesByTypeDisabled(disabled: Boolean, capacityType: DistributionType) =
+    copy(sources = sources.map {
+      case s if s.capacityType == capacityType ⇒ s.copy(disabled = disabled)
+      case s ⇒ s
+    })
+
+  def scaleSourceCapacity(scale: Double) = {  
+    assume(!external)
+    copy(sources = sources.map(s ⇒ s.copy(capacity = (s.unitCapacity * scale).toInt)))
+  }
+
+  def scaleSourceCapacityByType(scale: Double, capacityType: DistributionType) =
+    copy(sources = sources.map {
+      case s if s.capacityType == capacityType ⇒ s.copy(capacity = (s.unitCapacity * scale).toInt)
+      case s ⇒
+        println(s"${s.capacityType} no match for $capacityType")
+        s
     })
 }
 
@@ -234,6 +257,7 @@ case class World (name: String,
   def lineById(id: String): Option[Line] = lines.find(_.id == id)
   def linesForArea(area: Area): Seq[Line] =
     lines.filter(l ⇒ l.area1 == area || l.area2 == area)
+  def typeById(id: String): Option[DistributionType] = types.find(_.id == id)
 
   override def equals(obj: scala.Any): Boolean =
     obj match {
@@ -250,6 +274,31 @@ case class World (name: String,
     types.toSet.hashCode() ^
     areas.toSet.hashCode() ^
     lines.toSet.hashCode()
+
+
+  def setSourcesDisabled(disabled: Boolean) =
+    copy(areas = areas.map {
+      case a if a.external ⇒ a
+      case a ⇒ a.setSourcesDisabled(disabled)
+    })
+
+  def setSourcesDisabledByType(disabled: Boolean, capacityType: DistributionType) =
+    copy(areas = areas.map {
+      case a if a.external ⇒ a
+      case a ⇒ a.setSourcesByTypeDisabled(disabled, capacityType)
+    })
+
+  def scaleSourceCapacity(scale: Double) =
+    copy(areas = areas.map {
+      case a if a.external ⇒ a
+      case a ⇒ a.scaleSourceCapacity(scale)
+    })
+
+  def scaleSourceCapacityByType(scale: Double, capacityType: DistributionType) =
+    copy(areas = areas.map {
+      case a if a.external ⇒ a
+      case a ⇒ a.scaleSourceCapacityByType(scale, capacityType)
+    })
 }
 
 object World {

@@ -12,6 +12,7 @@ import org.scalajs.dom.html.Element
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js
 import scala.scalajs.js.annotation._
 import scala.util.{Failure, Success}
 
@@ -48,20 +49,20 @@ object Main {
     * Container for UI-related stuff for lines.
     */
 
-  case class LineData(name: String, mapId: String, selectedAnimationId: String, unselectedAnimationId: String)
+  case class LineData(name: String, mapId: String, selectedAnimationId: String, unselectedAnimationId: String, disabledId: String)
 
   val lines: Map[String, LineData] = Map(
-    "west-south" → LineData("West-South", "#west-south", "#west-south-focus", "#world-focus"),
-    "west-central" → LineData("West-Central", "#west-center", "#west-center-focus", "#world-focus"),
-    "south-east" → LineData("South-East", "#south-east", "#south-east-focus", "#world-focus"),
-    "south-central" → LineData("South-Central", "#south-center", "#south-center-focus", "#world-focus"),
-    "east-central" → LineData("East-Central", "#center-east", "#center-east-focus", "#world-focus"),
-    "central-north" → LineData("Central-North", "#north-center", "#north-center-focus", "#world-focus"),
-    "russia-east" → LineData("Russia (import)", "#russia-east", "#russia-east-focus", "#world-focus"),
-    "sweden-west" → LineData("Sweden (import)", "#sweden-west", "#sweden-west-focus", "#world-focus"),
-    "sweden-north" → LineData("Sweden (import)", "#sweden-north", "#sweden-north-focus", "#world-focus"),
-    "estonia-south" → LineData("Estonia (import)", "#estonia-south", "#estonia-south-focus", "#world-focus"),
-    "norway-north" → LineData("Norway (import)", "#norway-north", "#norway-north-focus", "#world-focus"),
+    "west-south" → LineData("West-South", "#west-south", "#west-south-focus", "#world-focus", "#west-south-disabled"),
+    "west-central" → LineData("West-Central", "#west-center", "#west-center-focus", "#world-focus", "#west-center-disabled"),
+    "south-east" → LineData("South-East", "#south-east", "#south-east-focus", "#world-focus", "#south-east-disabled"),
+    "south-central" → LineData("South-Central", "#south-center", "#south-center-focus", "#world-focus", "#south-center-disabled"),
+    "east-central" → LineData("East-Central", "#center-east", "#center-east-focus", "#world-focus", "#center-east-disabled"),
+    "central-north" → LineData("Central-North", "#north-center", "#north-center-focus", "#world-focus", "#north-center-disabled"),
+    "russia-east" → LineData("Russia (import)", "#russia-east", "#russia-east-focus", "#world-focus", "#russia-east-disabled"),
+    "sweden-west" → LineData("Sweden (import)", "#sweden-west", "#sweden-west-focus", "#world-focus", "#sweden-west-disabled"),
+    "sweden-north" → LineData("Sweden (import)", "#sweden-north", "#sweden-north-focus", "#world-focus", "#sweden-north-disabled"),
+    "estonia-south" → LineData("Estonia (import)", "#estonia-south", "#estonia-south-focus", "#world-focus", "#estonia-south-disabled"),
+    "norway-north" → LineData("Norway (import)", "#norway-north", "#norway-north-focus", "#world-focus", "#norway-north-disabled"),
   )
 
   // TODO: include icon (path to image) to use in UI, tooltip text
@@ -167,4 +168,10 @@ object Main {
         println(s"failed loading: $ex")
     }
   }
+
+  @JSExport
+  var collector: js.UndefOr[SimulationCollector] = null
+
+  @JSExport
+  var world: js.UndefOr[World] = null
 }

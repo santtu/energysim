@@ -203,11 +203,16 @@ abstract class UnitStatistics(history: Int) {
   val used = MeanVariance(history)
   val excess = MeanVariance(history)
   val capacity = MeanVariance(history)
+  val usage = MeanVariance(history)
 
   def +=(ud: UnitData): Unit = {
     used += ud.used
     excess += ud.excess
     capacity += ud.capacity
+    usage += (if (ud.capacity > 0)
+      ud.used.toDouble.abs / ud.capacity.abs
+    else
+      0.0)
   }
 }
 
@@ -215,9 +220,9 @@ class DrainStatistics(history: Int) extends UnitStatistics(history) {
 }
 
 class SourceStatistics(history: Int) extends UnitStatistics(history) {
-  val ghg = MeanVariance()
+  val ghg = MeanVariance(history)
   val atCapacity = Portion()
-  val proportion = MeanVariance()
+  val proportion = MeanVariance(history)
 
   override def +=(sd: UnitData): Unit = {
     super.+=(sd)
@@ -235,10 +240,10 @@ class TypeStatistics(history: Int) extends SourceStatistics(history) {
 }
 
 class LineStatistics(history: Int) extends UnitStatistics(history) {
-  val transfer = MeanVariance() // abs of used
-  val unused = MeanVariance() // abs against capacity
-  val right = MeanVariance() // from first to second
-  val left = MeanVariance()
+  val transfer = MeanVariance(history) // abs of used
+  val unused = MeanVariance(history) // abs against capacity
+  val right = MeanVariance(history) // from first to second
+  val left = MeanVariance(history)
   val atCapacity = Portion()
 
   override def +=(ld: UnitData): Unit = {
