@@ -26,7 +26,6 @@ lazy val ui = (project in file("ui"))
   .settings(
     name := "Energy Simulator UI",
     webpackBundlingMode := BundlingMode.LibraryOnly(),
-//    emitSourceMaps := false,
     webpackConfigFile := Some(baseDirectory.value / "my.webpack.config.js"),
     mainClass in Compile := Some("fi.iki.santtu.energysimui.Main"),
     scalaJSUseMainModuleInitializer := true,
@@ -49,11 +48,14 @@ lazy val ui = (project in file("ui"))
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
       "com.github.marklister" %%% "base64" % "0.2.3",
-      "com.payalabs" %%% "scalajs-react-bridge" % "0.4.0-SNAPSHOT",
+//      "com.payalabs" %%% "scalajs-react-bridge" % "0.5.0-SNAPSHOT",
+//      "com.payalabs" %%% "scalajs-react-bridge" % "0.4.0",
+      "org.scala-js" %%% "scalajs-dom" % "0.9.3",
     ),
     webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
     includeFilter in webpackMonitoredFiles := "*.sass",
   )
+  .dependsOn(ProjectRef(uri("https://github.com/payalabs/scalajs-react-bridge.git#52507ab06af2258e666eaf1637a09ec92ca89075"), "core"))
   .dependsOn(worker)
 
 // Worker is a separate project that has no NPM dependencies so it
@@ -93,7 +95,7 @@ lazy val library = crossProject.in(file("."))
   )
   .jsSettings(
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.3",
+//      "org.scala-js" %%% "scalajs-dom" % "0.9.3",
       "com.github.japgolly.scalajs-react" %%% "core" % "1.1.0",
       "com.github.japgolly.scalajs-react" %%% "extra" % "1.1.0",
     ),

@@ -201,9 +201,7 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
   def scaleSourceCapacityByType(scale: Double, capacityType: DistributionType) =
     copy(sources = sources.map {
       case s if s.capacityType == capacityType ⇒ s.copy(capacity = (s.unitCapacity * scale).toInt)
-      case s ⇒
-        println(s"${s.capacityType} no match for $capacityType")
-        s
+      case s ⇒ s
     })
 }
 

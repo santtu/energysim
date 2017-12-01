@@ -2,19 +2,19 @@ package fi.iki.santtu.energysimui
 
 import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
 import fi.iki.santtu.energysim.model.{Area, Line, World}
-import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, MeanVariance, Portion}
+import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, Portion}
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
-import japgolly.scalajs.react.vdom.{Attr, TagOf}
+import japgolly.scalajs.react.vdom.Attr
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, _}
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.html.Div
 import org.scalajs.dom.raw._
 
 import scala.collection.mutable
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 import scala.util.Try
 
 object utils {
@@ -30,10 +30,22 @@ object utils {
       tooltip := "The time all demand can be met and no power outages occur. Anything less than 100% means there are power outages.",
       "Power security", <.br,
       <.span(^.className := "power-security",
-        f"${100.0 - loss.percentage}%.0f%%")),
+        f"${100.0 - loss.percentage}%.0f%%"))
+
+  def dualGraph(data: Seq[Double]) =
+    Sparklines(data = data)(
+      SparklinesLine(style = Map("fill" → "none".asInstanceOf[js.Any]))(),
+      SparklinesSpots()(),
+      SparklinesReferenceLine(`type` = "custom", value = 0.0)())
+
+  def singleGraph(data: Seq[Double], mean: Double) =
+    Sparklines(data = data, min = 0.0)(
+      SparklinesLine(color = "#253e56")(),
+      SparklinesSpots()(),
+      SparklinesReferenceLine(`type` = "custom", value = mean)())
 }
 
-import utils._
+import fi.iki.santtu.energysimui.utils._
 
 
 object tooltip extends Attr[String]("tooltip") {
@@ -52,75 +64,13 @@ object tooltip extends Attr[String]("tooltip") {
     )
 }
 
-/*
-data - the data set used to build the sparkline
-
-limit - optional, how many data points to display at once
-
-width, height - dimensions of the generated sparkline in the SVG viewbox. This will be automatically scaled (i.e. responsive) inside the parent container by default.
-
-svgWidth, svgHeight - If you want absolute dimensions instead of a responsive component set these attributes.
-
-preserveAspectRatio - default: 'none', set this to modify how the sparkline should scale
-
-margin - optional, offset the chart
-
-min, max - optional, bound the chart
- */
-
-
-object Sparklines extends ReactBridgeComponent {
-  def apply(data: js.UndefOr[Seq[Double]] = js.undefined,
-            limit: js.UndefOr[Int] = js.undefined,
-            width: js.UndefOr[Int] = js.undefined,
-            height: js.UndefOr[Int] = js.undefined,
-            svgWidth: js.UndefOr[Int] = js.undefined,
-            svgHeight: js.UndefOr[Int] = js.undefined,
-            preserveAspectRatio: js.UndefOr[String] = js.undefined,
-            margin: js.UndefOr[Int] = js.undefined,
-            min: js.UndefOr[Double] = js.undefined,
-            max: js.UndefOr[Double] = js.undefined): WithProps = auto
-//             defaultValue: js.UndefOr[Seq[String]] = js.undefined,
-//            value: js.UndefOr[Seq[String]] = js.undefined,
-//            placeholder: js.UndefOr[String] = js.undefined,
-//            onChange: js.UndefOr[js.Array[String] => Callback] = js.undefined,
-//            validate: js.UndefOr[String => CallbackTo[Boolean]] = js.undefined,
-//            transform: js.UndefOr[String => CallbackTo[String]] = js.undefined): WithPropsNoChildren = autoNoChildren
-}
-
-object SparklinesLine extends ReactBridgeComponent {
-  def apply(color: js.UndefOr[String] = js.undefined,
-            style: js.UndefOr[Map[String, Any]] = js.undefined): WithProps = auto
-}
-
-object SparklinesSpots extends ReactBridgeComponent {
-  def apply(size: js.UndefOr[Int] = js.undefined,
-            style: js.UndefOr[Map[String, Any]] = js.undefined): WithProps = auto
-}
-
-/*
-
-    static propTypes = {
-        type: PropTypes.oneOf(['max', 'min', 'mean', 'avg', 'median', 'custom']),
-        value: PropTypes.number,
-        style: PropTypes.object
-    };
- */
-object SparklinesReferenceLine extends ReactBridgeComponent {
-  def apply(`type`: js.UndefOr[String] = js.undefined,
-            value: js.UndefOr[Double] = js.undefined,
-            style: js.UndefOr[Map[String, Any]] = js.undefined,
-            margin: js.UndefOr[Int] = js.undefined): WithProps = auto
-}
-
-
 /**
   * Generic number input with a "enabled" checkbox. This puts off
   * updates on the value until user has finished the input.
   */
 
 object EnabledNumber {
-  case class State(checked: Option[Boolean], value: Double, inInput: Boolean = false)
+  case class State(checked: Option[Boolean], value: Double, inInput: Boolean)
   case class Props(checked: Option[Boolean], value: Double, label: String,
                    callback: (Double, Option[Boolean]) ⇒ Callback,
                    min: Double, max: Double, step: Double, tooltip: Option[String])
@@ -128,14 +78,16 @@ object EnabledNumber {
   class Backend($: BackendScope[Props, State]) {
     def render(p: Props, s: State): VdomElement = {
       def update(state: State) =
-          $.setState(state) >>
-          // send new state only if not in input and values have changed
-          (if (!state.inInput &&
-            (p.value != state.value ||
-              p.checked != state.checked))
-            p.callback(state.value, state.checked)
-          else
-            Callback.empty)
+        ($.setState(state) >>
+          CallbackTo {
+            // send new state only if not in input and values have changed
+            if (!state.inInput &&
+              (p.value != state.value ||
+                p.checked != state.checked))
+              p.callback(state.value, state.checked)
+            else
+              Callback.empty
+          }).flatten
 
       val state = s.checked match {
         case Some(true) ⇒ TriStateCheckbox.Checked
@@ -188,11 +140,17 @@ object EnabledNumber {
     }
 
     def receiveProps(props: Props): Callback =
-      $.setState(State(props.checked, props.value))
+      $.modState {
+        // use modstate and be careful if we're in input -- do not change
+        // current state values if input is in process
+        // while we receive new props, keep the current value (slider)
+        case s if s.inInput ⇒ s
+        case s ⇒ s.copy(checked = props.checked, value = props.value)
+      }
   }
 
   private val component = ScalaComponent.builder[Props]("EnabledNumber")
-    .initialState(State(Some(true), 0))
+    .initialState(State(Some(true), 0, false))
     .renderBackend[Backend]
     .componentWillMount(i ⇒ i.backend.receiveProps(i.props))
     .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
@@ -305,7 +263,6 @@ object AreaInfo {
 
             if (v != productionCapacity) {
               val scale = v.toDouble / productionCapacity
-              println(s"production capacity changes $productionCapacity --> $v, scale=$scale")
               a = a.scaleSourceCapacity(scale)
             }
 
@@ -487,7 +444,7 @@ object GlobalInfo {
 
             // see if we need to scale capacities up or down
             if (v != importCapacity) {
-              println(s"import capacity changes $importCapacity --> $v")
+//              println(s"import capacity changes $importCapacity --> $v")
               ???
             }
 
@@ -532,38 +489,22 @@ object AreaStats {
           <.span(^.className := "current",
             f"${data.total / 1e3}%.1s GW",
           ),
-          Sparklines(data = data.total.toSeq)(
-            SparklinesLine(style = Map("fill" → "none"))(),
-            SparklinesSpots()(),
-            SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
-          )),
+          dualGraph(data.total.toSeq)),
 
         "Transfer",  <.br,
         <.span(^.className := "current",
           f"${data.transfer / 1000}%.1s GW"),
-        Sparklines(data = data.transfer.toSeq)(
-          SparklinesLine(style = Map("fill" → "none"))(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
-        ),
+        dualGraph(data.transfer.toSeq),
 
         "Production",  <.br,
         <.span(^.className := "current",
           f"${data.generation / 1000}%.1s GW"),
-        Sparklines(data = data.generation.toSeq, min = 0.0)(
-          SparklinesLine(color = "#253e56")(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = data.generation.mean)(),
-        ),
+        singleGraph(data.generation.toSeq, data.generation.mean),
 
         "CO2 emissions",  <.br,
         <.span(^.className := "current",
           f"${data.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
-        Sparklines(data = data.ghg.toSeq, min = 0.0)(
-          SparklinesLine(color = "#253e56")(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = data.ghg.mean)(),
-        ),
+        singleGraph(data.ghg.toSeq, data.ghg.mean),
       )
     }
   }
@@ -590,23 +531,15 @@ object LineStats {
 
         "Capacity", <.br,
         <.span(^.className := "current",
-          f"${data.capacity / 1000}%.1s GW"),
-        Sparklines(data = data.capacity.toSeq, min = 0.0)(
-          SparklinesLine(color = "#253e56")(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = data.capacity.mean)(),
-        ),
+          f"${data.capacity / 1000}%.1s GW"), <.br,
+//        singleGraph(data.capacity.toSeq, data.capacity.mean),
 
         // "transfer" is absolute value, but we want to show +- as
         // the direction
         "Transfer", <.br,
         <.span(^.className := "current",
           f"${data.used / 1000}%.1s GW"),
-        Sparklines(data = data.used.toSeq)(
-          SparklinesLine(style = Map("fill" → "none"), color = "#253e56")(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
-        ),
+        dualGraph(data.used.toSeq),
       )
     }
   }
@@ -637,39 +570,22 @@ object GlobalStats {
         "Power balance", <.br,
         <.span(^.className := "current",
           f"${global.total / 1e3}%.1s GW"),
-        Sparklines(data = global.total.toSeq)(
-          SparklinesLine(style = Map("fill" → "none"))(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = 0.0)(),
-        ),
+        dualGraph(global.total.toSeq),
 
         "Import", <.br,
         <.span(^.className := "current",
           f"${external.transfer / -1e3}%.1s GW"),
-        Sparklines(data = (external.transfer * -1).toSeq, min = 0.0)(
-          SparklinesLine()(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = -external.transfer.mean)(),
-        ),
+        singleGraph((external.transfer * -1).toSeq, -external.transfer.mean),
 
         "Production", <.br,
         <.span(^.className := "current",
           f"${global.generation / 1e3}%.1s GW"),
-        Sparklines(data = global.generation.toSeq, min = 0.0)(
-          SparklinesLine()(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = global.generation.mean)(),
-        ),
+        singleGraph(global.generation.toSeq, global.generation.mean),
 
         "CO2 emissions",  <.br,
         <.span(^.className := "current",
           f"${global.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
-        Sparklines(data = global.ghg.toSeq, min = 0.0)(
-          SparklinesLine(color = "#253e56")(),
-          SparklinesSpots()(),
-          SparklinesReferenceLine(`type` = "custom", value = global.ghg.mean)(),
-        ),
-
+        singleGraph(global.ghg.toSeq, global.ghg.mean),
       )
     }
   }
@@ -769,7 +685,7 @@ object WorldMap {
     def receiveProps(props: Props): Callback =
       Callback {
 //        println("receive props")
-        
+
         val elements: Iterable[(String, String, Option[String])] = Main.areas.map {
           case (id, area) ⇒
             val data = props.areas(id)
