@@ -15,6 +15,7 @@ import org.scalajs.dom.raw._
 import scala.collection.mutable
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.annotation.{JSGlobal, JSGlobalScope}
 import scala.util.Try
 
 object utils {
@@ -43,6 +44,14 @@ object utils {
       SparklinesLine(color = "#253e56")(),
       SparklinesSpots()(),
       SparklinesReferenceLine(`type` = "custom", value = mean)())
+
+}
+
+@js.native
+@JSGlobal("scrollIntoViewIfNeeded")
+object Scroll extends js.Object {
+  def scrollIntoViewIfNeeded(element: Element,
+                             parameters: js.UndefOr[js.Dictionary[Any]] = js.undefined): Unit = js.native
 }
 
 import fi.iki.santtu.energysimui.utils._

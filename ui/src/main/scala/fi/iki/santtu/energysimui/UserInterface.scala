@@ -12,7 +12,9 @@ import japgolly.scalajs.react.{BackendScope, Callback, CallbackTo, ScalaComponen
 import org.scalajs.dom.raw.Worker
 import japgolly.scalajs.react.vdom.html_<^._
 
+import scala.scalajs.js
 import scala.util.Random
+
 
 
 object UserInterface {
@@ -152,11 +154,34 @@ object UserInterface {
         })
     }
 
+    def scroll(id: String) = Callback {
+      val el = org.scalajs.dom.document.getElementById(id)
+      Scroll.scrollIntoViewIfNeeded(el,
+        js.Dictionary("duration" → 1000, "easing" → "ease"))
+    }
+
     def render(s: State, p: Props): VdomElement = {
       val world = p.world
       val collector: SimulationCollector = s.collector.get
 
       <.div(
+        <.div(^.className := "sticky-top btn-group btn-group-lg d-block d-sm-block d-md-none",
+          ^.role := "group",
+          ^.id := "nav",
+          <.button(^.`type` := "button",
+            ^.className := "btn btn-secondary",
+            ^.onClick --> scroll("map"),
+            "map"),
+          <.button(^.`type` := "button",
+            ^.className := "btn btn-secondary",
+            ^.onClick --> scroll("info"),
+            "info"),
+          <.button(^.`type` := "button",
+            ^.className := "btn btn-secondary",
+            ^.onClick --> scroll("stats"),
+            "stats")
+        ),
+        
         // header contains controllers and graphs
         <.header(^.className := "row pb-3",
           // controls (play stop) are here
@@ -186,7 +211,9 @@ object UserInterface {
                 f"in ${s.runningTime}%.1f seconds"),
             ).when(s.iterations > 0),
             <.img(^.className := "starting",
-              ^.src := "images/loading.svg").when(s.iterations == 0 && s.playing)),
+              ^.src := "images/loading.svg").when(s.iterations == 0 && s.playing),
+
+          ),
 
           // summary information
           <.div(^.className := "col-5 text-right",
@@ -212,7 +239,9 @@ object UserInterface {
               "RESET"))),
 
         <.div(^.className := "row",
-          <.div(^.className := "col-md-8",
+          // map column
+          <.div(^.className := "col col-sm-8 col-md-6 col-lg-5",
+            ^.id := "map",
             WorldMap(p.worldMap,
               collector.areas,
               collector.lines.map {
@@ -221,9 +250,11 @@ object UserInterface {
               },
               selected ⇒ $.modState(s ⇒ s.copy(selected = selected)))),
 
-          <.div(
-            ^.className := "col-md-4 main-right",
 
+          // info column
+          <.div(
+            ^.className := "col-sm-4 col-md-3 col-lg-3 main-right info",
+            ^.id := "info",
             // name
             <.div(^.className := "description",
               s.selected match {
@@ -240,6 +271,26 @@ object UserInterface {
                 case NoSelection ⇒
                   "Global"
               }),
+
+            // Information on global, area or line:
+            <.div(^.className := "info",
+              s.selected match {
+                case AreaSelection(id) ⇒
+                  AreaInfo(AreaInfo.Props(world.areaById(id).get,
+                    { newArea ⇒ changeWorld(world.update(newArea)) }))
+                case LineSelection(id) ⇒
+                  val line = world.lineById(id).get
+                  LineInfo(LineInfo.Props(line,
+                    { newLine ⇒ changeWorld(world.update(newLine)) }))
+                case NoSelection ⇒
+                  // show global statistics here
+                  GlobalInfo(world, changeWorld(_))
+              }
+            )),
+
+          // statistics column
+          <.div(^.className := "col-md-3 col-lg-4 main-right",
+            ^.id := "stats",
 
             // Global, area or line statistics:
 
@@ -261,25 +312,9 @@ object UserInterface {
                   GlobalStats(collector.global, collector.external)
               }
             else
-              EmptyVdom,
-
-            // Information on global, area or line:
-
-            <.div(
-              ^.className := "info",
-              s.selected match {
-                case AreaSelection(id) ⇒
-                  AreaInfo(AreaInfo.Props(world.areaById(id).get,
-                    { newArea ⇒ changeWorld(world.update(newArea)) }))
-                case LineSelection(id) ⇒
-                  val line = world.lineById(id).get
-                  LineInfo(LineInfo.Props(line,
-                    { newLine ⇒ changeWorld(world.update(newLine)) }))
-                case NoSelection ⇒
-                  // show global statistics here
-                  GlobalInfo(world, changeWorld(_))
-              }
-            ))))
+//              EmptyVdom
+              "No statistics to show. Click on \"START\" on the top-left corner to start the simulation."
+          )))
     }
   }
 
