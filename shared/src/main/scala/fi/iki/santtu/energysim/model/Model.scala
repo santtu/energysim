@@ -178,11 +178,16 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
 
   def sourceByName(name: String): Option[Source] = sources.find(_.name == name)
 
-  def update(source: Source) =
+  def updateSource(source: Source) =
     copy(sources = sources.map {
       case old if old.id == source.id ⇒ source
       case old ⇒ old
     })
+
+  def updateSources(updatedSources: Seq[Source]): Area = {
+    val byId = updatedSources.map(s ⇒ s.id → s).toMap
+    copy(sources = sources.map(s ⇒ byId.getOrElse(s.id, s)))
+  }
 
   def setSourcesDisabled(disabled: Boolean) =
     copy(sources = sources.map(_.copy(disabled = disabled)))
@@ -233,23 +238,32 @@ case class World (name: String,
     s"World(name=$name,areas=$areas,types=$types,lines=$lines)"
 
   // some manipulations, these return a copy
-  def remove(area: Area, drain: Drain) =
+  def remove(area: Area, drain: Drain): World =
     copy(areas = areas.map {
       case a if a == area ⇒ a.copy(drains = a.drains.filter(_ != drain))
       case a ⇒ a
     })
 
-  def update(line: Line) =
+  def updateLine(line: Line): World =
     copy(lines = lines.map {
       case old if old.id == line.id ⇒ line
       case old ⇒ old
     })
 
-  def update(area: Area) =
-    copy(areas = areas.map {
-      case old if old.id == area.id ⇒ area
-      case old ⇒ old
-    })
+  def updateAreas(updatedAreas: Seq[Area]): World = {
+    val byId = updatedAreas.map(a ⇒ a.id → a).toMap
+    copy(areas = areas.map(a ⇒ byId.getOrElse(a.id, a)))
+  }
+
+  def updateArea(area: Area): World = updateAreas(Seq(area))
+
+  def updateSources(updatedSources: Seq[Source]): World = {
+    val byId = updatedSources.map(s ⇒ s.id → s).toMap
+    copy(areas = areas.map(a ⇒ a.copy(
+      sources = a.sources.map(s ⇒ byId.getOrElse(s.id, s)))))
+  }
+
+  def updateSource(source: Source): World = updateSources(Seq(source))
 
   def areaById(id: String): Option[Area] = areas.find(_.id == id)
   def lineById(id: String): Option[Line] = lines.find(_.id == id)

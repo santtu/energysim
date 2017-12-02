@@ -1,7 +1,7 @@
 package fi.iki.santtu.energysimui
 
 import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
-import fi.iki.santtu.energysim.model.{Area, Line, World}
+import fi.iki.santtu.energysim.model.{Area, Line, Source, World}
 import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, Portion}
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
@@ -45,6 +45,74 @@ object utils {
       SparklinesSpots()(),
       SparklinesReferenceLine(`type` = "custom", value = mean)())
 
+  /**
+    * Given the scale and check parameter, update given list of sources
+    * with the capacity scaled by the value to current capacity and enabled by !checked.
+
+    * @param sources
+    * @param value
+    * @param checked
+    * @return
+    */
+
+  def updateSources(sources: Seq[Source], value: Double, checked: Option[Boolean]): Seq[Source] = {
+    val capacity = sources.map(_.unitCapacity).sum
+    sources map {
+      case s if capacity == 0 ⇒
+        s.copy(capacity = (value / sources.length).toInt)
+      case s if value == capacity ⇒ s
+      case s ⇒
+        val scale = value / capacity
+        s.copy(capacity = (scale * s.unitCapacity).toInt)
+    } map {
+      case s if checked.isEmpty ⇒ s
+      case s ⇒ s.copy(disabled = !checked.get)
+    }
+  }
+
+  /**
+    * Generates an editor for the given sources, adjusted based on their
+    * model type (this is a kludge, we should have a separate fuel or other
+    * grouping attribute to do this...). This takes into account the fact
+    * that multiple sources can have the same type.
+    *
+    * @param sources
+    * @return
+    */
+  def sourceTypeEditor(sources: Seq[Source], update: Seq[Source] ⇒ Callback) = {
+    // group all sources by their capacity type
+    val byType = sources.groupBy(_.capacityType.id)
+
+//    def updated(target: Seq[Source])(scale: Double, enabled: Option[Boolean]): Callback =
+//      (Callback.log(s"target=$target scale=$scale enabled=$enabled") >>
+//        CallbackTo(update(target))).flatten
+
+    // Show them by sorted names
+    Main.types.toSeq.sortBy(_._2.name).toVdomArray {
+      case (id, info) ⇒
+        val typeSources = byType.getOrElse(id, Seq.empty)
+        val capacity = typeSources.map(_.unitCapacity).sum
+        val enabled = tri(typeSources.map(!_.disabled))
+
+        <.div(
+          ^.className := "capacity",
+          ^.key := id,
+          ^.visibility.hidden.when(typeSources.isEmpty),
+          ^.visibility.visible.when(typeSources.nonEmpty),
+
+          EnabledNumber(
+            label = info.name,
+            value = capacity,
+            checked = enabled,
+            callback = {
+              case (value, checked) if value != capacity || enabled != checked ⇒
+                update(updateSources(typeSources, value, checked))
+              case _ ⇒ Callback.empty
+            },
+            min = 0, max = 10000, step = 10)
+        )
+    }
+  }
 }
 
 @js.native
@@ -68,8 +136,6 @@ object tooltip extends Attr[String]("tooltip") {
     EmptyVdom(
       dataToggle := "tooltip",
       dataOriginalTitle := text,
-//      ^.id := s"id-${text.hashCode().toHexString}",
-//      ^.title := text
     )
 }
 
@@ -80,7 +146,7 @@ object tooltip extends Attr[String]("tooltip") {
 
 object EnabledNumber {
   case class State(checked: Option[Boolean], value: Double, inInput: Boolean)
-  case class Props(checked: Option[Boolean], value: Double, label: String,
+  case class Props(checked: Option[Boolean], value: Double, label: TagMod,
                    callback: (Double, Option[Boolean]) ⇒ Callback,
                    min: Double, max: Double, step: Double, tooltip: Option[String])
 
@@ -165,7 +231,7 @@ object EnabledNumber {
     .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
-  def apply(label: String = "",
+  def apply(label: TagMod = "",
             value: Double = 0,
             checked: Option[Boolean] = Some(true),
             callback: (Double, Option[Boolean]) ⇒ Callback,
@@ -254,8 +320,9 @@ object AreaInfo {
         tri(area.sources.map(!_.disabled)))
 
       <.div(
+        ^.className := "capacity",
         EnabledNumber(
-          "Production capacity",
+          <.b("Production capacity"),
           productionCapacity,
           productionEnabled,
           { (v, c) ⇒
@@ -283,22 +350,9 @@ object AreaInfo {
           tooltip = s"The maximum production capacity in ${info.name}. Use the slider to adjust all production methods proportionally, and the checkbox to enable/disable all production in ${info.name} in one step.",
           min = 0, max = 10000, step = 100),
 
-        area.sources.toVdomArray(source ⇒ {
-          val typeinfo = Main.types(source.capacityType.id)
-          <.div(^.className := "source",
-            ^.key := source.id,
-            EnabledNumber(
-              label = typeinfo.name,
-              value = state(source.id)._1,
-              checked = Some(!state(source.id)._2),
-              callback = { (value, enabled) ⇒
-                p.areaUpdated(area.update(source.copy(
-                  capacity = value.toInt,
-                  disabled = !(enabled.get)))) >>
-                  $.modState(s ⇒ s.updated(source.id, (value.toInt, !(enabled.get))))
-              },
-              min = 0, max = 10000, step = 5))
-        }))
+        utils.sourceTypeEditor(
+          area.sources,
+          ss ⇒ p.areaUpdated(area.updateSources(ss))))
     }
 
     def receiveProps(props: Props): Callback =
@@ -376,9 +430,9 @@ object GlobalInfo {
 //      println(s"prod=${sources.map(!_.disabled)} -> $productionEnabled")
 //      println(s"import=${lines.map(!_.disabled)} -> $importEnabled")
 
-      <.div(
+      <.div(^.className := "capacity",
         EnabledNumber(
-          "Production capacity",
+          <.b("Production capacity"),
           productionCapacity,
           productionEnabled,
           { (v, c) ⇒
@@ -402,77 +456,48 @@ object GlobalInfo {
           tooltip = "Total maximum production capacity in Finland, use slider to change capacities in all areas proportionally.",
           min = 5000, max = 100000, step = 100),
 
-        Main.types.toVdomArray {
-          case (id, data) ⇒
-            val sources = world.areas.filter(!_.external).flatMap(_.sources).filter(_.capacityType.id == id)
-            val capacityType = world.typeById(id).get
-            val (typeCapacity, typeEnabled) = (
-              sources.map(_.unitCapacity).sum,
-              tri(sources.map(!_.disabled)))
-            <.div(^.key := id,
-              EnabledNumber(
-                data.name,
-                typeCapacity, typeEnabled,
-                { (v, c) ⇒
-                  var w = world
-                  c match {
-                    case Some(enabled) ⇒
-                      w = w.setSourcesDisabledByType(!enabled, capacityType)
-                    case None ⇒
-                  }
-                  if (v != typeCapacity) {
-                    val scale = v.toDouble / typeCapacity
-                    w = w.scaleSourceCapacityByType(scale, capacityType)
-                  }
-                  update(w)
-                },
-                tooltip = data.description,
-                min = 0, max = 20000, step = 100))
-        },
+        utils.sourceTypeEditor(
+          world.areas.filter(!_.external).flatMap(_.sources),
+          ss ⇒ update(world.updateSources(ss))),
 
         <.hr,
-        EnabledNumber(
-          "Import capacity",
-          importCapacity,
-          importEnabled,
-          { (v, c) ⇒
-            var w = world
+        <.div(^.className := "capacity",
+          EnabledNumber(
+            <.b("Import capacity"),
+            importCapacity,
+            importEnabled,
+            { (v, c) ⇒
+              var w = world
 
-            // if checked is set or unset, set all lines matching to that
-            // (if indeterminate, leave as is)
-            c match {
-              case Some(enabled) ⇒
-                w = w.copy(
-                  lines = world.lines.map {
-                    case l if l.area1.external || l.area2.external ⇒
-                      l.copy(disabled = !enabled)
-                    case l ⇒ l
-                  })
-              case None ⇒
-            }
+              // if checked is set or unset, set all lines matching to that
+              // (if indeterminate, leave as is)
+              c match {
+                case Some(enabled) ⇒
+                  w = w.copy(
+                    lines = world.lines.map {
+                      case l if l.area1.external || l.area2.external ⇒
+                        l.copy(disabled = !enabled)
+                      case l ⇒ l
+                    })
+                case None ⇒
+              }
 
-            // see if we need to scale capacities up or down
-            if (v != importCapacity) {
+              // see if we need to scale capacities up or down
+              if (v != importCapacity) {
 //              println(s"import capacity changes $importCapacity --> $v")
-              ???
-            }
+                ???
+              }
 
-            update(w)
-          },
-          tooltip = "Total imports from neighbouring countries. Use the slider to adjust all imports proportionally and the checkbox to enable or disable all electricity imports in one step.",
-          min = 0, max = 10000, step = 100),
+              update(w)
+            },
+            tooltip = "Total imports from neighbouring countries. Use the slider to adjust all imports proportionally and the checkbox to enable or disable all electricity imports in one step.",
+            min = 0, max = 10000, step = 100)),
       )
     }
-
-//    def receiveProps(props: Props): Callback =
-//      $.setState((props.line.unitCapacity, props.line.disabled))
   }
 
   private val component = ScalaComponent.builder[Props]("GlobalInfo")
-//    .initialState((0, false))
     .renderBackend[Backend]
-//    .componentWillMount(i ⇒ i.backend.receiveProps(i.props))
-//    .componentWillReceiveProps(i ⇒ i.backend.receiveProps(i.nextProps))
     .build
 
   def apply(world: World, worldUpdated: (World) ⇒ Callback) =
@@ -489,8 +514,6 @@ object AreaStats {
       <.div(
         ^.className := "statistics",
         powerSecurity(data.loss),
-
-//        <.br,
 
         <.div(
           tooltip := s"The power balance for ${area.name}, with values >0 showing unused or untransferred electricity production and <0 insufficient production and imports to meet demand.",
@@ -538,10 +561,10 @@ object LineStats {
         <.span(^.className := "power-security",
           f"${data.usage.mean * 100.0}%.1f%%"), <.br,
 
-        "Capacity", <.br,
-        <.span(^.className := "current",
-          f"${data.capacity / 1000}%.1s GW"), <.br,
-//        singleGraph(data.capacity.toSeq, data.capacity.mean),
+//        "Capacity", <.br,
+//        <.span(^.className := "current",
+//          f"${data.capacity / 1000}%.1s GW"), <.br,
+////        singleGraph(data.capacity.toSeq, data.capacity.mean),
 
         // "transfer" is absolute value, but we want to show +- as
         // the direction

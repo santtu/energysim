@@ -42,7 +42,7 @@ object Main {
     "south" → AreaData("Southern Finland", "#south", "#south-focus", "#world-focus", "Southern Finland is the most populous area of Finland and contains Loviisa nuclear power plant with two units."),
     "east" → AreaData("Eastern Finland", "#east", "#east-focus", "#world-focus", ""),
     "west" → AreaData("Western Finland", "#west", "#west-focus", "#world-focus", ""),
-    "central" → AreaData("Central Finland", "#center", "#center-focus", "#world-focus", ""),
+    "center" → AreaData("Central Finland", "#center", "#center-focus", "#world-focus", ""),
   )
 
   /**
@@ -53,16 +53,16 @@ object Main {
 
   val lines: Map[String, LineData] = Map(
     "west-south" → LineData("West-South", "#west-south", "#west-south-focus", "#world-focus", "#west-south-disabled"),
-    "west-central" → LineData("West-Central", "#west-center", "#west-center-focus", "#world-focus", "#west-center-disabled"),
+    "west-center" → LineData("West-Center", "#west-center", "#west-center-focus", "#world-focus", "#west-center-disabled"),
     "south-east" → LineData("South-East", "#south-east", "#south-east-focus", "#world-focus", "#south-east-disabled"),
-    "south-central" → LineData("South-Central", "#south-center", "#south-center-focus", "#world-focus", "#south-center-disabled"),
-    "east-central" → LineData("East-Central", "#center-east", "#center-east-focus", "#world-focus", "#center-east-disabled"),
-    "central-north" → LineData("Central-North", "#north-center", "#north-center-focus", "#world-focus", "#north-center-disabled"),
-    "russia-east" → LineData("Russia (import)", "#russia-east", "#russia-east-focus", "#world-focus", "#russia-east-disabled"),
-    "sweden-west" → LineData("Sweden (import)", "#sweden-west", "#sweden-west-focus", "#world-focus", "#sweden-west-disabled"),
-    "sweden-north" → LineData("Sweden (import)", "#sweden-north", "#sweden-north-focus", "#world-focus", "#sweden-north-disabled"),
-    "estonia-south" → LineData("Estonia (import)", "#estonia-south", "#estonia-south-focus", "#world-focus", "#estonia-south-disabled"),
-    "norway-north" → LineData("Norway (import)", "#norway-north", "#norway-north-focus", "#world-focus", "#norway-north-disabled"),
+    "south-center" → LineData("South-Center", "#south-center", "#south-center-focus", "#world-focus", "#south-center-disabled"),
+    "east-center" → LineData("East-Center", "#center-east", "#center-east-focus", "#world-focus", "#center-east-disabled"),
+    "center-north" → LineData("Center-North", "#north-center", "#north-center-focus", "#world-focus", "#north-center-disabled"),
+    "russia-east-import" → LineData("Russia (import)", "#russia-east", "#russia-east-focus", "#world-focus", "#russia-east-disabled"),
+    "sweden-west-import" → LineData("Sweden (import)", "#sweden-west", "#sweden-west-focus", "#world-focus", "#sweden-west-disabled"),
+    "sweden-north-import" → LineData("Sweden (import)", "#sweden-north", "#sweden-north-focus", "#world-focus", "#sweden-north-disabled"),
+    "estonia-south-import" → LineData("Estonia (import)", "#estonia-south", "#estonia-south-focus", "#world-focus", "#estonia-south-disabled"),
+    "norway-north-import" → LineData("Norway (import)", "#norway-north", "#norway-north-focus", "#world-focus", "#norway-north-disabled"),
   )
 
   // TODO: include icon (path to image) to use in UI, tooltip text

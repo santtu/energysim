@@ -91,7 +91,10 @@ object UserInterface {
       })
 
     def init: Callback =
-      $.props >>= { p ⇒ resetCollector(p.world) }
+        $.props >>= { p ⇒
+          Main.world = p.world // BAD BAD
+          resetCollector(p.world)
+        }
 
     def uninit: Callback =
       Callback {
@@ -126,13 +129,13 @@ object UserInterface {
     // (and also to clear the collector)
     def updateWorld(newWorld: World): Callback = {
 //      println(s"updateWorld: new=${newWorld.hashCode()}")
-      Main.world = newWorld  // BAD BAD
       // we need to get both the props and old state
-      ($.state |> {
-        case state if state.playing ⇒
-          sendWorld(newWorld)
-        case _ ⇒
-      }) >> $.forceUpdate
+      Callback(Main.world = world) >> // BAD BAD
+        ($.state |> {
+          case state if state.playing ⇒
+            sendWorld(newWorld)
+          case _ ⇒
+        }) >> $.forceUpdate
     }
 
     // update the current page for the new world (if it differs
@@ -277,11 +280,11 @@ object UserInterface {
               s.selected match {
                 case AreaSelection(id) ⇒
                   AreaInfo(AreaInfo.Props(world.areaById(id).get,
-                    { newArea ⇒ changeWorld(world.update(newArea)) }))
+                    { newArea ⇒ changeWorld(world.updateArea(newArea)) }))
                 case LineSelection(id) ⇒
                   val line = world.lineById(id).get
                   LineInfo(LineInfo.Props(line,
-                    { newLine ⇒ changeWorld(world.update(newLine)) }))
+                    { newLine ⇒ changeWorld(world.updateLine(newLine)) }))
                 case NoSelection ⇒
                   // show global statistics here
                   GlobalInfo(world, changeWorld(_))

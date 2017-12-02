@@ -131,8 +131,8 @@ class MeanVariance(history: Int = 0) extends Formattable {
 
   override def formatTo(formatter: Formatter, flags: Int, width: Int, precision: Int) = {
     val fmt = (width, precision) match {
-      case (-1, -1) ⇒ "%f"
-      case (w, -1) ⇒ s"%${w}f"
+      case (-1, -1) ⇒ "%.1f"
+      case (w, -1) ⇒ s"%${w}.1f"
       case (-1, p) ⇒ s"%.${p}f"
       case (w, p) ⇒ s"%${w}.${p}f"
     }

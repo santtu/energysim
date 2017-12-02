@@ -163,7 +163,7 @@
     height: 3rem;
 }
 
-.source input[type='checkbox'] {
+.capacity input[type='checkbox'] {
     transform: scale(1.5);
 }
 
