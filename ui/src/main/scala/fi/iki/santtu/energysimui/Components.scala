@@ -484,8 +484,10 @@ object GlobalInfo {
 
               // see if we need to scale capacities up or down
               if (v != importCapacity) {
-//              println(s"import capacity changes $importCapacity --> $v")
-                ???
+                w = w.copy(lines = w.lines.map {
+                  case l if importCapacity == 0 ⇒ l.copy(capacity = (v / w.lines.length).toInt)
+                  case l ⇒ l.copy(capacity = ((v / importCapacity) * l.unitCapacity).toInt)
+                })
               }
 
               update(w)
