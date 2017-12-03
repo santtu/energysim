@@ -2,7 +2,7 @@ package fi.iki.santtu.energysimui
 
 import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
 import fi.iki.santtu.energysim.model.{Area, Line, Source, World}
-import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, Portion, SimulationCollector}
+import fi.iki.santtu.energysim._
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.Attr
@@ -18,6 +18,21 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.annotation.{JSGlobal, JSGlobalScope}
 import scala.util.Try
+
+
+object tooltip extends Attr[String]("tooltip") {
+  private val dataToggle = VdomAttr("data-toggle")
+  // the use of data-original-title is not per popper.js spec, but
+  // apparently due to bad interaction between selectors and react
+  // that seems the only way to consistently get the correct tooltip
+  // shown (when the same element is re-used by react, for example)
+  private val dataOriginalTitle = VdomAttr("data-original-title")
+  override def :=[A](text: A)(implicit t: Attr.ValueType[A, String]): TagMod =
+    EmptyVdom(
+      dataToggle := "tooltip",
+      dataOriginalTitle := text,
+    )
+}
 
 object utils {
   def tri(b: Seq[Boolean]): Option[Boolean] =
@@ -84,10 +99,6 @@ object utils {
     // group all sources by their capacity type
     val byType = sources.groupBy(_.capacityType.id)
 
-//    def updated(target: Seq[Source])(scale: Double, enabled: Option[Boolean]): Callback =
-//      (Callback.log(s"target=$target scale=$scale enabled=$enabled") >>
-//        CallbackTo(update(target))).flatten
-
     // Show them by sorted names
     Main.types.toSeq.sortBy(_._2.name).toVdomArray {
       case (id, info) ⇒
@@ -114,6 +125,76 @@ object utils {
         )
     }
   }
+
+  /**
+    * Generate a proportionality graph for the values passed, using the label
+    * and toopltip (optional) for the data.
+    *
+    * @param values a tuple (id:String, label: String, tooltip:Option[String], value)
+    * @return VDOM containing the graph
+    */
+  def proportionGraph(values: Seq[(String, String, Option[String], MeanVariance)]) = {
+    var left = 0.0
+    val total = values.map(_._4.mean).sum
+
+    <.div(^.className := "graph-container",
+      // sort by "biggliest", visually low mean with huge deviation
+      // looks bigger than mediu mean with low deviation, so order on
+      // that
+      values.sortBy(t ⇒ t._4.mean + 2 * t._4.dev).reverse.toVdomArray {
+        case (id, label, maybetip, value) ⇒
+          val p = value / total
+          val el = <.div(
+            ^.className := "graph-line",
+            ^.key := id,
+            tooltip :=? maybetip,
+            <.span(^.className := "graph-name", label),
+            <.div(^.className := "graph-bar",
+              {
+                import japgolly.scalajs.react.vdom.svg_<^.{<, ^}
+
+                // base path is always a square unit size unfilled box
+                val path = <.path(^.d := "M 0,0 l 1,0 l 0,1 l -1,0 z")
+
+                // all styling, fills etc. occur in CSS, not here --
+                // this provides an unit-sized box with vertical
+                // bars stacked (to unit size)
+
+                // kldugekldkalgkeg
+                object ClassName extends Attr[String]("class") {
+                  override def :=[A](a: A)(implicit t: ValueType[A, String]): TagMod =
+                    TagMod.fn(b => t.fn(b.addClassName, a))
+                }
+                val cls = ClassName
+                // cls = ^.`class`  or ^.className do not work, see
+                // https://github.com/japgolly/scalajs-react/issues/287
+                // (the suggest fix doesn't work)
+
+                val dev = if (p.dev.isNaN) 0 else p.dev
+
+                <.svg(
+                  ^.viewBox := "0 0 1 1",
+                  ^.preserveAspectRatio := "none",
+                  <.g(
+                    cls := "graph-stack",
+                    // translate all right to the left point
+                    <.g(^.transform := s"translate($left, 0)",
+                      // the left deviation box
+                      <.g(cls := "graph-deviation",
+                        ^.transform := s"scale(${dev}, 1)", path),
+                      // main body
+                      <.g(cls := "graph-mean",
+                        ^.transform := s"translate(${dev}, 0) scale(${p.mean}, 1)", path),
+                      // right deviation
+                      <.g(cls := "graph-deviation",
+                        ^.transform := s"translate(${dev + p.mean}, 0) scale(${dev}, 1)", path)
+                    )))
+              }))
+
+          left += p.mean
+          el
+      })
+  }
 }
 
 @js.native
@@ -126,19 +207,6 @@ object Scroll extends js.Object {
 import fi.iki.santtu.energysimui.utils._
 
 
-object tooltip extends Attr[String]("tooltip") {
-  private val dataToggle = VdomAttr("data-toggle")
-  // the use of data-original-title is not per popper.js spec, but
-  // apparently due to bad interaction between selectors and react
-  // that seems the only way to consistently get the correct tooltip
-  // shown (when the same element is re-used by react, for example)
-  private val dataOriginalTitle = VdomAttr("data-original-title")
-  override def :=[A](text: A)(implicit t: Attr.ValueType[A, String]): TagMod =
-    EmptyVdom(
-      dataToggle := "tooltip",
-      dataOriginalTitle := text,
-    )
-}
 
 /**
   * Generic number input with a "enabled" checkbox. This puts off
@@ -508,11 +576,12 @@ object GlobalInfo {
 }
 
 object AreaStats {
-  type Props = (Area, AreaStatistics)
+  type Props = (Area, SimulationCollector)
 
   class Backend($: BackendScope[Props, Unit]) {
     def render(p: Props) = {
-      val (area, data) = p
+      val (area, collector) = p
+      val data = collector.areas(area.id)
 
       <.div(
         ^.className := "statistics",
@@ -536,10 +605,74 @@ object AreaStats {
           f"${data.generation / 1000}%.1s GW"),
         singleGraph(data.generation.toSeq, data.generation.mean),
 
+        {
+          val x = area.sources.groupBy(_.capacityType.id).map {
+            case (id, sources) ⇒
+              val stats = sources.map(s ⇒ collector.sources(s.id))
+              val power = stats.map(_.used).sum
+              id → power
+          }
+//          println(s"area ${area.id} generation=${data.generation} production by type: $x")
+//          println(s"area sources: ${area.sources}")
+//          println(s"area source data: ${area.sources.map(s ⇒ s.id → collector.sources(s.id))}")
+
+          utils.proportionGraph(
+            x.map {
+              case (id, power) ⇒
+                val info = Main.types(id)
+                val p = power / data.generation.mean
+                (id,
+                  info.name,
+                  Some(f"${info.name}%s produced ${power}%.1s MW, ${p * 100.0}%.1s%% of generated electricity in ${Main.areas(area.id).name}"),
+                  p)
+            }.toSeq)
+        },
+
+      //
+//        utils.proportionGraph(
+//          Main.types.map {
+//            case (id, info) ⇒
+//              val power = collector.types(id).used
+//              val p = power / collector.global.generation.mean
+//              (id,
+//                info.name,
+//                Some(f"${info.name}%s produced ${power}%.1s MW, ${p * 100.0}%.1s%% of all generated electricity"),
+//                p)
+//          }.toSeq),
+
+
         "CO2 emissions",  <.br,
         <.span(^.className := "current",
           f"${data.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
         singleGraph(data.ghg.toSeq, data.ghg.mean),
+
+        // co2 emissions by emission type .. there is no by-types
+        // grouping on area, so we need to group all sources by type
+        // and calculate values from that
+        {
+          val x = area.sources.groupBy(_.capacityType.id).map {
+            case (id, sources) ⇒
+              val stats = sources.map(s ⇒ collector.sources(s.id))
+              val ghg = stats.map(_.ghg).sum
+              id → ghg
+          }
+//          println(s"area ${area.id} co2 ghgs by type: $x")
+
+          utils.proportionGraph(
+            x.map {
+              case (id, ghg) ⇒
+                val info = Main.types(id)
+                val p = ghg / data.ghg.mean
+                (id,
+                  info.name,
+                  Some(f"${info.name}%s emissions ${Main.ghgToAnnual(ghg) / 1e6}%.1s Mt/a, ${p * 100.0}%.1s%% out of emissions in ${Main.areas(area.id).name}"),
+                  p)
+            }.toSeq)
+        },
+
+        "Carbon intensity", <.br,
+        <.span(^.className := "current",
+          f"${data.ghg.mean / data.generation.mean}%.1f g CO₂ eq./kWh")
       )
     }
   }
@@ -616,83 +749,38 @@ object GlobalStats {
           f"${global.generation / 1e3}%.1s GW"),
         singleGraph(global.generation.toSeq, global.generation.mean),
 
+        // production proportionality graphs
+        utils.proportionGraph(
+          Main.types.map {
+            case (id, info) ⇒
+              val power = collector.types(id).used
+              val p = power / collector.global.generation.mean
+              (id,
+                info.name,
+                Some(f"${info.name}%s produced ${power}%.1s MW, ${p * 100.0}%.1s%% of all generated electricity"),
+                p)
+          }.toSeq),
+
         "CO2 emissions",  <.br,
         <.span(^.className := "current",
           f"${global.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
         singleGraph(global.ghg.toSeq, global.ghg.mean),
 
-        {
-          // calculate proportions of CO2 production by different types
-          val total = global.ghg
-          val types = Main.types.keys.map(id ⇒ id → collector.types(id).ghg)
+        // and CO2 emission proportionality graph
+        utils.proportionGraph(
+          Main.types.map {
+            case (id, info) ⇒
+              val ghg = collector.types(id).ghg
+              val p = ghg / global.ghg.mean
+              (id,
+                info.name,
+                Some(f"${info.name}%s emissions ${Main.ghgToAnnual(ghg) / 1e6}%.1s Mt/a, ${p * 100.0}%.1s%% out of all emissions"),
+                p)
+          }.toSeq),
 
-//          println(s"total=$total original=${collector.types} types=$types")
-
-          // the left margin of 100% where to put stuff to
-          var left = 0.0
-
-          <.div(^.className := "graph-container",
-            types.toSeq.sortBy(_._2.mean).reverse.toVdomArray {
-              case (id, ghg) ⇒
-                val info = Main.types(id)
-                val p = ghg / total.mean
-                val el = <.div(
-                  ^.className := "graph-line",
-                  ^.key := id,
-                  tooltip := f"${info.name}%s emissions ${Main.ghgToAnnual(ghg) / 1e6}%.0s Mt/a, ${p * 100.0}%.1s%% out of all emissions",
-                  <.span(^.className := "graph-name", info.name),
-                  <.div(^.className := "graph-bar",
-                    {
-                      import japgolly.scalajs.react.vdom.svg_<^.{<, ^}
-
-                      // base path is always a square unit size unfilled box
-                      val path = <.path(^.d := "M 0,0 l 1,0 l 0,1 l -1,0 z")
-
-                      // all styling, fills etc. occur in CSS, not here --
-                      // this provides an unit-sized box with vertical
-                      // bars stacked (to unit size)
-
-                      // kldugekldkalgkeg
-                      object ClassName extends Attr[String]("class") {
-                        override def :=[A](a: A)(implicit t: ValueType[A, String]): TagMod =
-                          TagMod.fn(b => t.fn(b.addClassName, a))
-                      }
-                      val cls = ClassName
-                      // cls = ^.`class`  or ^.className do not work, see
-                      // https://github.com/japgolly/scalajs-react/issues/287
-                      // (the suggest fix doesn't work)
-                      <.svg(
-                        ^.viewBox := "0 0 1 1",
-                        ^.preserveAspectRatio := "none",
-                        //                      ^.width := 100,
-                        //                      ^.height := 20,
-                        //                      ^.transform := "scale(100 20)",
-
-                        <.g(
-                          cls := "graph-stack",
-                          //                        ^.transform := "scale(100, 20)",
-
-                          // translate all right to the left point
-                          <.g(^.transform := s"translate($left, 0)",
-
-                            // the left deviation box
-                            <.g(cls := "graph-deviation",
-                              ^.transform := s"scale(${p.dev}, 1)", path),
-
-                            // main body
-                            <.g(cls := "graph-mean",
-                              ^.transform := s"translate(${p.dev}, 0) scale(${p.mean}, 1)", path),
-
-                            // right deviation
-                            <.g(cls := "graph-deviation",
-                              ^.transform := s"translate(${p.dev + p.mean}, 0) scale(${p.dev}, 1)", path)
-                          )))
-                    }))
-
-                left += p.mean
-                el
-            })
-        }
+        "Carbon intensity", <.br,
+        <.span(^.className := "current",
+          f"${global.ghg.mean / global.generation.mean}%.1f g CO₂ eq./kWh")
       )
     }
   }

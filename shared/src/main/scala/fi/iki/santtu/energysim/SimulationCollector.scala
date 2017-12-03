@@ -86,6 +86,16 @@ class MeanVariance(history: Int = 0) extends Formattable {
   def min: Double = low
   def max: Double = high
 
+  def +(b: MeanVariance): MeanVariance = {
+    val o = new MeanVariance(history)
+    o.n = n + b.n
+    o.m = m + b.m
+    o.M2 = M2 + b.M2
+    o.high = Math.max(high, b.high)
+    o.low = Math.min(low, b.low)
+    o
+  }
+
   def +=(v: Double): Unit = {
     n += 1
     val delta = v - m
@@ -144,6 +154,34 @@ class MeanVariance(history: Int = 0) extends Formattable {
   }
 }
 
+object MeanVariance {
+  implicit object MeanVarianceNumeric extends Numeric[MeanVariance] {
+    override def plus(x: MeanVariance, y: MeanVariance): MeanVariance = x + y
+
+    override def minus(x: MeanVariance, y: MeanVariance): MeanVariance = x - y
+
+    override def times(x: MeanVariance, y: MeanVariance): MeanVariance = x * y
+
+    override def negate(x: MeanVariance): MeanVariance = x * -1.0
+
+    override def fromInt(x: Int): MeanVariance = ???
+
+    override def toInt(x: MeanVariance): Int = ???
+
+    override def toLong(x: MeanVariance): Long = ???
+
+    override def toFloat(x: MeanVariance): Float = ???
+
+    override def toDouble(x: MeanVariance): Double = ???
+
+    override def compare(x: MeanVariance, y: MeanVariance): Int = ???
+
+    override def zero: MeanVariance = MeanVariance()
+  }
+
+  def apply(history: Int = 0) = new MeanVariance(history)
+}
+
 class Portion {
   private var n: Long = 0
   private var p: Long = 0
@@ -161,10 +199,6 @@ class Portion {
   }
 
   override def toString: String = f"$percentage%.1f%%"
-}
-
-object MeanVariance {
-  def apply(history: Int = 0) = new MeanVariance(history)
 }
 
 object Portion {

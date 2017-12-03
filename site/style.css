@@ -221,6 +221,8 @@ img.starting {
     display: inline-block;
     /* width: 40%; */
     width: 30%;
+    overflow: hidden;
+    height: 1.2rem;
 }
 
 .graph-bar {

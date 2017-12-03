@@ -303,8 +303,7 @@ object UserInterface {
               s.selected match {
                 case AreaSelection(id) ⇒
                   val area = world.areaById(id).get
-                  val data = collector.areas(id)
-                  AreaStats(area, data)
+                  AreaStats(area, collector)
 
                 case LineSelection(id) ⇒
                   val line = world.lineById(id).get
