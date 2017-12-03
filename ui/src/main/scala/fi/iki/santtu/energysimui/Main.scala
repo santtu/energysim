@@ -28,6 +28,9 @@ object Main {
     */
   val ghgScaleFactor = 1e-3 * 365 * 24
 
+  def ghgToAnnual(value: Double) = value * ghgScaleFactor
+  def ghgToAnnual(value: MeanVariance) =  value * ghgScaleFactor
+
   // TODO: move these datas into external file like world definition
   // json and map svg already done
 

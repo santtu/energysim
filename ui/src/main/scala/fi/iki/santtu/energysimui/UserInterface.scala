@@ -312,7 +312,7 @@ object UserInterface {
                   LineStats((line, data))
 
                 case NoSelection ⇒
-                  GlobalStats(collector.global, collector.external)
+                  GlobalStats(collector)
               }
             else
 //              EmptyVdom

@@ -32,3 +32,4 @@ object SparklinesReferenceLine extends ReactBridgeComponent {
             style: js.UndefOr[Map[String, js.Any]] = js.undefined,
             margin: js.UndefOr[Int] = js.undefined): WithProps = auto
 }
+

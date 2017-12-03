@@ -2,10 +2,11 @@ package fi.iki.santtu.energysimui
 
 import com.payalabs.scalajs.react.bridge.{ReactBridgeComponent, WithProps}
 import fi.iki.santtu.energysim.model.{Area, Line, Source, World}
-import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, Portion}
+import fi.iki.santtu.energysim.{AreaStatistics, LineStatistics, Portion, SimulationCollector}
 import fi.iki.santtu.energysimui.Main.{AreaData, LineData}
 import japgolly.scalajs.react.extra.components.TriStateCheckbox
 import japgolly.scalajs.react.vdom.Attr
+import japgolly.scalajs.react.vdom.Attr.ValueType
 import japgolly.scalajs.react.vdom.html_<^._
 import japgolly.scalajs.react.{BackendScope, Callback, _}
 import org.scalajs.dom
@@ -587,11 +588,10 @@ object LineStats {
 
 
 object GlobalStats {
-  type Props = (AreaStatistics, AreaStatistics)
-
-  class Backend($: BackendScope[Props, Unit]) {
-    def render(p: Props) = {
-      val (global, external) = p
+  class Backend($: BackendScope[SimulationCollector, Unit]) {
+    def render(collector: SimulationCollector) = {
+      val global = collector.global
+      val external = collector.external
 
       <.div(
         ^.className := "statistics",
@@ -620,16 +620,89 @@ object GlobalStats {
         <.span(^.className := "current",
           f"${global.ghg * Main.ghgScaleFactor / 1e6}%.1s Mt/a"),
         singleGraph(global.ghg.toSeq, global.ghg.mean),
+
+        {
+          // calculate proportions of CO2 production by different types
+          val total = global.ghg
+          val types = Main.types.keys.map(id ⇒ id → collector.types(id).ghg)
+
+//          println(s"total=$total original=${collector.types} types=$types")
+
+          // the left margin of 100% where to put stuff to
+          var left = 0.0
+
+          <.div(^.className := "graph-container",
+            types.toSeq.sortBy(_._2.mean).reverse.toVdomArray {
+              case (id, ghg) ⇒
+                val info = Main.types(id)
+                val p = ghg / total.mean
+                val el = <.div(
+                  ^.className := "graph-line",
+                  ^.key := id,
+                  tooltip := f"${info.name}%s emissions ${Main.ghgToAnnual(ghg) / 1e6}%.0s Mt/a, ${p * 100.0}%.1s%% out of all emissions",
+                  <.span(^.className := "graph-name", info.name),
+                  <.div(^.className := "graph-bar",
+                    {
+                      import japgolly.scalajs.react.vdom.svg_<^.{<, ^}
+
+                      // base path is always a square unit size unfilled box
+                      val path = <.path(^.d := "M 0,0 l 1,0 l 0,1 l -1,0 z")
+
+                      // all styling, fills etc. occur in CSS, not here --
+                      // this provides an unit-sized box with vertical
+                      // bars stacked (to unit size)
+
+                      // kldugekldkalgkeg
+                      object ClassName extends Attr[String]("class") {
+                        override def :=[A](a: A)(implicit t: ValueType[A, String]): TagMod =
+                          TagMod.fn(b => t.fn(b.addClassName, a))
+                      }
+                      val cls = ClassName
+                      // cls = ^.`class`  or ^.className do not work, see
+                      // https://github.com/japgolly/scalajs-react/issues/287
+                      // (the suggest fix doesn't work)
+                      <.svg(
+                        ^.viewBox := "0 0 1 1",
+                        ^.preserveAspectRatio := "none",
+                        //                      ^.width := 100,
+                        //                      ^.height := 20,
+                        //                      ^.transform := "scale(100 20)",
+
+                        <.g(
+                          cls := "graph-stack",
+                          //                        ^.transform := "scale(100, 20)",
+
+                          // translate all right to the left point
+                          <.g(^.transform := s"translate($left, 0)",
+
+                            // the left deviation box
+                            <.g(cls := "graph-deviation",
+                              ^.transform := s"scale(${p.dev}, 1)", path),
+
+                            // main body
+                            <.g(cls := "graph-mean",
+                              ^.transform := s"translate(${p.dev}, 0) scale(${p.mean}, 1)", path),
+
+                            // right deviation
+                            <.g(cls := "graph-deviation",
+                              ^.transform := s"translate(${p.dev + p.mean}, 0) scale(${p.dev}, 1)", path)
+                          )))
+                    }))
+
+                left += p.mean
+                el
+            })
+        }
       )
     }
   }
 
-  private val component = ScalaComponent.builder[Props]("GlobalStats")
+  private val component = ScalaComponent.builder[SimulationCollector]("GlobalStats")
     .renderBackend[Backend]
     .build
 
-  def apply(global: AreaStatistics, external: AreaStatistics) =
-    component((global, external))
+  def apply(collector: SimulationCollector) =
+    component(collector)
 }
 
 

@@ -188,3 +188,72 @@ img.starting {
 #nav {
     margin-left: 25%;
 }
+
+
+/*
+ * The hiearchy is:
+ *
+ * 1 * graph-container
+ *  n * graph-line
+ *    1 * span.graph-name
+ *    1 * .graph-bar
+ *      1 * svg
+ *        1 * g.graph-stack
+ *          1 * g.graph-deviation
+ *          1 * g.graph-mean
+ *          1 * g.graph-deviation
+ */
+
+
+.graph-container {
+    font-size: 0;
+}
+
+.graph-line {
+}
+
+.graph-name {
+    vertical-align: middle;
+    font-size: 0.8rem;
+    /* float: left; */
+    /* clear: right; */
+    /* vertical-align: middle; */
+    display: inline-block;
+    /* width: 40%; */
+    width: 30%;
+}
+
+.graph-bar {
+    width: 70%;
+    vertical-align: middle;
+    /* height: 20px; */
+    /* width: 100px; */
+    border-left: 1px solid darkblue;
+    border-right: 1px solid darkblue;
+    border-top: 1px solid #d9d9d9;
+    background: #e3e3e3;
+    padding: 0 1px;
+    display: inline-block;
+    /* height: 2rem; */
+    /* float: right; */
+}
+
+.graph-bar svg {
+    width: 100%;
+    height: 1.2rem;
+}
+
+.graph-stack {
+    /* transform: scale(100, 20); */
+    /* margin-top: 5px; */
+    /* transform: scale(1, 1); */
+    fill: black;
+}
+
+.graph-mean path {
+    fill: cadetblue;
+}
+
+.graph-deviation path {
+    fill: lightblue;
+}
