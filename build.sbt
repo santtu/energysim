@@ -28,7 +28,6 @@ lazy val ui = (project in file("ui"))
   .settings(
     name := "Energy Simulator UI",
     webpackBundlingMode := BundlingMode.LibraryOnly(),
-    webpackConfigFile := Some(baseDirectory.value / "my.webpack.config.js"),
     mainClass in Compile := Some("fi.iki.santtu.energysimui.Main"),
     scalaJSUseMainModuleInitializer := true,
     npmDependencies in Compile ++= Seq(
@@ -50,6 +49,8 @@ lazy val ui = (project in file("ui"))
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
       "com.github.marklister" %%% "base64" % "0.2.3",
+      // see below, could not get these working, using a specific commit
+      // from the repository directly instead
 //      "com.payalabs" %%% "scalajs-react-bridge" % "0.5.0-SNAPSHOT",
 //      "com.payalabs" %%% "scalajs-react-bridge" % "0.4.0",
       "org.scala-js" %%% "scalajs-dom" % "0.9.3",
@@ -76,7 +77,7 @@ lazy val worker = (project in file("worker"))
 // Library JVM and JS versions is a Scala.JS cross-project, generating
 // both JVM and JS versions. The JVM version has a command line
 // interface main provided also.
-lazy val library = crossProject.in(file("."))
+lazy val library = crossProject.in(file("library"))
   .settings(
     libraryDependencies ++= Seq(
       "io.circe" %%% "circe-core" % "0.8.0",

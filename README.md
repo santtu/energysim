@@ -36,7 +36,8 @@ Finland. The project is structured into four separate SBT projects:
 * `library` that is a ScalaJS cross-project, meaning its targets are
   split into `libraryJVM` (JVM-targeted version) and `libraryJS`
   (JavaScript-targeted version). Sources for these are located in
-  `shared`, `js` and `jvm` subdirectories.
+  `library/shared` and `library/jvm` subdirectories (there is no
+  JS-specific code in library).
 
 * `worker`, a JS-only project that uses the simulator core from
   library and wraps it into a web worker. The source code for this is
