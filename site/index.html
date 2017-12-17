@@ -1,4 +1,21 @@
 <!doctype html>
+<!--
+  ~ Copyright 2017 Santeri Paavolainen
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
+
 <html lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -11,7 +28,10 @@
     <!-- End Google Tag Manager -->
     <title>Energy Simulator (Development Version)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.min.js"
+      integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+      crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
@@ -52,12 +72,12 @@
 
     <div class="container" id="playground"></div>
 
+    <div id="help"></div>
 
     <!-- Include Scala.js compiled code -->
     <script type="text/javascript" src="js/energy-simulator-ui-fastopt-library.js"></script>
     <script type="text/javascript" src="js/energy-simulator-ui-fastopt-loader.js"></script>
 
-    <!-- <script src="https://cdn.jsdelivr.net/npm/react-sparklines@1.7.0/build/index.js" integrity="sha256-TgNObJv9CDuyZVxmKa1CPhqLrbbC/znt4CjxIfPxxao=" crossorigin="anonymous"></script> -->
     <script src="js/react-sparklines-custom.js"></script>
     <script>
       var Sparklines = ReactSparklines.Sparklines,
@@ -71,6 +91,9 @@
       $('body').tooltip({
         selector: '[data-toggle="tooltip"]'
       });
+      });
+      $(function() {
+      $("#help").load("help.html");
       });
     </script>
 

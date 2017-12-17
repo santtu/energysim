@@ -3,12 +3,14 @@ version := "0.1.0"
 
 scalaVersion := "2.12.2"
 
-// This is to prevent me from getting confused if I accidentally typed
-// fastOptJS instead of fastOptJS::webpack -- they write to same files
-// but with different effects, resulting in confusion if used
-// interchangeably. So force this to be the webpack version.
-addCommandAlias("fastOptJS", "fastOptJS::webpack")
+// generate all JS files in the format the `site` subdirectory expects them
+// to be generated
+lazy val generateJs = taskKey[Unit]("generate all JS files")
 
+generateJs := {
+  (webpack in (ui, Compile, fastOptJS)).value
+  (fastOptJS in (worker, Compile)).value
+}
 
 // root project is aggregate of the subprojects, JVM and JS libraries
 // plus UI and background webworker
@@ -38,12 +40,12 @@ lazy val ui = (project in file("ui"))
     ),
     npmDevDependencies in Compile ++= Seq(
       "webpack-merge" → "^4.1.0",
-      "css-loader" → "^0.28.0",
-      "style-loader" → "^0.19.0",
-      "sass-loader" → "^6.0.0",
-      "node-sass" → "^4.0.0",
-      "precss" → "^2.0.0",
-      "autoprefixer" → "^7.0.0",
+      // "css-loader" → "^0.28.0",
+      // "style-loader" → "^0.19.0",
+      // "sass-loader" → "^6.0.0",
+      // "node-sass" → "^4.0.0",
+      // "precss" → "^2.0.0",
+      // "autoprefixer" → "^7.0.0",
     ),
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
@@ -61,7 +63,6 @@ lazy val ui = (project in file("ui"))
 // Worker is a separate project that has no NPM dependencies so it
 // doesn't use scalajs-bundler at all, just plain scalajs output. It
 // implements a WebWorker simulation backend that the UI element uses.
-
 lazy val worker = (project in file("worker"))
   .enablePlugins(ScalaJSPlugin)
   .settings(

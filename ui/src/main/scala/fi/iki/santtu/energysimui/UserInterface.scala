@@ -1,3 +1,20 @@
+/*
+ * Copyright 2017 Santeri Paavolainen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package fi.iki.santtu.energysimui
 
 import fi.iki.santtu.energysim.model.World
@@ -220,6 +237,8 @@ object UserInterface {
 
           // summary information
           <.div(^.className := "col-5 text-right",
+            <.i(^.className := "fa fa-question-circle px-3",
+              ^.id := "help-show"),
             <.i(^.className := "fa fa-share-alt px-3",
               ^.id := "share",
               tooltip := "You can copy the page address directly, as it includes all of the model parameters (you can also bookmark it)."),
