@@ -23,6 +23,11 @@ import java.nio.file.Paths
 import fi.iki.santtu.energysim.simulation.ScalaSimulation
 import scribe.Logger
 
+/**
+  * Simple command-line simulation runner. This uses the same simulation
+  * core and statistics collector as [[fi.iki.santtu.energysimui.Main]]
+  * uses.
+  */
 object Command {
   case class Config(file: String = "world.yml", rounds: Int = 1,
                     verbose: Boolean = false,

@@ -14,11 +14,16 @@ generateJs := {
 
 // root project is aggregate of the subprojects, JVM and JS libraries
 // plus UI and background webworker
-lazy val root = project.in(file(".")).
-  aggregate(libraryJS, libraryJVM, ui, worker).
-  settings(
+lazy val root = project.in(file("."))
+  .enablePlugins(ScalaUnidocPlugin)
+  .aggregate(libraryJS, libraryJVM, ui, worker)
+  .settings(
     publish := {},
-    publishLocal := {}
+    publishLocal := {},
+    // generate unidoc for only JVM project, if both libraryJS and
+    // libraryJVM are used unidoc will barf since it'll have duplicate
+    // definitions
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(libraryJS, reactBridge)
   )
 
 // UI is a javascript single-page app project, depending on the JS
@@ -58,8 +63,10 @@ lazy val ui = (project in file("ui"))
     webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
     includeFilter in webpackMonitoredFiles := "*.sass",
   )
-  .dependsOn(ProjectRef(uri("https://github.com/payalabs/scalajs-react-bridge.git#52507ab06af2258e666eaf1637a09ec92ca89075"), "core"))
+  .dependsOn(reactBridge)
   .dependsOn(worker)
+
+lazy val reactBridge = ProjectRef(uri("https://github.com/payalabs/scalajs-react-bridge.git#52507ab06af2258e666eaf1637a09ec92ca89075"), "core")
 
 // Worker is a separate project that has no NPM dependencies so it
 // doesn't use scalajs-bundler at all, just plain scalajs output. It
