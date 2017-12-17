@@ -1,1 +1,1785 @@
-../../../suomi.json
+{
+    "areas": {
+        "center": {
+            "drains": [
+                {
+                    "capacity": 1818.7214612,
+                    "id": "center-consumption",
+                    "type": "finland_consumption"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 33.3001819,
+                    "ghg": 750.0,
+                    "id": "center-oil",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 0.6776215,
+                    "ghg": 352.5,
+                    "id": "center-oil-chp",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 581.714406,
+                    "ghg": 12.0,
+                    "id": "center-wind",
+                    "type": "wind"
+                },
+                {
+                    "capacity": 0.7568223,
+                    "ghg": 240.0,
+                    "id": "center-bio",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 365.4907729,
+                    "ghg": 112.8,
+                    "id": "center-bio-chp",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 820.0,
+                    "id": "center-coal",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 87.3256519,
+                    "ghg": 914.0,
+                    "id": "center-peat",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 448.5031935,
+                    "ghg": 429.58,
+                    "id": "center-peat-chp",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 319.163072,
+                    "ghg": 24.0,
+                    "id": "center-hydro",
+                    "type": "hydro"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 12.0,
+                    "id": "center-nuclear",
+                    "type": "nuclear"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 490.0,
+                    "id": "center-gas",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 53.8584307,
+                    "ghg": 230.3,
+                    "id": "center-gas-chp",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 470.0,
+                    "id": "center-other",
+                    "type": "other"
+                },
+                {
+                    "capacity": 63.6964255,
+                    "ghg": 220.9,
+                    "id": "center-other-chp",
+                    "type": "other"
+                },
+                {
+                    "capacity": 0.291,
+                    "ghg": 45.0,
+                    "id": "center-solar",
+                    "type": "solar"
+                }
+            ]
+        },
+        "east": {
+            "drains": [
+                {
+                    "capacity": 1363.5844749,
+                    "id": "east-consumption",
+                    "type": "finland_consumption"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 164.1722256,
+                    "ghg": 750.0,
+                    "id": "east-oil",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 21.1642455,
+                    "ghg": 12.0,
+                    "id": "east-wind",
+                    "type": "wind"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 240.0,
+                    "id": "east-bio",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 347.7914956,
+                    "ghg": 112.8,
+                    "id": "east-bio-chp",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 820.0,
+                    "id": "east-coal",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 914.0,
+                    "id": "east-peat",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 211.2466362,
+                    "ghg": 429.58,
+                    "id": "east-peat-chp",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 375.056605,
+                    "ghg": 24.0,
+                    "id": "east-hydro",
+                    "type": "hydro"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 12.0,
+                    "id": "east-nuclear",
+                    "type": "nuclear"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 490.0,
+                    "id": "east-gas",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 7.4573212,
+                    "ghg": 230.3,
+                    "id": "east-gas-chp",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 470.0,
+                    "id": "east-other",
+                    "type": "other"
+                },
+                {
+                    "capacity": 25.7692452,
+                    "ghg": 220.9,
+                    "id": "east-other-chp",
+                    "type": "other"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 45.0,
+                    "id": "east-solar",
+                    "type": "solar"
+                }
+            ]
+        },
+        "estonia-south": {
+            "external": true,
+            "sources": [
+                {
+                    "capacity": 1000000.0,
+                    "ghg": 606.6811157,
+                    "id": "estonia-south-production",
+                    "type": "constant"
+                }
+            ]
+        },
+        "north": {
+            "drains": [
+                {
+                    "capacity": 1324.2009132,
+                    "id": "north-consumption",
+                    "type": "finland_consumption"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 7.5100061,
+                    "ghg": 750.0,
+                    "id": "north-oil",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 613.8639028,
+                    "ghg": 12.0,
+                    "id": "north-wind",
+                    "type": "wind"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 240.0,
+                    "id": "north-bio",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 187.0122829,
+                    "ghg": 112.8,
+                    "id": "north-bio-chp",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 820.0,
+                    "id": "north-coal",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 914.0,
+                    "id": "north-peat",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 204.234559,
+                    "ghg": 429.58,
+                    "id": "north-peat-chp",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 1700.603236,
+                    "ghg": 24.0,
+                    "id": "north-hydro",
+                    "type": "hydro"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 12.0,
+                    "id": "north-nuclear",
+                    "type": "nuclear"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 490.0,
+                    "id": "north-gas",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 470.0,
+                    "id": "north-other",
+                    "type": "other"
+                },
+                {
+                    "capacity": 0.42,
+                    "ghg": 45.0,
+                    "id": "north-solar",
+                    "type": "solar"
+                }
+            ]
+        },
+        "norway-north": {
+            "external": true,
+            "sources": [
+                {
+                    "capacity": 1000000.0,
+                    "ghg": 33.2318611,
+                    "id": "norway-north-production",
+                    "type": "constant"
+                }
+            ]
+        },
+        "russia-east": {
+            "external": true,
+            "sources": [
+                {
+                    "capacity": 1000000.0,
+                    "ghg": 403.5357631,
+                    "id": "russia-east-production",
+                    "type": "constant"
+                }
+            ]
+        },
+        "south": {
+            "drains": [
+                {
+                    "capacity": 2702.0547945,
+                    "id": "south-consumption",
+                    "type": "finland_consumption"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 156.371134,
+                    "ghg": 750.0,
+                    "id": "south-oil",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 57.3450272,
+                    "ghg": 12.0,
+                    "id": "south-wind",
+                    "type": "wind"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 240.0,
+                    "id": "south-bio",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 338.5026003,
+                    "ghg": 112.8,
+                    "id": "south-bio-chp",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 820.0,
+                    "id": "south-coal",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 877.9212211,
+                    "ghg": 385.4,
+                    "id": "south-coal-chp",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 914.0,
+                    "id": "south-peat",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 69.2205123,
+                    "ghg": 429.58,
+                    "id": "south-peat-chp",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 222.5742476,
+                    "ghg": 24.0,
+                    "id": "south-hydro",
+                    "type": "hydro"
+                },
+                {
+                    "capacity": 1009.0,
+                    "ghg": 12.0,
+                    "id": "south-nuclear",
+                    "type": "nuclear"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 490.0,
+                    "id": "south-gas",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 768.4874226,
+                    "ghg": 230.3,
+                    "id": "south-gas-chp",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 470.0,
+                    "id": "south-other",
+                    "type": "other"
+                },
+                {
+                    "capacity": 117.4317597,
+                    "ghg": 220.9,
+                    "id": "south-other-chp",
+                    "type": "other"
+                },
+                {
+                    "capacity": 4.145,
+                    "ghg": 45.0,
+                    "id": "south-solar",
+                    "type": "solar"
+                }
+            ]
+        },
+        "sweden-north": {
+            "external": true,
+            "sources": [
+                {
+                    "capacity": 1000000.0,
+                    "ghg": 96.1204998,
+                    "id": "sweden-north-production",
+                    "type": "constant"
+                }
+            ]
+        },
+        "sweden-west": {
+            "external": true,
+            "sources": [
+                {
+                    "capacity": 1000000.0,
+                    "ghg": 96.1204998,
+                    "id": "sweden-west-production",
+                    "type": "constant"
+                }
+            ]
+        },
+        "west": {
+            "drains": [
+                {
+                    "capacity": 2200.913242,
+                    "id": "west-consumption",
+                    "type": "finland_consumption"
+                }
+            ],
+            "sources": [
+                {
+                    "capacity": 173.7198302,
+                    "ghg": 750.0,
+                    "id": "west-oil",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 16.7347558,
+                    "ghg": 352.5,
+                    "id": "west-oil-chp",
+                    "type": "oil"
+                },
+                {
+                    "capacity": 486.2899443,
+                    "ghg": 12.0,
+                    "id": "west-wind",
+                    "type": "wind"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 240.0,
+                    "id": "west-bio",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 124.1402677,
+                    "ghg": 112.8,
+                    "id": "west-bio-chp",
+                    "type": "bio"
+                },
+                {
+                    "capacity": 328.9266222,
+                    "ghg": 820.0,
+                    "id": "west-coal",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 430.8674458,
+                    "ghg": 385.4,
+                    "id": "west-coal-chp",
+                    "type": "coal"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 914.0,
+                    "id": "west-peat",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 265.1410658,
+                    "ghg": 429.58,
+                    "id": "west-peat-chp",
+                    "type": "peat"
+                },
+                {
+                    "capacity": 407.6028393,
+                    "ghg": 24.0,
+                    "id": "west-hydro",
+                    "type": "hydro"
+                },
+                {
+                    "capacity": 1760.0,
+                    "ghg": 12.0,
+                    "id": "west-nuclear",
+                    "type": "nuclear"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 490.0,
+                    "id": "west-gas",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 297.8580526,
+                    "ghg": 230.3,
+                    "id": "west-gas-chp",
+                    "type": "gas"
+                },
+                {
+                    "capacity": 0.0,
+                    "ghg": 470.0,
+                    "id": "west-other",
+                    "type": "other"
+                },
+                {
+                    "capacity": 27.9569121,
+                    "ghg": 220.9,
+                    "id": "west-other-chp",
+                    "type": "other"
+                },
+                {
+                    "capacity": 3.686,
+                    "ghg": 45.0,
+                    "id": "west-solar",
+                    "type": "solar"
+                }
+            ]
+        }
+    },
+    "lines": [
+        {
+            "areas": [
+                "west",
+                "south"
+            ],
+            "capacity": 10000,
+            "id": "west-south"
+        },
+        {
+            "areas": [
+                "west",
+                "center"
+            ],
+            "capacity": 10000,
+            "id": "west-center"
+        },
+        {
+            "areas": [
+                "south",
+                "east"
+            ],
+            "capacity": 10000,
+            "id": "south-east"
+        },
+        {
+            "areas": [
+                "south",
+                "center"
+            ],
+            "capacity": 10000,
+            "id": "south-center"
+        },
+        {
+            "areas": [
+                "east",
+                "center"
+            ],
+            "capacity": 10000,
+            "id": "east-center"
+        },
+        {
+            "areas": [
+                "center",
+                "north"
+            ],
+            "capacity": 10000,
+            "id": "center-north"
+        },
+        {
+            "areas": [
+                "sweden-north",
+                "north"
+            ],
+            "capacity": 1500,
+            "id": "sweden-north-import",
+            "type": "import"
+        },
+        {
+            "areas": [
+                "sweden-west",
+                "west"
+            ],
+            "capacity": 1200,
+            "id": "sweden-west-import",
+            "type": "import"
+        },
+        {
+            "areas": [
+                "russia-east",
+                "east"
+            ],
+            "capacity": 1300,
+            "id": "russia-east-import",
+            "type": "import"
+        },
+        {
+            "areas": [
+                "norway-north",
+                "north"
+            ],
+            "capacity": 100,
+            "id": "norway-north-import",
+            "type": "import"
+        },
+        {
+            "areas": [
+                "estonia-south",
+                "south"
+            ],
+            "capacity": 1000,
+            "id": "estonia-south-import",
+            "type": "import"
+        }
+    ],
+    "name": "Suomi",
+    "types": {
+        "bio": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0001,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0003,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0018,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.0087,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0396,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.1132,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.2455,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.5908,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "coal": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0001,
+                    0.62,
+                    0.64
+                ],
+                [
+                    0.0,
+                    0.64,
+                    0.66
+                ],
+                [
+                    0.0,
+                    0.66,
+                    0.68
+                ],
+                [
+                    0.0,
+                    0.68,
+                    0.7
+                ],
+                [
+                    0.0,
+                    0.7,
+                    0.72
+                ],
+                [
+                    0.0025,
+                    0.72,
+                    0.74
+                ],
+                [
+                    0.0,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0,
+                    0.76,
+                    0.78
+                ],
+                [
+                    0.0,
+                    0.78,
+                    0.8
+                ],
+                [
+                    0.0275,
+                    0.8,
+                    0.82
+                ],
+                [
+                    0.0,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.2175,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.0,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.0,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.7524,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "finland_consumption": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0002096,
+                    0.68,
+                    0.7
+                ],
+                [
+                    0.0003773,
+                    0.7,
+                    0.72
+                ],
+                [
+                    0.00109,
+                    0.72,
+                    0.74
+                ],
+                [
+                    0.0007546,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0013835,
+                    0.76,
+                    0.78
+                ],
+                [
+                    0.0018027,
+                    0.78,
+                    0.8
+                ],
+                [
+                    0.0017189,
+                    0.8,
+                    0.82
+                ],
+                [
+                    0.0025154,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0034796,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0047793,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0057435,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.0089297,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0118643,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.0146313,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.0187398,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.0254056,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0313168,
+                    1.0,
+                    1.02
+                ],
+                [
+                    0.0345449,
+                    1.02,
+                    1.04
+                ],
+                [
+                    0.0422169,
+                    1.04,
+                    1.06
+                ],
+                [
+                    0.0441454,
+                    1.06,
+                    1.08
+                ],
+                [
+                    0.0458643,
+                    1.08,
+                    1.1
+                ],
+                [
+                    0.048757,
+                    1.1,
+                    1.12
+                ],
+                [
+                    0.0540393,
+                    1.12,
+                    1.14
+                ],
+                [
+                    0.0586928,
+                    1.14,
+                    1.16
+                ],
+                [
+                    0.0596151,
+                    1.16,
+                    1.18
+                ],
+                [
+                    0.0615855,
+                    1.18,
+                    1.2
+                ],
+                [
+                    0.0638494,
+                    1.2,
+                    1.22
+                ],
+                [
+                    0.0596151,
+                    1.22,
+                    1.24
+                ],
+                [
+                    0.053662,
+                    1.24,
+                    1.26
+                ],
+                [
+                    0.0452354,
+                    1.26,
+                    1.28
+                ],
+                [
+                    0.0362219,
+                    1.28,
+                    1.3
+                ],
+                [
+                    0.0297656,
+                    1.3,
+                    1.32
+                ],
+                [
+                    0.0255733,
+                    1.32,
+                    1.34
+                ],
+                [
+                    0.0220098,
+                    1.34,
+                    1.36
+                ],
+                [
+                    0.0176498,
+                    1.36,
+                    1.38
+                ],
+                [
+                    0.0168113,
+                    1.38,
+                    1.4
+                ],
+                [
+                    0.0139605,
+                    1.4,
+                    1.42
+                ],
+                [
+                    0.0102293,
+                    1.42,
+                    1.44
+                ],
+                [
+                    0.0070851,
+                    1.44,
+                    1.46
+                ],
+                [
+                    0.0063304,
+                    1.46,
+                    1.48
+                ],
+                [
+                    0.0036473,
+                    1.48,
+                    1.5
+                ],
+                [
+                    0.00218,
+                    1.5,
+                    1.52
+                ],
+                [
+                    0.0012158,
+                    1.52,
+                    1.54
+                ],
+                [
+                    0.0005869,
+                    1.54,
+                    1.56
+                ],
+                [
+                    0.0001677,
+                    1.56,
+                    1.58
+                ]
+            ],
+            "model": "step"
+        },
+        "gas": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0001,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0,
+                    0.76,
+                    0.78
+                ],
+                [
+                    0.0001,
+                    0.78,
+                    0.8
+                ],
+                [
+                    0.0,
+                    0.8,
+                    0.82
+                ],
+                [
+                    0.0027,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0191,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.103,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.3372,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.0,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.5378,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "hydro": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0023676,
+                    0.3,
+                    0.32
+                ],
+                [
+                    0.0078404,
+                    0.32,
+                    0.34
+                ],
+                [
+                    0.0109455,
+                    0.34,
+                    0.36
+                ],
+                [
+                    0.0178156,
+                    0.36,
+                    0.38
+                ],
+                [
+                    0.0194457,
+                    0.38,
+                    0.4
+                ],
+                [
+                    0.0220075,
+                    0.4,
+                    0.42
+                ],
+                [
+                    0.0198727,
+                    0.42,
+                    0.44
+                ],
+                [
+                    0.0251902,
+                    0.44,
+                    0.46
+                ],
+                [
+                    0.0372225,
+                    0.46,
+                    0.48
+                ],
+                [
+                    0.0517777,
+                    0.48,
+                    0.5
+                ],
+                [
+                    0.0625679,
+                    0.5,
+                    0.52
+                ],
+                [
+                    0.0666434,
+                    0.52,
+                    0.54
+                ],
+                [
+                    0.0589582,
+                    0.54,
+                    0.56
+                ],
+                [
+                    0.0508073,
+                    0.56,
+                    0.58
+                ],
+                [
+                    0.0508461,
+                    0.58,
+                    0.6
+                ],
+                [
+                    0.0454122,
+                    0.6,
+                    0.62
+                ],
+                [
+                    0.0435491,
+                    0.62,
+                    0.64
+                ],
+                [
+                    0.0386974,
+                    0.64,
+                    0.66
+                ],
+                [
+                    0.0373777,
+                    0.66,
+                    0.68
+                ],
+                [
+                    0.0456063,
+                    0.68,
+                    0.7
+                ],
+                [
+                    0.0557755,
+                    0.7,
+                    0.72
+                ],
+                [
+                    0.0517,
+                    0.72,
+                    0.74
+                ],
+                [
+                    0.0621022,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0543394,
+                    0.76,
+                    0.78
+                ],
+                [
+                    0.038581,
+                    0.78,
+                    0.8
+                ],
+                [
+                    0.0158749,
+                    0.8,
+                    0.82
+                ],
+                [
+                    0.0062878,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0003881,
+                    0.84,
+                    0.86
+                ]
+            ],
+            "model": "step"
+        },
+        "import": {
+            "data": [
+                [
+                    1.0,
+                    0.6,
+                    1.0
+                ]
+            ],
+            "model": "step"
+        },
+        "nuclear": {
+            "data": [
+                [
+                    0.02,
+                    0.0,
+                    0.9
+                ],
+                [
+                    0.98,
+                    1.0,
+                    1.0
+                ]
+            ],
+            "model": "step"
+        },
+        "oil": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0001,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.001,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0086,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.0455,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.1596,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.3721,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.4131,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "other": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0001,
+                    0.62,
+                    0.64
+                ],
+                [
+                    0.0,
+                    0.64,
+                    0.66
+                ],
+                [
+                    0.0,
+                    0.66,
+                    0.68
+                ],
+                [
+                    0.0,
+                    0.68,
+                    0.7
+                ],
+                [
+                    0.0,
+                    0.7,
+                    0.72
+                ],
+                [
+                    0.0027,
+                    0.72,
+                    0.74
+                ],
+                [
+                    0.0,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0,
+                    0.76,
+                    0.78
+                ],
+                [
+                    0.0,
+                    0.78,
+                    0.8
+                ],
+                [
+                    0.0295,
+                    0.8,
+                    0.82
+                ],
+                [
+                    0.0,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.2165,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.0,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.0,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.7512,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "peat": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0002,
+                    0.82,
+                    0.84
+                ],
+                [
+                    0.0,
+                    0.84,
+                    0.86
+                ],
+                [
+                    0.0025,
+                    0.86,
+                    0.88
+                ],
+                [
+                    0.0117,
+                    0.88,
+                    0.9
+                ],
+                [
+                    0.0549,
+                    0.9,
+                    0.92
+                ],
+                [
+                    0.0,
+                    0.92,
+                    0.94
+                ],
+                [
+                    0.1743,
+                    0.94,
+                    0.96
+                ],
+                [
+                    0.3681,
+                    0.96,
+                    0.98
+                ],
+                [
+                    0.3883,
+                    0.98,
+                    1.0
+                ],
+                [
+                    0.0,
+                    1.0,
+                    1.02
+                ]
+            ],
+            "model": "step"
+        },
+        "solar": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.8976898,
+                    0.0,
+                    0.02
+                ],
+                [
+                    0.0589345,
+                    0.02,
+                    0.04
+                ],
+                [
+                    0.0155587,
+                    0.04,
+                    0.06
+                ],
+                [
+                    0.0094295,
+                    0.06,
+                    0.08
+                ],
+                [
+                    0.0056577,
+                    0.08,
+                    0.1
+                ],
+                [
+                    0.0014144,
+                    0.1,
+                    0.12
+                ],
+                [
+                    0.0051862,
+                    0.12,
+                    0.14
+                ],
+                [
+                    0.0018859,
+                    0.14,
+                    0.16
+                ],
+                [
+                    0.0018859,
+                    0.16,
+                    0.18
+                ],
+                [
+                    0.0004715,
+                    0.18,
+                    0.2
+                ],
+                [
+                    0.0,
+                    0.2,
+                    0.22
+                ],
+                [
+                    0.0004715,
+                    0.22,
+                    0.24
+                ],
+                [
+                    0.0,
+                    0.24,
+                    0.26
+                ],
+                [
+                    0.0004715,
+                    0.26,
+                    0.28
+                ],
+                [
+                    0.000943,
+                    0.28,
+                    0.3
+                ],
+                [
+                    0.0,
+                    0.3,
+                    0.32
+                ]
+            ],
+            "model": "step"
+        },
+        "wind": {
+            "aggregated": true,
+            "data": [
+                [
+                    0.0030095,
+                    0.0,
+                    0.02
+                ],
+                [
+                    0.0359053,
+                    0.02,
+                    0.04
+                ],
+                [
+                    0.0438456,
+                    0.04,
+                    0.06
+                ],
+                [
+                    0.0404426,
+                    0.06,
+                    0.08
+                ],
+                [
+                    0.0452809,
+                    0.08,
+                    0.1
+                ],
+                [
+                    0.0393546,
+                    0.1,
+                    0.12
+                ],
+                [
+                    0.0360905,
+                    0.12,
+                    0.14
+                ],
+                [
+                    0.0340301,
+                    0.14,
+                    0.16
+                ],
+                [
+                    0.0307892,
+                    0.16,
+                    0.18
+                ],
+                [
+                    0.0373174,
+                    0.18,
+                    0.2
+                ],
+                [
+                    0.0351182,
+                    0.2,
+                    0.22
+                ],
+                [
+                    0.0305345,
+                    0.22,
+                    0.24
+                ],
+                [
+                    0.0366461,
+                    0.24,
+                    0.26
+                ],
+                [
+                    0.026738,
+                    0.26,
+                    0.28
+                ],
+                [
+                    0.0275945,
+                    0.28,
+                    0.3
+                ],
+                [
+                    0.0274556,
+                    0.3,
+                    0.32
+                ],
+                [
+                    0.0253953,
+                    0.32,
+                    0.34
+                ],
+                [
+                    0.0253258,
+                    0.34,
+                    0.36
+                ],
+                [
+                    0.0201403,
+                    0.36,
+                    0.38
+                ],
+                [
+                    0.0197699,
+                    0.38,
+                    0.4
+                ],
+                [
+                    0.0160891,
+                    0.4,
+                    0.42
+                ],
+                [
+                    0.0178022,
+                    0.42,
+                    0.44
+                ],
+                [
+                    0.0201171,
+                    0.44,
+                    0.46
+                ],
+                [
+                    0.0228025,
+                    0.46,
+                    0.48
+                ],
+                [
+                    0.0218765,
+                    0.48,
+                    0.5
+                ],
+                [
+                    0.019631,
+                    0.5,
+                    0.52
+                ],
+                [
+                    0.0197467,
+                    0.52,
+                    0.54
+                ],
+                [
+                    0.0208811,
+                    0.54,
+                    0.56
+                ],
+                [
+                    0.0227562,
+                    0.56,
+                    0.58
+                ],
+                [
+                    0.019631,
+                    0.58,
+                    0.6
+                ],
+                [
+                    0.0255805,
+                    0.6,
+                    0.62
+                ],
+                [
+                    0.0257657,
+                    0.62,
+                    0.64
+                ],
+                [
+                    0.0253721,
+                    0.64,
+                    0.66
+                ],
+                [
+                    0.0273399,
+                    0.66,
+                    0.68
+                ],
+                [
+                    0.024886,
+                    0.68,
+                    0.7
+                ],
+                [
+                    0.0266222,
+                    0.7,
+                    0.72
+                ],
+                [
+                    0.0118527,
+                    0.72,
+                    0.74
+                ],
+                [
+                    0.0098849,
+                    0.74,
+                    0.76
+                ],
+                [
+                    0.0005787,
+                    0.76,
+                    0.78
+                ]
+            ],
+            "model": "step"
+        }
+    },
+    "version": 1
+}

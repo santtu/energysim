@@ -1,6 +1,6 @@
 #!/bin/sh -ex
 [ -d dist ] && rm -rf dist
-sbt clean worker/fastOptJS ui/fastOptJS::webpack
+sbt clean generateJs
 mkdir -p dist
 cp -RL site/ dist
 if [ "$1" = "--s3" ]; then
