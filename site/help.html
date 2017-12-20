@@ -1,142 +1,155 @@
 <!--
-  ~ Copyright 2017 Santeri Paavolainen
-  ~
-  ~ Licensed under the Apache License, Version 2.0 (the "License");
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an "AS IS" BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
-  ~
+    ~ Copyright 2017 Santeri Paavolainen
+    ~
+    ~ Licensed under the Apache License, Version 2.0 (the "License");
+    ~ you may not use this file except in compliance with the License.
+    ~ You may obtain a copy of the License at
+    ~
+    ~     http://www.apache.org/licenses/LICENSE-2.0
+    ~
+    ~ Unless required by applicable law or agreed to in writing, software
+    ~ distributed under the License is distributed on an "AS IS" BASIS,
+    ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    ~ See the License for the specific language governing permissions and
+    ~ limitations under the License.
+    ~
   -->
 
 <!-- this is included via .load() in the parent page -->
-<div id="help-fade"></div>
-<div id="help-outer" class="container">
-  <div id="help-inner">
-    <div>
-      <h1>Energy Simulator</h1>
+<div>
+  <div id="help-fade"></div>
+  <div id="help-outer" class="container">
+    <div id="help-close"><i class="fa fa-times help-dismiss"></i></div>
+    <div id="help-inner">
+      <div>
+	<h1>Energy Simulator</h1>
 
-      <p><b>Welcome to the Finnish electricity market simulator!</b></p>
+	<p><b>Welcome to the Finnish electricity market simulator!</b></p>
 
-      <p>In short, this is a sandbox simulation (or a game where you
-	get to set your own goals) of Finland's electricity market
-	based on real electricity demand and production information of
-	about 2016 and 2017. While the model of the market, and the
-	simulation using it are simplified, they are realistic enough
-	to show the generic outcomes of various changes that can be
-	applied.</p>
+	<p>In short, this is a sandbox simulation (or a game where you
+	  get to set your own goals) of Finland's electricity market
+	  based on real electricity demand and production information of
+	  about 2016 and 2017. While the model of the market, and the
+	  simulation using it are simplified, they are realistic enough
+	  to show the generic outcomes of various changes that can be
+	  applied.</p>
 
-      <p>The <b>really short guide</b> is: 1) close this help test by
-	clicking on the CLOSE button below (come back here by clicking
-	on the <i class="fa fa-question-circle"></i> icon), 2) click
-	on START button (top left corner), 3) twiddle with
-	sliders. Try clicking also on the map and things in it!</p>
+	<h2>Quickstart</h2>
 
-      <p>
-	<button class="help-dismiss btn btn-primary">Close</button>
-	<!-- <button id="joyride-enable" class="btn btn-secondary">Enable walkthrough</button> -->
-	<!-- <button id="joyride-disable" class="btn btn-secondary">Disable -->
-	<!--   walkthrough</button> -->
-      </p>
+	<p>The <b>really short guide</b> is: 1) close this help test
+	  by clicking on the CLOSE button below (come back here by
+	  clicking on the <i class="fa fa-question-circle"></i> icon),
+	  2) click on the START button (top left corner), 3) twiddle
+	  with sliders. Please also try clicking also on the map and
+	  things in it!</p>
 
-      <h2>Details</h2>
+	<p>
+	  <button class="help-dismiss btn btn-primary">Close</button>
+	  <!-- <button id="joyride-enable" class="btn btn-secondary">Enable walkthrough</button> -->
+	  <!-- <button id="joyride-disable" class="btn btn-secondary">Disable -->
+	  <!--   walkthrough</button> -->
+	</p>
 
-      <p>
-	The screen is divided into three main areas: <b>the
-	  map</b>, <b>controls</b> and <b>statistics</b>. The map is
-	pretty straightforward. You can click on it to select areas,
-	transmission lines and re-clicking on the area or line will
-	deselect it.</p>
+	<h2>A bit longer introduction</h2>
 
-      <img src="images/help-panes.png" style="width: 70%; margin: 1rem;">
+	<p>
+	  The screen is divided into three main areas: <b>the
+	    map</b>, <b>controls</b> and <b>statistics</b>. The map is
+	  pretty straightforward. You can click on it to select areas,
+	  transmission lines and re-clicking on the area or line will
+	  deselect it.</p>
 
-      <p><b>Controls</b> can be used to manage production capacities
-	either over the whole Finland, or within a single area. Below
-	is an example of a control for manipulating hydropower
-	capacity. The checkbox either enables or disables the
-	production category, and you can use the slider to control the
-	nominal capacity in megawatts (MW).</p>
+	<img src="images/help-panes.png" style="width: 70%; margin: 1rem;">
 
-      <p>Once you have started a simulation, the <b>statistics</b>
-	area shows all kinds of pretty graphs. Please note that since
-	this is a stateless monte carlo simulation, the vertical axis is
-	the simulation round and <b>not</b> time dimension.</p>
+	<p><b>Controls</b> can be used to manage production capacities
+	  either over the whole Finland, or within a single area. Below
+	  is an example of a control for manipulating hydropower
+	  capacity. The checkbox either enables or disables the
+	  production category, and you can use the slider to control the
+	  nominal capacity in megawatts (MW).</p>
 
-      <p>Remember that you can hover your mouse over most of the
-	elements to get detailed information!</p>
+	<p>Once you have started a simulation, the <b>statistics</b>
+	  area shows all kinds of pretty graphs. Please note that since
+	  this is a stateless monte carlo simulation, the vertical axis is
+	  the simulation round and <b>not</b> time dimension.</p>
 
-      <p>The CLEAR button will clear out the statistics, and the RESET
-	button (clickable only when simulation is stopped) will reset
-	the model back to the default one.</p>
+	<p>Remember that you can hover your mouse over most of the
+	  elements to get detailed information!</p>
 
-      <h2>Background</h2>
+	<p>The CLEAR button will clear out the statistics, and the RESET
+	  button (clickable only when simulation is stopped) will reset
+	  the model back to the default one.</p>
 
-      <p>This work is result of the B.Sc. work at Aalto University in
-	2017, and conducted as part of the AAN-C2008 Research Project
-	course.</p>
+	<h2>Background</h2>
 
-      <p>You can find more information on this work in
-	in <a target="_blank" href="http://santtu.iki.fi/xxx">this blog
-	  post</a>. Also, the source code can be found
-	at <a target="_blank" href="https://github.com/santtu/energysim">github.com/santtu/energysim</a>.</p>
+	<p>This work is result of the B.Sc. work at Aalto University in
+	  2017, and conducted as part of the AAN-C2008 Research Project
+	  course.</p>
 
-      <h2>Licenses</h2>
+	<p>You can find more information on this work in
+	  in <a target="_blank" href="http://santtu.iki.fi/xxx">this blog
+	    post</a>. Also, the source code can be found
+	  at <a target="_blank" href="https://github.com/santtu/energysim">github.com/santtu/energysim</a>.</p>
 
-      <p>Copyright Santeri Paavolainen, Finland, 2017. This work is published under
-	the <a href="http://www.apache.org/licenses/#2.0">Apache
-	  License 2.0</a>.</p>
+	<h2>Privacy policy</h2>
 
-      <p>This work incorporates various third party libraries which
-	are listed below:</p>
+	<p>This site uses third-party services such as Google
+	  Analytics to collect anonymous usage statistics. This site
+	  does not directly store personal or identifying information,
+	  nor does it use cookies.</p>
 
-      <ul>
-	<li>Bootstrap 4: "Bootstrap is released under the MIT license and is copyright 2017 Twitter."</li>
-	<li>Font Awesome: SIL OFL 1.1, "Font Awesome by Dave Gandy - http://fontawesome.io"</li>
-	<li>React Sparklines: "The MIT License (MIT) Copyright (c) 2015 Boris Yankov", some modifications adapted from Dem0n3D's changes (https://github.com/Dem0n3D)</li>
-	<li>React-DOM: MIT license, "Copyright (c) 2013-present, Facebook, Inc."</li>
-	<li>React: MIT license, "Copyright (c) 2013-present, Facebook, Inc."</li>
-	<li>Scala.JS: BSD 3-clause license, "Copyright (c) 2013-2014 EPFL"</li>
-	<li>circe: Apache 2.0 License, see https://github.com/circe/circe</li>
-	<li>jQuery, jQuery Foundation, MIT License, https://jquery.org/license/</li>
-	<li>marklister base64: BSD 2-clause license, "Copyright (c) 2013 - 2015, Mark Lister"</li>
-	<li>moultingyaml: MIT license, "Copyright (c) 2015 Joao Azevedo joao.c.azevedo@gmail.com"</li>
-	<li>popper.js "Code and documentation copyright 2016 Federico Zivolo. Code released under the MIT license. Docs released under Creative Commons."</li>
-	<li>scala-js-dom: MIT license, "Copyright (c) 2013 Li Haoyi"</li>
-	<li>scalajs-bundler: BSD 3-clause license, "Copyright (c) 2016 EPFL"</li>
-	<li>scalajs-react-bridge: MIT license, "Copyright (c) 2015 Paya Labs LLC"</li>
-	<li>scalajs-react: Apache 2.0 license, see https://github.com/japgolly/scalajs-react</li>
-	<li>scalatest: Apache 2.0 License, see https://github.com/scalatest/scalatest</li>
-	<li>scopt: MIT license, "Copyright (c) scopt contributors"</li>
-	<li>scribe: Apache 2.0 License, "Copyright (c) 2016 OUTR Technologies, LLC"</li>
-	<li>scroll-into-view-if-needed: "MIT License Copyright (c) 2017 Stian Didriksen"</li>
-	<li>webpack-merge: MIT license, "Copyright (c) 2015 Juho Vepsalainen"</li>
+	<h2>Licenses</h2>
 
-      </ul>
-      <p>These 3rd party libraries can themselves depend on further libraries.</p>
-      <p>
-	<button class="help-dismiss btn btn-primary">Close</button>
-      </p>
+	<p>Copyright Santeri Paavolainen, Finland, 2017. This work is published under
+	  the <a href="http://www.apache.org/licenses/#2.0">Apache
+	    License 2.0</a>.</p>
 
+	<p>This work incorporates various third party libraries which
+	  are listed below:</p>
+
+	<ul>
+	  <li>Bootstrap 4: "Bootstrap is released under the MIT license and is copyright 2017 Twitter."</li>
+	  <li>Font Awesome: SIL OFL 1.1, "Font Awesome by Dave Gandy - http://fontawesome.io"</li>
+	  <li>React Sparklines: "The MIT License (MIT) Copyright (c) 2015 Boris Yankov", some modifications adapted from Dem0n3D's changes (https://github.com/Dem0n3D)</li>
+	  <li>React-DOM: MIT license, "Copyright (c) 2013-present, Facebook, Inc."</li>
+	  <li>React: MIT license, "Copyright (c) 2013-present, Facebook, Inc."</li>
+	  <li>Scala.JS: BSD 3-clause license, "Copyright (c) 2013-2014 EPFL"</li>
+	  <li>circe: Apache 2.0 License, see https://github.com/circe/circe</li>
+	  <li>jQuery, jQuery Foundation, MIT License, https://jquery.org/license/</li>
+	  <li>marklister base64: BSD 2-clause license, "Copyright (c) 2013 - 2015, Mark Lister"</li>
+	  <li>moultingyaml: MIT license, "Copyright (c) 2015 Joao Azevedo joao.c.azevedo@gmail.com"</li>
+	  <li>popper.js "Code and documentation copyright 2016 Federico Zivolo. Code released under the MIT license. Docs released under Creative Commons."</li>
+	  <li>scala-js-dom: MIT license, "Copyright (c) 2013 Li Haoyi"</li>
+	  <li>scalajs-bundler: BSD 3-clause license, "Copyright (c) 2016 EPFL"</li>
+	  <li>scalajs-react-bridge: MIT license, "Copyright (c) 2015 Paya Labs LLC"</li>
+	  <li>scalajs-react: Apache 2.0 license, see https://github.com/japgolly/scalajs-react</li>
+	  <li>scalatest: Apache 2.0 License, see https://github.com/scalatest/scalatest</li>
+	  <li>scopt: MIT license, "Copyright (c) scopt contributors"</li>
+	  <li>scribe: Apache 2.0 License, "Copyright (c) 2016 OUTR Technologies, LLC"</li>
+	  <li>scroll-into-view-if-needed: "MIT License Copyright (c) 2017 Stian Didriksen"</li>
+	  <li>webpack-merge: MIT license, "Copyright (c) 2015 Juho Vepsalainen"</li>
+
+	</ul>
+	<p>These 3rd party libraries can themselves depend on further libraries.</p>
+	<p>
+	  <button class="help-dismiss btn btn-primary">Close</button>
+	</p>
+
+      </div>
     </div>
   </div>
+  <script type="text/javascript">
+    $(function() {
+    if (localStorage.getItem("initial-help-dismissed") != "dismissed") {
+    $('#help').show();
+    }
+    $('.help-dismiss').click(function() {
+    localStorage.setItem("initial-help-dismissed", "dismissed");
+    $('#help').hide();
+    });
+    $('#help-show').click(function() {
+    $('#help').show();
+    });
+    });
+  </script>
 </div>
-<script type="text/javascript">
-  $(function() {
-  if (localStorage.getItem("initial-help-dismissed") != "dismissed") {
-  $('#help').show();
-  }
-  $('.help-dismiss').click(function() {
-  localStorage.setItem("initial-help-dismissed", "dismissed");
-  $('#help').hide();
-  });
-  $('#help-show').click(function() {
-  $('#help').show();
-  });
-  });
-</script>

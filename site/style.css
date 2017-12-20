@@ -294,3 +294,13 @@ img.starting {
     padding: 1rem;
     margin: 1rem;
 }
+
+#help-close {
+    position: absolute;
+    top: 0rem;
+    right: .5rem;
+    font-size: 2rem;
+    color: black;
+    cursor: pointer;
+
+}
