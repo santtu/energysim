@@ -4,7 +4,7 @@ Energy Simulator
 To see this in action, please check out
 to [energysim.kooma.net](http://energysim.kooma.net). For a bit more
 academic background on this, please
-see [this blog post](http://santtu.iki.fi/xxx).
+see [this blog post](http://santtu.iki.fi/2018/01/10/energy-simulator).
 
 # Building and testing
 
