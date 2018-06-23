@@ -75,7 +75,9 @@ object Command {
     }
 
     if (config.verbose)
-      Logger.root.update { Logger.root.copy(multiplier = 2.0) }
+      Logger.root.clearHandlers().withHandler(
+        minimumLevel = Some(scribe.Level.Debug)).replace()
+
 
     scribe.debug(s"parser=$parser config=$config")
 

@@ -302,11 +302,13 @@ object EnabledNumber {
 
     def receiveProps(props: Props): Callback =
       $.modState {
-        // use modstate and be careful if we're in input -- do not change
-        // current state values if input is in process
-        // while we receive new props, keep the current value (slider)
-        case s if s.inInput ⇒ s
-        case s ⇒ s.copy(checked = props.checked, value = props.value)
+        state => state match {
+          // use modstate and be careful if we're in input -- do not change
+          // current state values if input is in process
+          // while we receive new props, keep the current value (slider)
+          case s if s.inInput ⇒ s
+          case s ⇒ s.copy(checked = props.checked, value = props.value)
+        }
       }
   }
 

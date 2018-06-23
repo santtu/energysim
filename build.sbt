@@ -1,7 +1,9 @@
-name := "Energy Simulator"
-version := "0.1.0"
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-scalaVersion := "2.12.2"
+name := "Energy Simulator"
+version := "0.2.0"
+
+scalaVersion := "2.12.6"
 
 // generate all JS files in the format the `site` subdirectory expects them
 // to be generated
@@ -23,7 +25,7 @@ lazy val root = project.in(file("."))
     // generate unidoc for only JVM project, if both libraryJS and
     // libraryJVM are used unidoc will barf since it'll have duplicate
     // definitions
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(libraryJS, reactBridge)
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := inAnyProject -- inProjects(libraryJS),
   )
 
 // UI is a javascript single-page app project, depending on the JS
@@ -36,11 +38,11 @@ lazy val ui = (project in file("ui"))
     mainClass in Compile := Some("fi.iki.santtu.energysimui.Main"),
     scalaJSUseMainModuleInitializer := true,
     npmDependencies in Compile ++= Seq(
-      "react" → "15.6.1",
-      "react-dom" → "15.6.1",
-      "bootstrap" → "4.0.0-beta.2",
-      "jquery" → "3.2.1",
-      "popper.js" → "^1.12.6",
+      "react" → "16.4.1",
+      "react-dom" → "16.4.1",
+      "bootstrap" → "4.1.1",
+      "jquery" → "3.3.1",
+      "popper.js" → "^1.14.3",
     ),
     npmDevDependencies in Compile ++= Seq(
       "webpack-merge" → "^4.1.0",
@@ -53,20 +55,14 @@ lazy val ui = (project in file("ui"))
     ),
     resolvers += Resolver.sonatypeRepo("snapshots"),
     libraryDependencies ++= Seq(
-      "com.github.marklister" %%% "base64" % "0.2.3",
-      // see below, could not get these working, using a specific commit
-      // from the repository directly instead
-//      "com.payalabs" %%% "scalajs-react-bridge" % "0.5.0-SNAPSHOT",
-//      "com.payalabs" %%% "scalajs-react-bridge" % "0.4.0",
-      "org.scala-js" %%% "scalajs-dom" % "0.9.3",
+      "com.github.marklister" %%% "base64" % "0.2.4",
+      "com.payalabs" %%% "scalajs-react-bridge" % "0.6.0",
+      "org.scala-js" %%% "scalajs-dom" % "0.9.6",
     ),
     webpackMonitoredDirectories += baseDirectory.value / "src" / "main" / "sass",
     includeFilter in webpackMonitoredFiles := "*.sass",
   )
-  .dependsOn(reactBridge)
   .dependsOn(worker)
-
-lazy val reactBridge = ProjectRef(uri("https://github.com/payalabs/scalajs-react-bridge.git#52507ab06af2258e666eaf1637a09ec92ca89075"), "core")
 
 // Worker is a separate project that has no NPM dependencies so it
 // doesn't use scalajs-bundler at all, just plain scalajs output. It
@@ -84,14 +80,15 @@ lazy val worker = (project in file("worker"))
 // Library JVM and JS versions is a Scala.JS cross-project, generating
 // both JVM and JS versions. The JVM version has a command line
 // interface main provided also.
-lazy val library = crossProject.in(file("library"))
+lazy val library = crossProject(JSPlatform, JVMPlatform)
+  .in(file("library"))
   .settings(
     libraryDependencies ++= Seq(
-      "io.circe" %%% "circe-core" % "0.8.0",
-      "io.circe" %%% "circe-generic" % "0.8.0",
-      "io.circe" %%% "circe-parser" % "0.8.0",
-      "org.scalatest" %%% "scalatest" % "3.0.1" % "test",
-      "com.outr" %%% "scribe" % "1.4.3"
+      "io.circe" %%% "circe-core" % "0.9.3",
+      "io.circe" %%% "circe-generic" % "0.9.3",
+      "io.circe" %%% "circe-parser" % "0.9.3",
+      "org.scalatest" %%% "scalatest" % "3.0.5" % "test",
+      "com.outr" %%% "scribe" % "2.5.1"
     ),
     name := "Energy Simulator",
   )
@@ -105,8 +102,8 @@ lazy val library = crossProject.in(file("library"))
   .jsSettings(
     libraryDependencies ++= Seq(
 //      "org.scala-js" %%% "scalajs-dom" % "0.9.3",
-      "com.github.japgolly.scalajs-react" %%% "core" % "1.1.0",
-      "com.github.japgolly.scalajs-react" %%% "extra" % "1.1.0",
+      "com.github.japgolly.scalajs-react" %%% "core" % "1.2.0",
+      "com.github.japgolly.scalajs-react" %%% "extra" % "1.2.0",
     ),
   )
 
