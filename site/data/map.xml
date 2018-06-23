@@ -102,11 +102,11 @@
   </defs>
 
   <!-- animations for focusing on different areas -->
-  <animate id="north-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-10 -50 1325 1850" fill="freeze"/>
-  <animate id="west-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="110 1700 580 1250" fill="freeze"/>
-  <animate id="center-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="345 1400 800 1200" fill="freeze"/>
-  <animate id="east-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="800 1400 750 1200" fill="freeze"/>
-  <animate id="south-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="550 2100 800 800" fill="freeze"/>
+  <animate id="north-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-50 -50 1650 3000" fill="freeze"/>
+  <animate id="west-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-50 -50 1650 3000" fill="freeze"/>
+  <animate id="center-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-50 -50 1650 3000" fill="freeze"/>
+  <animate id="east-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-50 -50 1650 3000" fill="freeze"/>
+  <animate id="south-focus" attributeName="viewBox" begin="indefinite" dur="0.2s" to="-50 -50 1650 3000" fill="freeze"/>
 
   <!--  document.querySelector("#west").getBBox() -->
   <!-- SVGRect {x: 137.697998046875, y: 1897.7030029296875, width: 522.989990234375, height: 996.7520751953125} -->
