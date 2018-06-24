@@ -83,6 +83,7 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
                         external: Option[Boolean])
 
   case class WorldHolder(name: Option[String],
+    version: Option[Int],
                          types: Option[Map[String, TypeHolder]],
                          areas: Option[Map[String, AreaHolder]],
                          lines: Option[Seq[UnitHolder]]) {
@@ -93,7 +94,7 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
   implicit val typeHolderFormat = yamlFormat4(TypeHolder)
   implicit val unitHolderFormat = yamlFormat7(UnitHolder)
   implicit val areaHolderFormat = yamlFormat4(AreaHolder)
-  implicit val worldHolderFormat = yamlFormat4(WorldHolder)
+  implicit val worldHolderFormat = yamlFormat5(WorldHolder)
 
 
   private var counter: Int = 0
@@ -172,7 +173,8 @@ trait WorldYamlProtocol extends DefaultYamlProtocol {
             lineHolder.disabled.getOrElse(false))
       }
 
-      World(worldHolder.name.getOrElse("unnamed world"),
+      World(name = worldHolder.name.getOrElse("unnamed world"),
+        version = worldHolder.version.getOrElse(1),
         types = types.values.toSeq,
         areas = areas.values.toSeq,
         lines = lines.toSeq)

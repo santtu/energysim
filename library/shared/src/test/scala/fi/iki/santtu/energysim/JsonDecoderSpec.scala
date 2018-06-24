@@ -20,6 +20,7 @@ package fi.iki.santtu.energysim
 import fi.iki.santtu.energysim.model._
 import io.circe.parser.decode
 import io.circe._
+import io.circe.parser.parse
 import org.scalatest.{FlatSpec, Matchers}
 
 class JsonDecoderSpec extends FlatSpec with Matchers {
@@ -118,12 +119,14 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
       |            "capacity": 500
       |        }
       |    ],
-      |    "name": "simple model"
+      |    "name": "simple model",
+      |    "version": 2
       |}""".stripMargin
 
   "JSON world decoder" should "work with empty input" in {
     val world = dec("{}")
     world.name should not be empty
+    world.version shouldBe 1
     world.areas shouldBe empty
     world.lines shouldBe empty
     world.units shouldBe empty
@@ -153,6 +156,8 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val data = complexData
     val world = dec(data)
 
+    world.name shouldBe "simple model"
+    world.version shouldBe 2
     world.areas.size shouldBe 3
     world.units.size shouldBe 11
     world.lines.size shouldBe 3
@@ -267,6 +272,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val j = enc(w)
     j shouldBe Json.fromFields(Seq(
       "name" → Json.fromString("a world"),
+      "version" -> Json.fromInt(1),
       "areas" → Json.fromFields(Seq()),
       "lines" → Json.fromValues(Seq()),
       "types" → Json.fromFields(Seq())
@@ -287,6 +293,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
 
     j shouldBe Json.fromFields(Seq(
       "name" → Json.fromString("a world"),
+      "version" -> Json.fromInt(1),
       "areas" → Json.fromFields(Seq()),
       "lines" → Json.fromValues(Seq()),
       "types" → Json.fromFields(Seq(
@@ -323,6 +330,7 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
 
     j shouldBe Json.fromFields(Seq(
       "name" → Json.fromString("a world"),
+      "version" -> Json.fromInt(1),
       "areas" → Json.fromFields(Seq(
         "a" → Json.fromFields(Seq(
           "name" → Json.Null,
@@ -352,5 +360,49 @@ class JsonDecoderSpec extends FlatSpec with Matchers {
     val j = enc(w)
     val w1 = dec(j.toString())
     w1 shouldBe w
+  }
+
+  // test of changes encoding and decoding
+  "Change encoder" should "handle no changes" in {
+    val j = decode[Json](JsonDecoder.encode(Changes("world", 2))).right.get
+    j shouldBe parse("""{"name": "world", "version": 2, "changes": []}""").right.get
+  }
+
+  it should "encode changes correctly" in {
+    val j = decode[Json](JsonDecoder.encode(
+      Changes("world", 1,
+        Seq(Change("id-1", None, Some(10)),
+          Change("id-2", Some(false), None),
+          Change("id-3", Some(true), Some(5)))))).right.get
+    j shouldBe parse("""{
+                "name": "world",
+                "version": 1,
+                "changes": [
+                        {"id": "id-1", "enabled": null, "capacity": 10},
+                        {"id": "id-2", "enabled": false, "capacity": null},
+                        {"id": "id-3", "enabled": true, "capacity": 5}
+                ]
+        }""").right.get
+  }
+
+  "Change decoder" should "handle no changes" in {
+    val c = JsonDecoder.decodeChanges("""{"name":"world","version":3,"changes":[]}""")
+    c shouldBe Changes("world", 3, Seq.empty)
+  }
+
+  "Change decoder" should "decode changes correctly" in {
+    val c = JsonDecoder.decodeChanges("""{
+                "name": "world",
+                "version": 1,
+                "changes": [
+                        {"id": "id-1", "enabled": null, "capacity": 10},
+                        {"id": "id-2", "enabled": false, "capacity": null},
+                        {"id": "id-3", "enabled": true, "capacity": 5}
+                ]
+        }""")
+    c shouldBe Changes("world", 1,
+      Seq(Change("id-1", None, Some(10)),
+        Change("id-2", Some(false), None),
+        Change("id-3", Some(true), Some(5))))
   }
 }

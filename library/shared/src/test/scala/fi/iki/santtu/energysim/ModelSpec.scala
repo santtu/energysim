@@ -103,8 +103,9 @@ class ModelSpec extends FlatSpec with Matchers {
     ne(Line("id-4", area1 = a1, area2 = a2), Line("id-5", area1 = a1, area2 = a2))
   }
 
-  it  should "work for worlds" in {
+  it should "work for worlds" in {
     eq(World(), World())
+    ne(World(), World(version = 2))
     ne(World(), World("another name"))
     eq(World(areas = Seq(Area("id-1"))), World(areas = Seq(Area("id-1"))))
     ne(World(areas = Seq(Area("id-1"))), World())

@@ -25,6 +25,7 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
   "YAML world decoder" should "work with empty input" in {
     val world = decode("{}")
     world.name should not be empty
+    world.version shouldBe 1
     world.areas shouldBe empty
     world.lines shouldBe empty
     world.units shouldBe empty
@@ -60,6 +61,7 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
 
   it should "handle complex case" in {
     val data = """name: simple model
+                 |version: 2
                  |areas:
                  |  north:
                  |    sources:
@@ -103,6 +105,8 @@ class YamlDecoderSpec extends FlatSpec with Matchers {
                  |""".stripMargin
     val world = decode(data)
 
+    world.name shouldBe "simple model"
+    world.version shouldBe 2
     world.areas.size shouldBe 3
     world.units.size shouldBe 11
     world.lines.size shouldBe 3

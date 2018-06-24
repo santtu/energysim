@@ -169,7 +169,18 @@ object UserInterface {
 
       (if (reset) resetCollector(world) else Callback.empty) >>
         ($.props >>= {
-          case props if props.world != world ⇒ props.controller.set(WorldPage(world))
+          // if we have not diverged from default world (e.g. name and
+          // version match), then use Version2Page
+          case props if props.world != world &&
+              world.name == props.defaultWorld.name &&
+              world.version == props.defaultWorld.version =>
+            props.controller.set(Version2Page(props.defaultWorld, world))
+
+          // otherwise fall back to Version1Page
+          case props if props.world != world ⇒
+            props.controller.set(Version1Page(world))
+
+          // if no changes, do nothing
           case _ ⇒ Callback.empty
         })
     }
@@ -201,7 +212,7 @@ object UserInterface {
             ^.onClick --> scroll("stats"),
             "stats")
         ),
-        
+
         // header contains controllers and graphs
         <.header(^.className := "row pb-3",
           // controls (play stop) are here

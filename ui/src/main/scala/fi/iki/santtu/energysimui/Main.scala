@@ -19,7 +19,7 @@ package fi.iki.santtu.energysimui
 
 import com.github.marklister.base64.Base64._
 import fi.iki.santtu.energysim._
-import fi.iki.santtu.energysim.model.{Area, Line, World}
+import fi.iki.santtu.energysim.model.{Area, Line, World, Changes}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -105,29 +105,64 @@ object Main {
 //  type Selection = Option[Either[String, String]]
 
   sealed trait Pages
-  case class WorldPage(encoded: String) extends Pages {
+  case class Version1Page(encoded: String) extends Pages {
     def world = JsonDecoder.decode(new String(encoded.toByteArray, "UTF-8"))
   }
 
-  object WorldPage {
-    def apply(w: World): WorldPage =
-      WorldPage(JsonDecoder.encode(w).getBytes("UTF-8").toBase64)
+  object Version1Page {
+    def apply(w: World): Version1Page =
+      Version1Page(JsonDecoder.encode(w).getBytes("UTF-8").toBase64)
+  }
+
+  import boopickle.Default._
+  import java.util.Base64
+  import java.nio.charset.StandardCharsets
+  import java.nio.ByteBuffer
+
+  case class Version2Page(encoded: String) extends Pages {
+    def changes = {
+      val buffer = ByteBuffer.wrap(encoded.getBytes("UTF-8"))
+      val decoded = Base64.getUrlDecoder().decode(buffer)
+      val changes = Unpickle[Changes].fromBytes(decoded)
+
+      changes
+    }
+
+    def apply(w: World): World = changes(w)
+  }
+
+  object Version2Page {
+    def apply(origin: World, world: World): Version2Page = {
+      val changes = Changes(origin, world)
+
+      val pickle = Pickle.intoBytes(changes)
+      val encoded = Base64.getUrlEncoder().encode(pickle)
+      val buffer = StandardCharsets.UTF_8.decode(encoded).toString
+
+      Version2Page(buffer)
+    }
   }
 
   def router(defaultWorld: World, worldMap: String) = {
-    val defaultPage = WorldPage(defaultWorld)
+    val defaultPage = Version2Page(defaultWorld, defaultWorld)
     val routerConfig = Router(BaseUrl.until_#,
       RouterConfigDsl[Pages].buildConfig {
         dsl =>
           import dsl._
 
-          val worldRoute =
-            dynamicRouteCT("#" / string(".+").caseClass[WorldPage]) ~>
-              dynRenderR((page: WorldPage, ctl) => {
+          val v1encoding =
+            dynamicRouteCT("#" / string(".+").caseClass[Version1Page]) ~>
+              dynRenderR((page: Version1Page, ctl) => {
                 UserInterface(page.world, defaultWorld, worldMap, ctl)
               })
 
-          (worldRoute)
+        val v2encoding =
+            dynamicRouteCT("#2-" ~ string(".+").caseClass[Version2Page]) ~>
+              dynRenderR((page: Version2Page, ctl) => {
+                UserInterface(page(defaultWorld), defaultWorld, worldMap, ctl)
+              })
+
+          (v2encoding | v1encoding)
             .notFound(redirectToPage(defaultPage)(Redirect.Replace))
             .setPostRender((prev, cur) ⇒ Callback {
             })

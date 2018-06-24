@@ -53,6 +53,7 @@ object JsonDecoder extends ModelDecoder {
                                 areas: Tuple2[String, String],
                                 disabled: Option[Boolean])
   private case class WorldHolder(name: Option[String],
+    version: Option[Int],
                                  types: Option[Map[String, TypeHolder]],
                                  areas: Option[Map[String, AreaHolder]],
                                  lines: Option[Seq[LineHolder]])
@@ -123,6 +124,8 @@ object JsonDecoder extends ModelDecoder {
             (json.as[Double], json.as[Seq[Double]]) match {
               case (Right(c), _) ⇒ UniformDistributionModel(c, 1.0)
               case (_, Right(Seq(l, h))) ⇒ UniformDistributionModel(l, h)
+              case (Left(error), _) => throw error
+              case (_, Left(error)) => throw error
             }
         }
       case "constant" ⇒
@@ -130,6 +133,7 @@ object JsonDecoder extends ModelDecoder {
           case None ⇒ ConstantDistributionModel
           case Some(json) ⇒
             json.as[Double] match {
+              case Left(error) => throw error
               case Right(c) ⇒ ConstantDistributionModel(c)
             }
         }
@@ -206,6 +210,7 @@ object JsonDecoder extends ModelDecoder {
     }
 
     World(name = model.name.getOrElse("unnamed world"),
+      version = model.version.getOrElse(1),
       types = types.values.toList,
       areas = areas.values.toList,
       lines = lines.toList
@@ -219,6 +224,7 @@ object JsonDecoder extends ModelDecoder {
   def encodeAsJson(w: World): Json = {
     WorldHolder(
       name = Some(w.name),
+      version = Some(w.version),
       types = Some(w.types.map { t ⇒
         val (model, data) = capacityData(t.model)
         t.id → TypeHolder(
@@ -263,7 +269,31 @@ object JsonDecoder extends ModelDecoder {
     ).asJson
   }
 
+  implicit val changesEncoder: Encoder[Changes] =
+    Encoder.forProduct3("name", "version", "changes")(Changes.unapply(_).get)
+  implicit val changesDecoder: Decoder[Changes] =
+    Decoder.forProduct3("name", "version", "changes")(Changes.apply)
+
   def encodeAsJson(result: Result): Json = {
     result.asJson
+  }
+
+  def encodeAsJson(changes: Changes): Json = changes.asJson
+
+  def encode(changes: Changes): String = {
+    encodeAsJson(changes).toString()
+  }
+
+  def decodeChangesFromJson(json: Json): Changes =
+    json.as[Changes] match {
+      case Left(error) => throw error
+      case Right(changes) => changes
+    }
+
+  def decodeChanges(data: String): Changes = {
+    parse(data) match {
+      case Left(error) => throw error
+      case Right(json) => decodeChangesFromJson(json)
+    }
   }
 }

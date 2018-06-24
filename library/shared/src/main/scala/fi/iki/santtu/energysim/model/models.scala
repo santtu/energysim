@@ -215,7 +215,7 @@ case class Area (id: String, name: Option[String], drains: Seq[Drain], sources: 
       case s ⇒ s
     })
 
-  def scaleSourceCapacity(scale: Double) = {  
+  def scaleSourceCapacity(scale: Double) = {
     assume(!external)
     copy(sources = sources.map(s ⇒ s.copy(capacity = (s.unitCapacity * scale).toInt)))
   }
@@ -237,6 +237,7 @@ object Area {
 }
 
 case class World (name: String,
+  version: Int,
                   types: Seq[DistributionType] = Seq.empty[DistributionType],
                   areas: Seq[Area] = Seq.empty[Area],
                   lines: Seq[Line] = Seq.empty[Line]) {
@@ -252,7 +253,7 @@ case class World (name: String,
   }
 
   override def toString: String =
-    s"World(name=$name,areas=$areas,types=$types,lines=$lines)"
+    s"World(name=$name@$version,areas=$areas,types=$types,lines=$lines)"
 
   // some manipulations, these return a copy
   def remove(area: Area, drain: Drain): World =
@@ -292,14 +293,16 @@ case class World (name: String,
     obj match {
       case w: World ⇒
         w.name == name &&
-          w.types.toSet == types.toSet &&
-          w.areas.toSet == areas.toSet &&
-          w.lines.toSet == lines.toSet
+        w.version == version &&
+        w.types.toSet == types.toSet &&
+        w.areas.toSet == areas.toSet &&
+        w.lines.toSet == lines.toSet
       case _ ⇒ false
     }
 
   override def hashCode(): Int =
     name.hashCode() ^
+  version.hashCode() ^
     types.toSet.hashCode() ^
     areas.toSet.hashCode() ^
     lines.toSet.hashCode()
@@ -332,8 +335,9 @@ case class World (name: String,
 
 object World {
   def apply(name: String = "world",
+    version: Int = 1,
             types: Seq[DistributionType] = Seq.empty[DistributionType],
             areas: Seq[Area] = Seq.empty[Area],
             lines: Seq[Line] = Seq.empty[Line]): World =
-    new World(name, types, areas, lines)
+    new World(name, version, types, areas, lines)
 }

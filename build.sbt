@@ -88,7 +88,8 @@ lazy val library = crossProject(JSPlatform, JVMPlatform)
       "io.circe" %%% "circe-generic" % "0.9.3",
       "io.circe" %%% "circe-parser" % "0.9.3",
       "org.scalatest" %%% "scalatest" % "3.0.5" % "test",
-      "com.outr" %%% "scribe" % "2.5.1"
+      "com.outr" %%% "scribe" % "2.5.1",
+      "io.suzaku" %%% "boopickle" % "1.3.0",
     ),
     name := "Energy Simulator",
   )

@@ -24,3 +24,13 @@ not gotten around to doing.
 * Add SBT web server for local development.
 
 * Clean up the publish script.
+
+* Make the CO2 values more understandable, compare for example against
+  targets (provide easier visual result --- under/over target?)
+
+* Add a sign of no-power for areas when they run out of power, the
+  color styling is sometimes a bit too subtle (when powerouts are
+  rare, but still exist)
+
+* Properly version the output files so they can be better cached (when
+  not changed)
