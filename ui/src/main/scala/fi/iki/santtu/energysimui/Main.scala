@@ -19,7 +19,7 @@ package fi.iki.santtu.energysimui
 
 import com.github.marklister.base64.Base64._
 import fi.iki.santtu.energysim._
-import fi.iki.santtu.energysim.model.{Area, Line, World, Changes}
+import fi.iki.santtu.energysim.model.{Area, Line, World, Changes, Change}
 import japgolly.scalajs.react._
 import japgolly.scalajs.react.extra.router.{Router, _}
 import japgolly.scalajs.react.vdom.html_<^._
@@ -119,12 +119,24 @@ object Main {
   import java.nio.charset.StandardCharsets
   import java.nio.ByteBuffer
 
+  def wrap(pickled: ByteBuffer): String = {
+    val encoded = Base64.getUrlEncoder().encode(pickled)
+    val buffer = StandardCharsets.UTF_8.decode(encoded).toString
+    buffer
+  }
+
+  def unwrap(encoded: String): ByteBuffer = {
+    val buffer = ByteBuffer.wrap(encoded.getBytes("UTF-8"))
+    val decoded = Base64.getUrlDecoder().decode(buffer)
+    decoded
+  }
+
   case class Version2Page(encoded: String) extends Pages {
     def changes = {
-      val buffer = ByteBuffer.wrap(encoded.getBytes("UTF-8"))
-      val decoded = Base64.getUrlDecoder().decode(buffer)
-      val changes = Unpickle[Changes].fromBytes(decoded)
-
+      val changes = Unpickle[Changes].fromBytes(unwrap(encoded))
+      // val buffer = ByteBuffer.wrap(encoded.getBytes("UTF-8"))
+      // val decoded = Base64.getUrlDecoder().decode(buffer)
+      // val changes = Unpickle[Changes].fromBytes(decoded)
       changes
     }
 
@@ -134,17 +146,57 @@ object Main {
   object Version2Page {
     def apply(origin: World, world: World): Version2Page = {
       val changes = Changes(origin, world)
-
-      val pickle = Pickle.intoBytes(changes)
-      val encoded = Base64.getUrlEncoder().encode(pickle)
-      val buffer = StandardCharsets.UTF_8.decode(encoded).toString
-
-      Version2Page(buffer)
+      Version2Page(wrap(Pickle.intoBytes(changes)))
     }
   }
 
+  def worldSourceLineIds(w: World): Seq[String] =
+    w.units.filter {
+      case _: fi.iki.santtu.energysim.model.Line => true
+      case _: fi.iki.santtu.energysim.model.Source => true
+      case _ => false
+    }.map(_.id).sorted
+
+  type IndexedChange = (Int, Option[Boolean], Option[Int])
+  case class IndexedChanges(name: String, version: Int, changes: Seq[IndexedChange])
+
+  case class Version3Page(encoded: String) extends Pages {
+    def changes(w: World) = {
+      val ids = worldSourceLineIds(w)
+      val indexedChanges = Unpickle[IndexedChanges].fromBytes(unwrap(encoded))
+
+      Changes(indexedChanges.name, indexedChanges.version,
+        indexedChanges.changes.map {
+          case (index, enabled, capacity) =>
+            Change(ids(index), enabled, capacity)
+        })
+    }
+
+    def apply(w: World): World = {
+      changes(w)(w)
+    }
+  }
+
+  object Version3Page {
+    def apply(origin: World, world: World): Version3Page = {
+      val changes = Changes(origin, world)
+      val ids = worldSourceLineIds(origin).zipWithIndex.map {
+        case (id, index) => id -> index
+      }.toMap
+
+      val indexedChanges = IndexedChanges(changes.worldName, changes.worldVersion,
+        changes.changes.map {
+          change => (ids(change.id), change.enabled, change.capacity)
+        })
+
+      Version3Page(wrap(Pickle.intoBytes(indexedChanges)))
+    }
+  }
+
+
+
   def router(defaultWorld: World, worldMap: String) = {
-    val defaultPage = Version2Page(defaultWorld, defaultWorld)
+    val defaultPage = Version3Page(defaultWorld, defaultWorld)
     val routerConfig = Router(BaseUrl.until_#,
       RouterConfigDsl[Pages].buildConfig {
         dsl =>
@@ -162,7 +214,13 @@ object Main {
                 UserInterface(page(defaultWorld), defaultWorld, worldMap, ctl)
               })
 
-          (v2encoding | v1encoding)
+        val v3encoding =
+            dynamicRouteCT("#3-" ~ string(".+").caseClass[Version3Page]) ~>
+              dynRenderR((page: Version3Page, ctl) => {
+                UserInterface(page(defaultWorld), defaultWorld, worldMap, ctl)
+              })
+
+          (v3encoding | v2encoding | v1encoding)
             .notFound(redirectToPage(defaultPage)(Redirect.Replace))
             .setPostRender((prev, cur) ⇒ Callback {
             })

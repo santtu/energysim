@@ -103,3 +103,62 @@ The `Changes` type is directly pickled with BooPickle into whatever
 binary format it uses internally, then Base64-encoded (URL safe). This
 results in URLs that at least with the Finnish model with all sources
 and lines disabled results in URLs that can be copied and pasted.
+
+> Note: This version was deployed, and is considered version 2 of the
+> URL encoding format (the original one is implicit version 1).
+
+## Attempt 3
+
+The previous version is already more compact, but still results in
+over 1.5 kB of base64-encoded data to be appended to the URL. Most of
+the space in the encoding is actually taken by identifiers --- the
+identifiers of sources and lines in the version 1 of Finland take a
+total of 1075 bytes. However, these identifiers should be stable in a
+specific version of the world definition, so encoding the identifiers
+as strings is a tautology. Taking advantage of this, it is possible to
+squeeze the changes into a smaller blob.
+
+Since all identifiers are unique, any stable ordering of them can be
+indexed. E.g., instead of the string, it is possible to sort the
+identifiers (of sources and lines) and store the index instead. We can
+require that any changes into the world structure must be reflected in
+the version number.
+
+So, we could use a format such as `case class (name: String, version:
+Int, changes: Seq[(Int, Option[Boolean], Option[Int])])`. Using
+BooPickle, encoding `("world", 1,
+List.fill(88)((0,Some(true),Some(1000))))` takes 537 bytes, and
+expanded to base64 this will take 716 characters. Hooray! Right?
+
+Well, we can encode this data directly as semi-readable string without
+a binary encoding. If a single change is represented as
+`<index><enabled><capacity>`, with comma as a separator. Here
+`enabled` would be one of `+` (for enabled), `-` (for disabled) and
+`=` (no change from default) and `capacity` just a straight
+integer. So, a change of two sources could be represented as
+`1+,2=1000`.
+
+Wait, there's more! We actually do not need to encode the index at
+all. It can be made implicit, e.g. the previous one would be `,+,1000,,,...`
+(`=` can be omitted since there is no longer a risk of running index
+into capacity).
+
+So considering the earlier case of 88 repeats of explicitly enabled
+sources and lines for capacity 1000. It would be encoded as 87 commas
+plus 88 `+` characters and 88 times 4 digits for a total of 87 + 88 +
+88 * 4 = 527 characters total.
+
+This assumes that source and line capacities can be represented as
+four digits. Although, it has to be said that doing the BooPickle from
+above with capacity of 10000 results in 715 characters of base64
+encoding, and the same with custm encoding results in 87+88+88*5=615
+characters ... so, still more compact.
+
+The downside of this is that there is the need for the
+placeholders. This could be worked around if `<index>` was still
+allowed, but omission of it was interpreted as implicit increment from
+previous value. This would require an encoder with some heuristics on
+when to use implicit indexing and when explicit indexing, though.
+
+However, I am attracted by the apparent illegibility of
+base64-encoding so that's what the version 3 is using.

@@ -170,11 +170,13 @@ object UserInterface {
       (if (reset) resetCollector(world) else Callback.empty) >>
         ($.props >>= {
           // if we have not diverged from default world (e.g. name and
-          // version match), then use Version2Page
+          // version match), then use Version3Page
           case props if props.world != world &&
               world.name == props.defaultWorld.name &&
               world.version == props.defaultWorld.version =>
-            props.controller.set(Version2Page(props.defaultWorld, world))
+            props.controller.set(Version3Page(props.defaultWorld, world))
+            // version2page input is compatible with version3page, so
+            // we upgrade 2->3 immediately
 
           // otherwise fall back to Version1Page
           case props if props.world != world ⇒

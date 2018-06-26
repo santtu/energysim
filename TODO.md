@@ -34,3 +34,5 @@ not gotten around to doing.
 
 * Properly version the output files so they can be better cached (when
   not changed)
+
+* Refactor a lot of the code, JsonDecoder is a mess, for example
